@@ -72,6 +72,11 @@ Punkte:  4 / 10 / 16
   Ihre Anzahl ist zugleich die Anzahl der Tierwürfel der Karte; ein separates
   Feld dafür wäre redundant.
 
+Die Würfelzahl **schwankt je Karte** — beobachtet wurden 3 und 4, laut Hauke
+gibt es Karten mit bis zu 5. Die Punktleiste ist deshalb eine **Liste
+variabler Länge**, keine feste Dreierstruktur. Die Untergrenze ist noch nicht
+belegt.
+
 Das obige Beispiel ist **erfunden** und dient nur der Veranschaulichung des
 Formats. Die Punktwerte 4 / 10 / 16 stammen aus Haukes Beschreibung der
 Pinguinkarte, das Muster nicht.
