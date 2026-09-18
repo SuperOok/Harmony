@@ -1,91 +1,105 @@
 # Harmony
 
-SwiftUI multiplatform app (iOS, iPadOS, macOS) built with Xcode 27.
-At present the project is essentially the Xcode template — treat any
-convention below as a starting point, not as settled architecture.
+SwiftUI-App (iOS, iPadOS, macOS), gebaut mit Xcode 27.
 
-## Layout
+Harmony stellt einen Computer-Mitspieler für das Brettspiel **Harmonies**.
+Die Partie läuft am echten Tisch mit echtem Material; die App verwaltet nur
+das Wissen eines einzelnen Spielers und schlägt dessen Züge vor. Sie ist
+keine Digitalfassung des Spiels. Siehe `docs/` für Produktkern und Konzept.
+
+Der Stand ist derzeit im Wesentlichen die Xcode-Vorlage. Was unten als
+Konvention steht, ist ein Ausgangspunkt, keine gewachsene Architektur.
+
+## Aufbau
 
 ```
-Harmony.xcodeproj      single target and scheme, both named "Harmony"
-MyApp/                 all source lives here
-  MyApp.swift          @main entry point, WindowGroup
-  ContentView.swift    root view
+Harmony.xcodeproj      ein Target und ein Schema, beide „Harmony“
+MyApp/                 sämtlicher Quellcode
+  MyApp.swift          @main, WindowGroup
+  ContentView.swift    Wurzel-View
   Assets.xcassets/
+docs/                  Konzeptdokumente, nach Phasen nummeriert
 ```
 
-The source directory is named `MyApp/` while the target is named `Harmony`.
-This is a leftover from the template. Renaming the directory requires
-updating the file references in `project.pbxproj`, so do not rename it as a
-drive-by change.
+Das Quellverzeichnis heißt `MyApp/`, das Target dagegen `Harmony` — ein
+Überbleibsel der Vorlage. Ein Umbenennen erfordert Anpassungen an den
+Dateireferenzen in `project.pbxproj` und ist deshalb keine Nebenbei-Änderung.
 
-## Build
+## Bauen
 
 ```bash
 xcodebuild -project Harmony.xcodeproj -scheme Harmony -destination 'platform=macOS' build
 ```
 
-Swap the destination for iOS. Prefer the generic destination, which does not
-depend on which simulators happen to be installed:
+Für iOS besser das generische Ziel verwenden, das nicht davon abhängt,
+welche Simulatoren gerade installiert sind:
 
 ```bash
 xcodebuild -project Harmony.xcodeproj -scheme Harmony -destination 'generic/platform=iOS Simulator' build
 ```
 
-To build for one concrete device, pass `-destination 'platform=iOS Simulator,name=iPhone 18 Pro'`.
-Device names shift between Xcode releases, so check `xcrun simctl list devices available`
-before hardcoding one.
+Für ein konkretes Gerät `-destination 'platform=iOS Simulator,name=iPhone 18 Pro'`.
+Gerätenamen ändern sich zwischen Xcode-Versionen — vorher
+`xcrun simctl list devices available` prüfen, statt einen Namen fest
+einzutragen.
 
-There is **no test target**. Do not invent `xcodebuild test` invocations
-until one exists.
+Es gibt **kein Test-Target**. Keine `xcodebuild test`-Aufrufe erfinden,
+solange keines existiert.
 
-### If xcodebuild cannot find Xcode
+### Wenn xcodebuild Xcode nicht findet
 
-`xcode-select` on this machine points at the Command Line Tools, which makes
-every `xcodebuild` call fail with:
+`xcode-select` zeigt auf diesem Rechner auf die Command Line Tools, wodurch
+jeder nackte `xcodebuild`-Aufruf abbricht:
 
 ```
 tool 'xcodebuild' requires Xcode, but active developer directory
 '/Library/Developer/CommandLineTools' is a command line tools instance
 ```
 
-Prefix the command instead of changing the setting system-wide:
+Statt die Einstellung systemweit zu ändern, dem Befehl eine Variable
+voranstellen:
 
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild ...
 ```
 
-The permanent fix is `sudo xcode-select -s /Applications/Xcode.app`, which
-needs a password and is therefore the user's call, not an agent's.
+Die dauerhafte Lösung wäre `sudo xcode-select -s /Applications/Xcode.app`.
+Sie braucht ein Passwort und ist damit Sache des Nutzers, nicht eines Agents.
 
-## Build settings
+## Build-Einstellungen
 
-| Setting | Value |
+| Einstellung | Wert |
 | --- | --- |
-| Bundle identifier | `de.superook.Harmony` |
-| Supported platforms | `iphoneos iphonesimulator macosx` |
+| Bundle-Identifier | `de.superook.Harmony` |
+| Unterstützte Plattformen | `iphoneos iphonesimulator macosx` |
 | `SDKROOT` | `auto` |
-| Deployment target | 27.0 across all platforms |
-| Swift language mode | 5.0 |
+| Deployment-Target | 27.0 auf allen Plattformen |
+| Swift-Sprachmodus | 5.0 |
 
-`SDKROOT = auto` means the SDK follows the destination, so a single scheme
-covers every platform. Keep it that way rather than adding per-platform
-targets.
+`SDKROOT = auto` bedeutet, dass das SDK dem Ziel folgt — ein Schema deckt
+alle Plattformen ab. Das so lassen, statt plattformspezifische Targets
+anzulegen.
 
-## Conventions
+## Konventionen
 
-- SwiftUI only. No UIKit or AppKit unless a specific API forces it.
-- `ContentView.swift` carries a `#Preview` and a `#Playground` block. Keep
-  previews working; they are the fastest feedback loop in this project.
-- The deployment target is deliberately current, so newer platform APIs may
-  be used without availability guards.
+- Ausschließlich SwiftUI. Kein UIKit oder AppKit, sofern nicht eine
+  bestimmte API dazu zwingt.
+- `ContentView.swift` enthält einen `#Preview`- und einen
+  `#Playground`-Block. Previews funktionsfähig halten; sie sind die
+  schnellste Rückmeldung in diesem Projekt.
+- Das Deployment-Target ist bewusst aktuell, neuere Plattform-APIs dürfen
+  also ohne Verfügbarkeitsprüfung verwendet werden.
+- Dokumentation auf Deutsch, Quellcode und Commit-Nachrichten auf Englisch.
 
-## Repository notes
+## Hinweise zum Repository
 
-- The remote `origin` is **public**: `github.com/SuperOok/Harmony`. Never
-  commit API keys, provisioning profiles, or signing certificates.
-- `xcuserdata/` is gitignored. Xcode regenerates the scheme automatically on
-  first open, so a fresh clone needs no extra setup.
-- The working copy lives in iCloud Drive. If git behaves strangely — missing
-  objects, conflicted copies inside `.git/` — suspect iCloud sync before
-  suspecting git.
+- Das Remote `origin` ist **öffentlich**: `github.com/SuperOok/Harmony`.
+  Niemals API-Schlüssel, Provisioning-Profile oder Signaturzertifikate
+  einchecken. Ebenso keine wörtlich übernommenen Regeltexte oder
+  Kartenillustrationen des Brettspiels — Regeln als solche sind frei,
+  ihre konkrete Ausformulierung und Gestaltung nicht.
+- `xcuserdata/` ist ignoriert. Xcode erzeugt das Schema beim ersten Öffnen
+  neu, ein frischer Klon braucht also keine Zusatzschritte.
+- Das Arbeitsverzeichnis liegt in iCloud Drive. Bei merkwürdigem
+  Git-Verhalten — fehlende Objekte, Konfliktkopien in `.git/` — zuerst
+  iCloud-Synchronisation verdächtigen, nicht Git.
