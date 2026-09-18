@@ -113,3 +113,15 @@ Punkte:  3 / 6 / 10 / 16
 
 Berg der Höhe 3 mit einem Wasserstein direkt darunter. Erste Karte, deren
 Zielstein Wasser ist. Bestätigt.
+
+---
+
+```
+Karte:   Frosch
+Muster:  1=Baum1  2=Wasser
+Würfel:  auf 2
+Punkte:  2 / 4 / 6 / 10 / 15
+```
+
+Baum der Höhe 1 mit einem Wasserstein direkt darunter. **Fünf** Tierwürfel,
+die höchste belegte Zahl. Formgleich mit dem Lachs, siehe dort. Bestätigt.

@@ -28,6 +28,19 @@ mit zwei Würfeln 8 und 18, das Erdmännchen mit vieren 2/5/9/14. Maßgeblich is
 der **Zuwachs pro gelegtem Würfel** im Verhältnis zur Schwierigkeit des
 Musters, nicht die Summe.
 
+Lachs und Frosch belegen das sauber. Beide haben dieselbe Form und denselben
+Zielstein, nur die zweite Zelle unterscheidet sich:
+
+| | zweite Zelle | Steine dafür | Würfel | Punkte |
+| --- | --- | --- | --- | --- |
+| Lachs | `Berg3` | 3 | 4 | 3 / 6 / 10 / 16 |
+| Frosch | `Baum1` | 1 | 5 | 2 / 4 / 6 / 10 / 15 |
+
+Das leichtere Muster bekommt mehr Würfel bei flacheren Schritten, das schwerere
+weniger bei steileren. Der Endwert ist fast gleich; der Unterschied liegt in
+der **Geschwindigkeit**. Welche Karte besser ist, hängt damit an der
+Restlaufzeit der Partie — die Harmony kostenlos aus dem Zugzähler kennt.
+
 **Landschaftswertung allein reicht nicht.** Das Erdmännchen belohnt einen
 einzelnen Berg der Höhe 1 — als Landschaft 0 Punkte wert, solange er an keinen
 anderen Berg grenzt. Eine Bewertungsfunktion, die nur Landschaften zählt,
