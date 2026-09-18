@@ -61,7 +61,23 @@ Spielstein, nie auf oder unter einen Tierwürfel.
 | Gebäude | 1 rot auf 1 braun, grau **oder** rot | 2 |
 
 Ein einzelner brauner Spielstein ohne grün darauf ist zulässig, bildet aber
-keine Landschaft und zählt 0 Punkte.
+keine Landschaft und zählt 0 Punkte. Dasselbe gilt für einen einzelnen roten
+Stein ohne Unterbau.
+
+#### Vollständige Liste zulässiger Stapel
+
+Schreibweise in Prosa: **„X auf Y“ heißt X oben**. In Datenstrukturen wird ein
+Stapel dagegen von unten nach oben abgelegt; die Richtung wird dort jeweils
+dazugeschrieben.
+
+| Höhe | Zulässig |
+| --- | --- |
+| 1 | jeder einzelne Stein, auch rot und braun allein |
+| 2 | grau auf grau · rot auf rot · rot auf braun · rot auf grau · braun auf braun · grün auf braun |
+| 3 | grau auf grau auf grau · grün auf braun auf braun |
+
+Daraus folgt: Auf **blau und gelb kann nie etwas gestapelt** werden, und
+**drei braune** Steine übereinander gibt es nicht.
 
 ## Tierkarten
 
@@ -121,6 +137,10 @@ geteilter Sieg.
 Dieselbe Staffel: Höhe 1/2/3 ergibt 1/3/7 Punkte — **aber nur**, wenn der
 Berg an mindestens einen anderen Berg angrenzt. Sonst 0.
 
+Ein grauer Stapel mit einem roten Stein obendrauf ist ein **Gebäude, kein
+Berg**. Er zählt weder selbst als Berg noch als benachbarter Berg für einen
+anderen.
+
 ### Felder
 
 Eine zusammenhängende Gruppe aus **mindestens 2** angrenzenden gelben
@@ -130,9 +150,12 @@ Felder sind also besser als ein großes.
 
 ### Wasser, Seite A: der Fluss
 
-Ein Fluss ist eine Kette aufeinanderfolgender blauer Spielsteine. Gezählt
-wird der kürzeste Weg von einem Ende zum anderen, Enden eingeschlossen.
-**Nur der längste Fluss** zählt.
+Ein Fluss ist eine zusammenhängende Gruppe blauer Spielsteine. Seine Länge ist
+der **längste unter allen kürzesten Wegen** zwischen zwei Steinen der Gruppe,
+beide Enden mitgezählt. Bei einer Verzweigung fällt damit der Ast heraus, der
+nicht auf dieser längsten Kette liegt — die Anleitung markiert einen solchen
+Stein im Beispiel mit einem X. **Nur der längste Fluss** eines Spielplans
+zählt.
 
 | Länge | 1 | 2 | 3 | 4 | 5 | 6 | je weiterer |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -140,16 +163,17 @@ wird der kürzeste Weg von einem Ende zum anderen, Enden eingeschlossen.
 
 ### Wasser, Seite B: die Inseln
 
-Spielplanfelder, die durch blaue Spielsteine vom Rest abgetrennt sind, bilden
-eine Insel; jede zählt 5 Punkte. Es gibt immer mindestens 1 Insel, auch ohne
-jede Abtrennung.
+Inseln sind die **Zusammenhangsgebiete aller nicht-blauen Felder**, wobei
+**leere Felder dazugehören**. Jede Insel zählt 5 Punkte. Es gibt immer
+mindestens 1 Insel, auch ohne jede Abtrennung.
 
 ### Gebäude
 
 5 Punkte je Gebäude, das von **mindestens 3 verschiedenfarbigen**
 Spielsteinen umgeben ist, gezählt über die 6 Farben einschließlich rot.
-Maßgeblich ist nur der **oberste** Stein jedes Nachbarfeldes. Andernfalls
-0 Punkte.
+Maßgeblich ist nur der **oberste** Stein jedes Nachbarfeldes. **Leere
+Nachbarfelder zählen nicht mit** — ein Gebäude am Spielplanrand hat dadurch
+weniger Gelegenheiten, die Bedingung zu erfüllen. Andernfalls 0 Punkte.
 
 ### Tierkarten
 
@@ -244,6 +268,43 @@ selbst geklärt:
 2. **Punktwerte steigen von unten nach oben**, siehe Wertung der Tierkarten.
 3. **Ein nackter brauner Spielstein kommt als Musterelement nicht vor.** Das
    Vokabular braucht dafür kein Zeichen.
+
+## Präzisierungen für die Engine
+
+Am 2026-09-18 mit Hauke geklärt, weil die Anleitung sie offenlässt oder nur
+implizit beantwortet.
+
+### Zugablauf
+
+**Ein Zug ist immer vollständig ausführbar.** Da ein Stein stets auf ein leeres
+Feld darf, genügen 3 freie Felder. Zu Beginn jedes Zuges sind mindestens 3
+frei, denn sonst hätte das Spielende schon am Ende des Vorzugs ausgelöst. Die
+Engine braucht dafür keinen Sonderfall, sondern kann die Invariante prüfen und
+eine Verletzung als **Eingabefehler** melden.
+
+**Der Beutel läuft nie auf einen Rest von 1 oder 2 Steinen.** 120 Steine minus
+15 in der Startauslage ergeben 105 im Beutel, und 105 ist durch 3 teilbar. Da
+pro Zug exakt 3 Steine nachgezogen werden, durchläuft der Beutelstand nur
+Vielfache von 3.
+
+Daraus folgt: Der Beutel reicht für genau **35 Züge**; im 36. muss aufgefüllt
+werden und löst das Spielende aus. Die **verbleibende Zugzahl ist damit allein
+aus dem Zugzähler ableitbar**, ohne Kenntnis fremder Tableaus und ohne jede
+zusätzliche Eingabe. Es ist eine Obergrenze — der zweite Auslöser, ein volles
+Tableau, kann die Partie verkürzen.
+
+Ist der Beutel leer, während die Runde noch zu Ende gespielt wird, wird nicht
+mehr aufgefüllt; die restlichen Spielenden nehmen aus der vorhandenen Auslage.
+
+**Tierkarten können nicht abgeworfen werden.** Wer 4 unabgeschlossene Karten
+hält, kann keine weitere nehmen. Die im Solomodus erlaubte Abwurfaktion gilt
+dort nicht.
+
+### Lebensräume
+
+**Andere Zellen eines Musters dürfen bereits Tierwürfel tragen.** Nur der
+Zielstein muss unbesetzt sein. Das ist die Kehrseite davon, dass ein Stein zu
+mehreren Lebensräumen gehören darf.
 
 ## Offene Punkte
 
