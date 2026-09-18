@@ -88,3 +88,16 @@ Punkte:  4 / 10 / 16
 
 Berg der Höhe 1 mit je einem Wasserstein unten links und unten rechts.
 **Formgleich mit dem Eisvogel**, nur die Mitte unterscheidet sich. Bestätigt.
+
+---
+
+```
+Karte:   Affe
+Muster:  1=Wasser  2=Wasser  4=Berg2
+Würfel:  auf 4
+Punkte:  5 / 11
+```
+
+Berg der Höhe 2 mit zwei Wassersteinen links davon, oben links und unten
+links. Erste Form, bei der beide Nachbarn auf derselben Seite liegen.
+Bestätigt.
