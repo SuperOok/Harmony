@@ -64,3 +64,15 @@ Punkte:  2 / 5 / 9 / 14
 
 Zwei senkrecht benachbarte Zellen: Feld über einem Berg der Höhe 1. **Vier**
 Tierwürfel. Bestätigt.
+
+---
+
+```
+Karte:   Biene
+Muster:  2=Feld  4=Baum2  5=Feld  8=Feld
+Würfel:  auf 4
+Punkte:  8 / 18
+```
+
+Baum der Höhe 2 mit drei Feldern darunter — unten links, direkt darunter,
+unten rechts. Vier Zellen über drei Spalten, **zwei** Tierwürfel. Bestätigt.
