@@ -93,6 +93,36 @@ Daraus folgt:
 - Für die vollständige Erfassung ist eine **stabile Nummerierung** robuster
   als Namen. Wie die Karten intern identifiziert werden, entscheidet Phase 4.
 
+### Kurzform zum Diktieren
+
+Die Langform oben ist die Ablageform in `tierkarten.md`. Zum Diktieren am
+Tisch gibt es eine Kurzform in einer Zeile:
+
+```
+Panther: 1 B2 2 B2 3 F T 3 P 5 11
+```
+
+Gelesen als: Zellen 1 und 2 tragen je einen Baum der Höhe 2, Zelle 3 ein
+Feld, der Tierwürfel liegt auf Zelle 3, die Punkte sind 5 und 11.
+
+| Zeichen | Bedeutung |
+| --- | --- |
+| `W` | Wasser |
+| `F` | Feld |
+| `B1` `B2` `B3` | Baum |
+| `M1` `M2` `M3` | Berg (Massiv) |
+| `H` | Gebäude (Haus) |
+| `T <Zelle>` | Tierwürfel auf dieser Zelle |
+| `P <Zahlen>` | Punkte, von unten aufsteigend |
+
+Berg heißt `M` und Gebäude `H`, obwohl beide anders anfangen. Die
+naheliegenden Buchstaben kollidieren nämlich dreifach: **B** für Baum und
+Berg, **W** für Wasser und Würfel, **G** für Gebäude und Gebirge. Ein
+Kürzel, das beim Diktieren nachgefragt werden muss, spart keine Zeit.
+
+Claude überträgt die Kurzform in die Langform und zeichnet wie gehabt zurück;
+die Prüfschleife bleibt unverändert.
+
 ## Drehungen
 
 Laut Anleitung darf ein Lebensraummuster beliebig ausgerichtet sein; die
@@ -112,7 +142,7 @@ jede erfasste Karte:
 2. Claude zeichnet das Muster **aus der Notation zurück** in ein Diagramm:
 
 ```
-  Wasser      ·
+  ·           ·
         Berg1      ·
   Wasser      ·        ← Würfel auf Berg1
 ```
