@@ -101,3 +101,15 @@ Punkte:  5 / 11
 Berg der Höhe 2 mit zwei Wassersteinen links davon, oben links und unten
 links. Erste Form, bei der beide Nachbarn auf derselben Seite liegen.
 Bestätigt.
+
+---
+
+```
+Karte:   Lachs
+Muster:  1=Berg3  2=Wasser
+Würfel:  auf 2
+Punkte:  3 / 6 / 10 / 16
+```
+
+Berg der Höhe 3 mit einem Wasserstein direkt darunter. Erste Karte, deren
+Zielstein Wasser ist. Bestätigt.
