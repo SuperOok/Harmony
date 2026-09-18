@@ -153,9 +153,23 @@ Maßgeblich ist nur der **oberste** Stein jedes Nachbarfeldes. Andernfalls
 
 ### Tierkarten
 
-Für jede Karte, abgeschlossen oder nicht, zählt der Punktwert, der unter dem
-obersten Feld **ohne** Tierwürfel steht. Liegen noch alle Würfel auf der
-Karte, zählt sie 0. Für verbliebene Würfel gibt es keine Strafe.
+Die Punktwerte stehen auf der Karte **von unten nach oben aufsteigend**, ein
+Wert je Würfelfeld, und werden von den aufliegenden Tierwürfeln verdeckt.
+Gelegt wird stets der **unterste** Würfel, wodurch der nächsthöhere Wert
+sichtbar wird. Gewertet wird die **höchste sichtbare Zahl**.
+
+Beispiel Pinguine, Werte 4 / 10 / 16 von unten:
+
+| gelegte Würfel | Punkte |
+| --- | --- |
+| 0 | 0 |
+| 1 | 4 |
+| 2 | 10 |
+| 3 | 16 |
+
+Operativ also: `punkte = werte[gelegteWürfel - 1]`, bei keinem gelegten Würfel
+0. Für auf der Karte verbliebene Würfel gibt es keine Strafe. Die Anzahl der
+Werte ist zugleich die Anzahl der Tierwürfel der Karte.
 
 ## Geometrie der persönlichen Spielpläne
 
@@ -218,14 +232,19 @@ Die Regeln beantworten vier der fünf offenen Fragen aus der Methodikplanung:
    bei den Naturgeistkarten auf, die nicht Teil von v1 sind. Die geplante
    Hex-Schablone reicht damit aus.
 
+## Am Spielmaterial geklärt
+
+Drei Punkte, die die Anleitung offenließ, wurden am 2026-09-18 an den Karten
+selbst geklärt:
+
+1. **Unbelegte Musterzellen bedeuten „egal“**, nicht „muss leer sein“. Ein
+   Muster stellt damit nur Anforderungen an die belegten Zellen; was
+   drumherum liegt, ist unerheblich. Das ist der Grund, warum sich Muster
+   überlappen und ein Spielstein zu mehreren Lebensräumen gehören kann.
+2. **Punktwerte steigen von unten nach oben**, siehe Wertung der Tierkarten.
+3. **Ein nackter brauner Spielstein kommt als Musterelement nicht vor.** Das
+   Vokabular braucht dafür kein Zeichen.
+
 ## Offene Punkte
 
-1. **Unbelegte Musterzellen.** Ob eine im Kartenbild leere Zelle „egal“ oder
-   „muss leer sein“ bedeutet, sagt die Anleitung nicht ausdrücklich. Die
-   Abbildung zu Kombinationen legt **„egal“** nahe, da sich dort Muster dicht
-   an dicht überlappen. An einer echten Karte zu bestätigen.
-2. **Punktleiste der Tierkarten.** Die Leserichtung der Punktwerte ist aus
-   den Fotos nicht zweifelsfrei erkennbar. Klärt sich bei der ersten
-   erfassten Karte.
-3. **Brauner Einzelstein als Musterelement.** Ob Karten einen nackten braunen
-   Stein verlangen können, ist offen. Das Vokabular sollte es vorsehen.
+Derzeit keine.
