@@ -157,6 +157,50 @@ Für jede Karte, abgeschlossen oder nicht, zählt der Punktwert, der unter dem
 obersten Feld **ohne** Tierwürfel steht. Liegen noch alle Würfel auf der
 Karte, zählt sie 0. Für verbliebene Würfel gibt es keine Strafe.
 
+## Geometrie der persönlichen Spielpläne
+
+Die Felder sind **flat-top**-Sechsecke: oben und unten Kanten, links und
+rechts Ecken. Sie sind spaltenweise angeordnet, die geraden Spalten sitzen
+eine halbe Zelle tiefer als die ungeraden.
+
+Die beiden Seiten sind **unterschiedlich groß**. Das verschiebt nicht nur die
+Wasserwertung, sondern auch die Partiedauer: Der Abbruch bei „2 oder weniger
+unbesetzte Felder“ greift auf Seite B zwei Spielsteine später.
+
+### Seite A (braun): 23 Felder
+
+Spalten von links nach rechts: 5 – 4 – 5 – 4 – 5
+
+```
+ 1       10      19
+    6       15
+ 2       11      20
+    7       16
+ 3       12      21
+    8       17
+ 4       13      22
+    9       18
+ 5       14      23
+```
+
+### Seite B (blau): 25 Felder
+
+Spalten von links nach rechts: 4 – 3 – 4 – 3 – 4 – 3 – 4
+
+```
+ 1       8      15      22
+    5      12      19
+ 2       9      16      23
+    6      13      20
+ 3      10      17      24
+    7      14      21
+ 4      11      18      25
+```
+
+Die Nummerierung läuft spaltenweise von links nach rechts, innerhalb jeder
+Spalte von oben nach unten. Sie dient der Verständigung; welches
+Koordinatensystem die Engine intern nutzt, entscheidet Phase 4.
+
 ## Folgerungen für die Notation
 
 Die Regeln beantworten vier der fünf offenen Fragen aus der Methodikplanung:
@@ -176,16 +220,12 @@ Die Regeln beantworten vier der fünf offenen Fragen aus der Methodikplanung:
 
 ## Offene Punkte
 
-1. **Geometrie des persönlichen Spielplans.** Anzahl und Anordnung der
-   Hex-Felder sind aus den vorliegenden Fotos nicht sicher abzählbar. Nötig
-   für Modell und Abbruchbedingung „2 oder weniger freie Felder“. Ein Foto
-   eines leeren Spielplans, Seite A und B, klärt das.
-2. **Unbelegte Musterzellen.** Ob eine im Kartenbild leere Zelle „egal“ oder
+1. **Unbelegte Musterzellen.** Ob eine im Kartenbild leere Zelle „egal“ oder
    „muss leer sein“ bedeutet, sagt die Anleitung nicht ausdrücklich. Die
    Abbildung zu Kombinationen legt **„egal“** nahe, da sich dort Muster dicht
    an dicht überlappen. An einer echten Karte zu bestätigen.
-3. **Punktleiste der Tierkarten.** Die Leserichtung der Punktwerte ist aus
+2. **Punktleiste der Tierkarten.** Die Leserichtung der Punktwerte ist aus
    den Fotos nicht zweifelsfrei erkennbar. Klärt sich bei der ersten
    erfassten Karte.
-4. **Brauner Einzelstein als Musterelement.** Ob Karten einen nackten braunen
+3. **Brauner Einzelstein als Musterelement.** Ob Karten einen nackten braunen
    Stein verlangen können, ist offen. Das Vokabular sollte es vorsehen.
