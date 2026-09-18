@@ -15,7 +15,15 @@ mit einem Dokument und einem Commit.
 | 4 | Daten & Architektur | Welche Entitäten, welche Persistenz, welches Suchverfahren? | `04-architektur.md` |
 | 5 | Oberfläche | Welche Ansichten, welche Eingabewege? | `05-ui.md` |
 | 6 | Durchstich | Funktioniert die Kette von der Kartennotation bis zum Zugvorschlag? | Lauffähiger Code, wenige Karten |
-| 7 | Kartenerfassung | Alle Tierkarten systematisch erfassen | Vollständiger Kartensatz |
+| 7 | Kartenerfassung | Alle Tierkarten systematisch erfassen | `tierkarten.md`, alle 32 ✅ |
+
+Phase 7 ist **vorgezogen worden** und bereits abgeschlossen. Der Grund für
+ihre späte Einordnung war das Risiko, nach vollständiger Erfassung noch das
+Format wechseln zu müssen. Dieses Risiko sank mit jeder Karte, an der die
+Notation unverändert trug; nach einem Dutzend Karten war es klein genug, um
+durchzuarbeiten. Ob Phase 6 die Daten unverändert übernehmen kann, ist damit
+nicht bewiesen — ein Umbau beträfe aber nur noch die Umwandlung in die
+interne Form, nicht die Erfassung selbst.
 
 Ab Phase 6 wird Code geschrieben, vorher nicht. Der Übergang läuft über den
 Plan-Modus: erst ein Umsetzungsplan zur Freigabe, dann Umsetzung.

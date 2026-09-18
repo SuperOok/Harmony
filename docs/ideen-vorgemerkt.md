@@ -41,6 +41,61 @@ weniger bei steileren. Der Endwert ist fast gleich; der Unterschied liegt in
 der **Geschwindigkeit**. Welche Karte besser ist, hängt damit an der
 Restlaufzeit der Partie — die Harmony kostenlos aus dem Zugzähler kennt.
 
+**Gleiche Punktleiste heißt nicht gleicher Wert.** Affe und Panther tragen
+beide zwei Tierwürfel und dieselbe Leiste 5 / 11. Der Affe kostet vier Steine
+(Berg2 und zwei Wasser), der Panther fünf (zwei Baum2 und ein Feld). Gleicher
+Ertrag, höherer Preis — die Schwierigkeit einer Karte steht nirgends auf ihr
+und muss aus dem Muster berechnet werden.
+
+Die Steinzahl allein misst sie aber auch nicht. Affe und Papagei haben
+dieselbe Form und kosten dieselben vier Steine; die Mitte ist einmal `Berg2`
+(zwei graue), einmal `Baum2` (ein brauner, ein grüner). Der Papagei bekommt
+drei Würfel statt zwei. Naheliegende Erklärung: Ein Berg2 ist aus **einer**
+Farbe zu bauen, und Grau ist mit 23 Steinen die häufigste; ein Baum2 braucht
+zwei verschiedene Farben, gezogen wird aber in festen Dreiergruppen. In eine
+Schwierigkeitsschätzung gehören also Farbknappheit und Stapelzwang, nicht nur
+die Anzahl der Steine.
+
+**Die Würfelzahl ist die Stellschraube, nicht die Gesamtsumme.** Innerhalb
+einer Formklasse liegen Karten mit drei Tierwürfeln bei 16 bis 18
+Höchstpunkten, solche mit zweien bei 11 bis 12. Der **erste** Würfelwert
+dagegen wächst mit der Größe des Musters: 4 bis 5 bei drei Zellen, 6 beim
+Waschbären und 8 bei der Biene mit vieren. Das entspricht der Mechanik — die
+Würfelzahl sagt, wie oft das Muster gebaut werden muss, der erste Wert, was
+eine einzelne Fertigstellung einbringt. Eine Bewertungsfunktion sollte daher
+am Zuwachs des **nächsten** Würfels rechnen, nicht an der Kartensumme.
+
+**Punktleisten sind aus einem kleinen Vorrat gezogen.** Auf 32 Karten kommen
+nur 19 verschiedene Leisten vor; sieben davon sind mehrfach belegt, `5/10/17`
+und `4/10/16` und `5/11` je viermal — teils über Formklassen hinweg. Eine
+Engine kann Leisten also als Aufzählung führen. Berechenbar aus Steinzahl und
+Würfelzahl sind sie aber nicht: Frosch und Marienkäfer haben beide zwei
+Steine und fünf Würfel, aber `2/4/6/10/15` gegen `2/5/8/12/17`.
+
+*Zwei widerlegte Thesen, damit sie niemand erneut aufstellt:*
+
+„**Höchstpunktzahl = Steinzahl + 13.**" Passt auf Pinguin, Pfau, Eisvogel,
+Hase und Wüstenfuchs, scheitert an Papagei (4 Steine, 14 Punkte), Eisfuchs
+(3 Steine, 17), Echse, Lama und Panther. Sie stammte aus drei Datenpunkten
+einer einzigen Formklasse und war schon durch den damals bereits erfassten
+Papagei widerlegt.
+
+„**Die Tierkarte zahlt, was die Landschaft nicht zahlt.**" Naheliegend beim
+Raben, dessen zwei Gebäude bis zu 10 Landschaftspunkte tragen und der nur
+`4/9` zahlt, und beim Igel mit sechs Steinen und `5/12`. Flamingo und Wolf
+widerlegen sie: gleiche Form, gleiche Leiste `4/10/16`, aber der Wolf trägt
+mit `Baum3` sieben Landschaftspunkte mehr im Muster.
+
+Beide Male stand die These auf den zuletzt erfassten Karten. Hypothesen über
+Kartenwerte gehören gegen den **gesamten** Bestand geprüft —
+`tools/pruefe-tierkarten.py` gibt die Tabelle dafür aus.
+
+**Muster erfüllen manchmal nebenbei eine Landschaftswertung.** Die beiden
+Felder des Lamas bilden zugleich eine Feldgruppe, die beiden Berge des
+Wüstenfuchses erfüllen einander die Nachbarschaftsbedingung. Andere Muster
+tun das ausdrücklich nicht, siehe Erdmännchen unten. Der Tierwürfel und die
+Landschaftswertung sind also weder deckungsgleich noch unabhängig.
+
 **Landschaftswertung allein reicht nicht.** Das Erdmännchen belohnt einen
 einzelnen Berg der Höhe 1 — als Landschaft 0 Punkte wert, solange er an keinen
 anderen Berg grenzt. Eine Bewertungsfunktion, die nur Landschaften zählt,
