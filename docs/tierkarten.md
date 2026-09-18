@@ -76,3 +76,15 @@ Punkte:  8 / 18
 
 Baum der Höhe 2 mit drei Feldern darunter — unten links, direkt darunter,
 unten rechts. Vier Zellen über drei Spalten, **zwei** Tierwürfel. Bestätigt.
+
+---
+
+```
+Karte:   Pinguin
+Muster:  2=Wasser  4=Berg1  8=Wasser
+Würfel:  auf 4
+Punkte:  4 / 10 / 16
+```
+
+Berg der Höhe 1 mit je einem Wasserstein unten links und unten rechts.
+**Formgleich mit dem Eisvogel**, nur die Mitte unterscheidet sich. Bestätigt.

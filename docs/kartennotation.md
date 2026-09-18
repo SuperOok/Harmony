@@ -59,10 +59,10 @@ oben links.
 ## Format je Karte
 
 ```
-Karte:   Pinguine
-Muster:  1=Wasser  2=Wasser  4=Berg1
+Karte:   Beispieltier
+Muster:  2=Wasser  4=Berg1
 Würfel:  auf 4
-Punkte:  4 / 10 / 16
+Punkte:  3 / 8 / 14
 ```
 
 - **Muster** listet nur die belegten Zellen.
@@ -78,8 +78,20 @@ variabler Länge**, keine feste Dreierstruktur. Die Untergrenze ist noch nicht
 belegt.
 
 Das obige Beispiel ist **erfunden** und dient nur der Veranschaulichung des
-Formats. Die Punktwerte 4 / 10 / 16 stammen aus Haukes Beschreibung der
-Pinguinkarte, das Muster nicht.
+Formats. Echte Karten stehen in `tierkarten.md`.
+
+### Der Name ist unsere Erfindung
+
+Die Karten tragen **keinerlei aufgedruckten Identifikator** — weder Namen noch
+Nummern. Das einzige Unterscheidungsmerkmal ist das Tierbild. Der Name im
+Feld `Karte:` ist deshalb ein Etikett von uns, keine Eigenschaft der Karte.
+
+Daraus folgt:
+
+- Der Name muss **eindeutig** und am Bild **wiedererkennbar** sein, aber nicht
+  zoologisch korrekt. „Affe“ genügt, solange es nur eine Affenkarte gibt.
+- Für die vollständige Erfassung ist eine **stabile Nummerierung** robuster
+  als Namen. Wie die Karten intern identifiziert werden, entscheidet Phase 4.
 
 ## Drehungen
 
