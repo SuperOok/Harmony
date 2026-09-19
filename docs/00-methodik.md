@@ -12,7 +12,7 @@ mit einem Dokument und einem Commit.
 | 1 | Produktkern | Für wen löst Harmony welches Problem, und was ausdrücklich nicht? | `01-produktkern.md` ✅ |
 | 2 | Szenarien | Wie sieht die Nutzung konkret aus? | `02-szenarien.md` ✅ |
 | 3 | Funktionsumfang | Was gehört in v1, was später, was nie? | `03-funktionsumfang.md` ✅ |
-| 4 | Daten & Architektur | Welche Entitäten, welche Persistenz, welches Suchverfahren? | `04-architektur.md` |
+| 4 | Daten & Architektur | Welche Entitäten, welche Persistenz, welches Suchverfahren? | `04-architektur.md` ✅ |
 | 5 | Oberfläche | Welche Ansichten, welche Eingabewege? | `05-ui.md` |
 | 6 | Durchstich | Funktioniert die Kette von der Kartennotation bis zum Zugvorschlag? | Lauffähiger Code, wenige Karten |
 | 7 | Kartenerfassung | Alle Tierkarten systematisch erfassen | `tierkarten.md`, alle 32 ✅ |

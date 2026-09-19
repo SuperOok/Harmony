@@ -15,7 +15,13 @@ Beide hier geparkten Punkte sind in `03-funktionsumfang.md` entschieden:
 - **Mitzählen, was im Beutel liegt.** → in v1 enthalten, ohne zusätzliche
   Eingabe, weil die Szenarien jede Nachfüllung ohnehin erfassen.
 
-## Für Phase 4 — Daten und Architektur
+## Für Phase 4 — Daten und Architektur ✅ eingearbeitet
+
+Die Punkte dieses Abschnitts stehen in `04-architektur.md` — der
+Identifikator, die Bewertungsterme, das Vorhalten der Musterinstanzen. Sie
+bleiben hier stehen, weil die Begründungen ausführlicher sind als das, was
+dort hineinpasst, und weil die beiden widerlegten Thesen am Ende niemand
+erneut aufstellen soll.
 
 **Karten brauchen einen stabilen Identifikator.** ✅ Entschieden: Es bleibt
 bei den Namen. Sie sind erfunden, aber eindeutig — `tools/pruefe-tierkarten.py`

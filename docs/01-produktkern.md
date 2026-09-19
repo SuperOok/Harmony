@@ -84,10 +84,10 @@ beschränken.
 
 ## Offene Punkte
 
-1. **Zufall.** Ausgeschlossen sind gelernte Modelle. Ob auch
-   Zufallsverfahren wie Monte-Carlo ausgeschlossen sein sollen, ist offen.
-   Reproduzierbarkeit würde Debugging und Transparenz stützen.
-   Zu klären in Phase 4.
+1. **Zufall.** ✅ Erledigt in Phase 4: Die Engine ist deterministisch.
+   Gewählt wurde Expectimax über die Beutelzüge — der Beutelinhalt ist
+   bekannt, es lässt sich abzählen statt Stichproben zu ziehen. Siehe
+   `04-architektur.md`.
 2. **Marke und Kartendaten.** Spielregeln als solche sind nicht
    urheberrechtlich geschützt, Kartentexte, Namen, Illustrationen und die
    Marke sind es. Relevant erst bei einer Veröffentlichung, prägt aber schon
