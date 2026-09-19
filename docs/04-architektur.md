@@ -82,6 +82,18 @@ nichts — sie steckt ohnehin darin, dass ein geleertes Feld über seinen
 Inhalt benannt wird. Unbekannt bleibt allein, **wohin** sie damit gehen,
 und das ist die Eingabe, die Phase 3 verworfen hat.
 
+### Kartenstapelwissen
+
+Dasselbe gilt für die Karten, und es ist bisher übersehen worden. Alle 32
+sind in `tierkarten.md` katalogisiert, und jede Karte, die je offen lag,
+ist erfasst. Der **verbliebene Stapel ist damit exakt bekannt** — nicht
+seine Reihenfolge, aber seine Zusammensetzung.
+
+Zwei Folgen. Für die eigene Planung weiß Harmony, welche Karte noch
+auftauchen kann und welche endgültig weg ist. Und für die Suche ist das
+Nachrücken einer Karte eine **zweite Zufallsschicht**, die sich genauso
+aufzählen lässt wie die Nachfüllung aus dem Beutel.
+
 ### Was Harmony nicht hält
 
 Keine fremden Tableaus, keine fremden Tierwürfel. Nur, welche Karte wer
@@ -110,7 +122,9 @@ Aufgezählt werden alle eigenen Züge vollständig: fünf Auslagenfelder, die
 Platzierungen der drei Steine, das Nehmen einer Karte, das Setzen von
 Tierwürfeln. Darunter hängt eine **Zufallsschicht**: die Nachfüllung des
 geleerten Feldes, aufgezählt über die Farbverteilung des Beutels, jede
-Möglichkeit mit ihrer Wahrscheinlichkeit gewichtet.
+Möglichkeit mit ihrer Wahrscheinlichkeit gewichtet. Wurde eine Karte
+genommen, rückt außerdem eine nach — ebenfalls aufzählbar, weil der
+verbliebene Stapel bekannt ist.
 
 ### Der Zufall hat zwei Quellen, und nur eine ist bekannt
 
@@ -257,8 +271,21 @@ vom Fundament.
    schwächste Stelle der Suche. Zwei Verbesserungen kosten **keine**
    zusätzliche Eingabe: Harmony weiß bereits, welche Tierkarten jeder
    genommen hat (Phase 3) und welche Steine jeder je bekommen hat — ein
-   geleertes Feld wird ja über seinen Inhalt benannt. Daraus lässt sich
-   schätzen, worauf jemand hinarbeitet und welches Feld ihn reizt. Die
+   geleertes Feld wird ja über seinen Inhalt benannt. Aus den Karten eines
+   Mitspielers folgt eine Farbnachfrage — wer den Pinguin hält, braucht
+   Blau und Grau —, und ein Feld mit diesen Farben reizt ihn mehr als eines
+   ohne.
+
+   Drei Grenzen gehören dazu: Harmony weiß nicht, wie viele Würfel schon
+   auf einer fremden Karte liegen, kann also eine frische nicht von einer
+   fast fertigen unterscheiden — die Nachfrage besteht allerdings fort,
+   weil eine Karte ihr Muster einmal je Würfel verlangt, also zwei- bis
+   fünfmal. Sie weiß nicht, ob die Farbe auf dem fremden Tableau überhaupt
+   unterkommt. Und sie sieht die Landschaftswertung nicht, die ebenfalls
+   Farben zieht.
+
+   Deshalb mildes Gewicht, mit der Gleichverteilung gemischt: Ein
+   selbstsicher falsches Gegnermodell ist schlechter als gar keins. Die
    Alternative bleibt eine pessimistische Annahme. Was stärker spielt,
    entscheidet das Selbstspiel, nicht dieses Dokument.
 2. **Trägt die Verzweigung wirklich?** Die Schätzung 10⁴ bis 10⁵ ist nicht
