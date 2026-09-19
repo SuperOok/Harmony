@@ -59,6 +59,10 @@ noch trägt.
 optimistisch war, wird Phase 2 geändert. Die Reihenfolge ist eine Denkhilfe,
 kein Genehmigungsverfahren.
 
+**Sollwerte stammen nicht aus dem Programm.** Ein erwarteter Wert, der aus
+einem Programmlauf kommt, beschreibt nur, was das Programm gerade tut. Wie
+geprüft wird, regelt `pruefverfahren.md`.
+
 **Keine Regeln aus dem Gedächtnis.** Claudes Kenntnis von Harmonies ist
 lückenhaft und darf nicht Grundlage der Regel-Engine werden. Jede Regel
 stammt aus der Anleitung oder vom Spielmaterial.

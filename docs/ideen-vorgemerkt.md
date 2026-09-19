@@ -110,6 +110,15 @@ erfüllen, setzen, überbauen.
 
 ## Für Phase 5 — Oberfläche
 
+**Klickdummy früh, vor der Engine.** Hauke möchte die Oberfläche iterativ
+ausprobieren, bevor Funktion dahintersteckt. Das spricht dafür, Phase 5
+vorzuziehen — Eingabeeffizienz ist das erste Qualitätskriterium aus Phase 1
+und lässt sich nicht aufschreiben, nur antippen. Offen ist nur, ob vor oder
+nach Phase 4; die Entscheidung steht aus. Die Methodik müsste dafür
+präzisiert werden: Ansichtscode über Attrappendaten ist etwas anderes als
+der Engine-Code, den „ab Phase 6 wird Code geschrieben" verhindern sollte.
+Messbar wird der Dummy über die Antippzahl, siehe `pruefverfahren.md`.
+
 **Bildsymbole statt Namen.** Karten am Tisch über ein kleines Tierbild
 auszuwählen ist schneller und sicherer als über einen Namen, den sich niemand
 merkt. Die Originalillustrationen sind allerdings geschützt — selbstgezeichnete
