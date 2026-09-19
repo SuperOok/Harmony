@@ -10,7 +10,7 @@ mit einem Dokument und einem Commit.
 | | Phase | Kernfrage | Ergebnis |
 | --- | --- | --- | --- |
 | 1 | Produktkern | Für wen löst Harmony welches Problem, und was ausdrücklich nicht? | `01-produktkern.md` ✅ |
-| 2 | Szenarien | Wie sieht die Nutzung konkret aus? | `02-szenarien.md` |
+| 2 | Szenarien | Wie sieht die Nutzung konkret aus? | `02-szenarien.md` ✅ |
 | 3 | Funktionsumfang | Was gehört in v1, was später, was nie? | `03-funktionsumfang.md` |
 | 4 | Daten & Architektur | Welche Entitäten, welche Persistenz, welches Suchverfahren? | `04-architektur.md` |
 | 5 | Oberfläche | Welche Ansichten, welche Eingabewege? | `05-ui.md` |

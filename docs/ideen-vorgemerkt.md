@@ -15,7 +15,11 @@ ob jemand **früher** fertig wird. Siehe `regeln-basisspiel.md`.
 
 **Mitzählen, was im Beutel liegt.** Die Farbverteilung der 120 Steine ist
 bekannt. Wer mitzählt, weiß gegen Spielende recht genau, was noch kommen kann.
-Das ist echte Spielstärke, kostet aber Eingaben über die Züge der anderen.
+Das ist echte Spielstärke — und seit Phase 2 vermutlich **umsonst zu haben**:
+Die Szenarien erfassen ohnehin jede Nachfüllung des gemeinsamen Spielplans,
+und genau das sind die Züge aus dem Beutel (15 beim Aufbau, 3 pro Zug). Es
+braucht also keine zusätzliche Eingabe, nur die Auswertung der vorhandenen.
+Siehe `02-szenarien.md`, Szenario 2.
 
 ## Für Phase 4 — Daten und Architektur
 
