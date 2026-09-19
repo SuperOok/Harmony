@@ -162,17 +162,56 @@ enum Sample {
         ],
         cubes: [CubePlacement(card: "Fledermaus", cell: 44)],
         rationale: MoveRationale(
-            total: 12,
+            immediate: 12,
+            value: 12,
             terms: [
                 ScoreTerm(name: "Baum der Höhe 3 auf 4.3", points: 7),
                 ScoreTerm(name: "Zwei benachbarte Berge, 4.4 und 5.4", points: 2),
                 ScoreTerm(name: "Tierwürfel Fledermaus, erster von vier", points: 3),
             ],
+            probabilityNote: nil,
             runnerUp: "Laub auf 4.3, beide Steine auf 5.3 und 5.4",
-            runnerUpTotal: 9,
+            runnerUpImmediate: 9,
+            runnerUpValue: 9,
             gapExplanation: "Der Abstand ist genau der Tierwürfel. Ohne einen "
                 + "Berg neben dem Baum ist das Muster der Fledermaus nicht "
                 + "vollständig, und der Würfel bliebe auf der Karte liegen."
+        )
+    )
+
+    /// The second example scores **nothing** when it is played. Two wood
+    /// tiles form no landscape and a lone mountain has no neighbour, so the
+    /// move is worth zero points and is still the better one: it leaves a
+    /// tree of height three and the Fledermaus pattern one green tile away.
+    static let harmonyMoveSetup = HarmonyMove(
+        placements: [
+            Placement(stone: .wood, cell: 53),
+            Placement(stone: .wood, cell: 53),
+            Placement(stone: .stone, cell: 54),
+        ],
+        cubes: [],
+        rationale: MoveRationale(
+            immediate: 0,
+            value: 8,
+            terms: [
+                ScoreTerm(name: "Zwei Holz auf 5.3 — noch keine Landschaft",
+                          points: 0),
+                ScoreTerm(name: "Berg der Höhe 1 auf 5.4 — noch ohne Bergnachbarn",
+                          points: 0),
+                ScoreTerm(name: "Mit einem Laub auf 5.3: Baum der Höhe 3 (7) und "
+                          + "das Muster der Fledermaus (3)",
+                          points: 10, prospect: true, probability: 0.8),
+            ],
+            probabilityNote: "Laub ist bis zum nächsten eigenen Zug mit rund "
+                + "80 % erreichbar: Es liegt dreimal offen in der Auslage, und "
+                + "von den 19 grünen Steinen sind noch 14 im Beutel.",
+            runnerUp: "Beide Holz auf 3.3 und 4.1, Stein auf 5.4",
+            runnerUpImmediate: 1,
+            runnerUpValue: 4,
+            gapExplanation: "Die Alternative bringt sofort einen Punkt mehr und "
+                + "steht trotzdem schlechter: Sie lässt zwei Holzplättchen "
+                + "verstreut zurück, aus denen kein Baum mehr wird. Punkte "
+                + "jetzt und Wert der Stellung sind nicht dasselbe."
         )
     )
 }
@@ -182,6 +221,21 @@ enum Sample {
 struct ScoreTerm {
     let name: String
     let points: Int
+    /// Not points but prospect: what the move sets up for a later turn.
+    /// Kept apart because a prospect is not a score, and mixing the two
+    /// would make the reason claim more than it can.
+    var prospect = false
+    /// How likely the prospect is met in time. The figure comes from the
+    /// bag and the deck, both of which Harmony knows exactly, and it is the
+    /// chance layer of the expectimax search seen from the other side. A
+    /// prospect without its probability would be an arbitrary number.
+    var probability: Double? = nil
+
+    /// Expected value: what the prospect is worth once weighted.
+    var expected: Int {
+        guard let probability else { return points }
+        return Int((Double(points) * probability).rounded())
+    }
 }
 
 /// Why this move and not the next best one. Phase 2 asks both questions:
@@ -189,13 +243,23 @@ struct ScoreTerm {
 /// number without a comparison answers neither.
 struct MoveRationale: Identifiable {
     let id = UUID()
-    let total: Int
+    /// What the move scores the moment it is played.
+    let immediate: Int
+    /// What the resulting position is worth, prospects included. The
+    /// comparison runs on this number, not on the points — which is the
+    /// only way a move worth nothing today can be the best one.
+    let value: Int
     let terms: [ScoreTerm]
+    /// Where the probabilities come from. Named, so a weighted number does
+    /// not look like it was picked out of the air.
+    var probabilityNote: String? = nil
     let runnerUp: String
-    let runnerUpTotal: Int
+    let runnerUpImmediate: Int
+    let runnerUpValue: Int
     let gapExplanation: String
 
-    var gap: Int { total - runnerUpTotal }
+    var gap: Int { value - runnerUpValue }
+    var isProspective: Bool { value != immediate }
 }
 
 struct Placement {

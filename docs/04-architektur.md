@@ -204,6 +204,25 @@ Aus `ideen-vorgemerkt.md` gehören mindestens hinein:
 - **Restlaufzeit**, aus dem Zugzähler. Lachs und Frosch unterscheiden sich
   nur in der Geschwindigkeit; welcher besser ist, hängt daran.
 
+### Punkte jetzt und Wert der Stellung sind zweierlei
+
+Ein Zug kann **null Punkte** bringen und trotzdem der beste sein: zwei
+Holzplättchen übereinander bilden keine Landschaft, sind aber ein Laub von
+einem Baum der Höhe 3 entfernt. Die Suche vergleicht deshalb Bewertungen,
+nicht Punktzahlen — sonst wäre ein vorbereitender Zug nie wählbar.
+
+Terme, die eine Aussicht ausdrücken, sind **Erwartungswerte**: der Gewinn
+mal der Wahrscheinlichkeit, ihn rechtzeitig zu erreichen. Diese
+Wahrscheinlichkeit ist keine Schätzung, sondern fällt aus der
+Zufallsschicht ab — Beutel und Kartenstapel sind vollständig bekannt. Ein
+Aussichtsterm ohne seine Wahrscheinlichkeit wäre eine willkürliche Zahl.
+
+Für die Begründung folgt daraus eine Auflage: Sie muss beides nennen, die
+Punkte jetzt und die Bewertung, und bei jedem Aussichtsterm die
+Wahrscheinlichkeit dazu — „Baum und Muster zusammen 10, mit 80 % erreichbar,
+also 8". Ohne das wirkte die Zahl erfunden, und Störfall C wäre nicht
+beantwortet, sondern nur beschwichtigt.
+
 Musterinstanzen werden **vorgehalten**, nicht bei jeder Bewertung neu
 gesucht: Muster überlappen, ein Stein kann mehreren Karten dienen, und ein
 einzelner Stein entscheidet manchmal, welche von zwei Karten bedient wird.

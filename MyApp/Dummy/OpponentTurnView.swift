@@ -37,6 +37,7 @@ struct OpponentTurnView: View {
     /// on its own and the why is one tap away.
     @State private var shownRationale: MoveRationale?
     @State private var pendingMove: HarmonyMove? = Sample.harmonyMove
+    @State private var showSetupExample = false
 
     struct Entry: Identifiable {
         let id = UUID()
@@ -218,6 +219,17 @@ struct OpponentTurnView: View {
     private var harmonyTurn: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                Picker("Beispiel", selection: $showSetupExample) {
+                    Text("Punktet sofort").tag(false)
+                    Text("Bereitet vor").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: showSetupExample) { _, setup in
+                    harmonyBoard = Sample.harmonyBoard
+                    harmonyCubes = [:]
+                    pendingMove = setup ? Sample.harmonyMoveSetup : Sample.harmonyMove
+                }
+
                 BoardView(side: .a, columns: BoardView.sideA, cells: harmonyCells)
                     .padding(.horizontal, 4)
 
@@ -243,8 +255,12 @@ struct OpponentTurnView: View {
                     } label: {
                         HStack {
                             Image(systemName: "questionmark.circle")
-                            Text("\(move.rationale.total) Punkte, "
-                                 + "\(move.rationale.gap) mehr als der nächstbeste")
+                            Text(move.rationale.isProspective
+                                 ? "\(move.rationale.immediate) Punkte jetzt · "
+                                   + "Bewertung \(move.rationale.value) · "
+                                   + "\(move.rationale.gap) mehr"
+                                 : "\(move.rationale.value) Punkte · "
+                                   + "\(move.rationale.gap) mehr als der nächstbeste")
                             Spacer()
                             Image(systemName: "chevron.right").font(.footnote)
                         }
@@ -440,32 +456,71 @@ struct OpponentTurnView: View {
                         VStack(spacing: 10) {
                             ForEach(Array(rationale.terms.enumerated()), id: \.offset) { _, term in
                                 HStack(alignment: .firstTextBaseline) {
-                                    Text(term.name).font(.callout)
+                                    if term.prospect {
+                                        Image(systemName: "arrow.turn.right.up")
+                                            .font(.caption2)
+                                            .foregroundStyle(.tint)
+                                    }
+                                    Text(term.name)
+                                        .font(.callout)
+                                        .foregroundStyle(term.prospect ? .secondary : .primary)
                                     Spacer(minLength: 12)
-                                    Text("+\(term.points)")
-                                        .font(.callout.monospacedDigit().weight(.semibold))
+                                    if term.points > 0 {
+                                        Text(term.prospect
+                                             ? (term.probability.map {
+                                                   "\(term.points) × \(Int($0 * 100)) % = \(term.expected)"
+                                               } ?? "(\(term.points))")
+                                             : "+\(term.points)")
+                                            .font(.callout.monospacedDigit()
+                                                .weight(term.prospect ? .regular : .semibold))
+                                            .foregroundStyle(term.prospect ? .secondary : .primary)
+                                    }
                                 }
                             }
                             Divider()
                             HStack {
-                                Text("Zusammen").font(.callout.weight(.semibold))
+                                Text("Punkte jetzt").font(.callout.weight(.semibold))
                                 Spacer()
-                                Text("\(rationale.total)")
+                                Text("\(rationale.immediate)")
                                     .font(.callout.monospacedDigit().weight(.bold))
+                            }
+                            if rationale.isProspective {
+                                HStack {
+                                    Text("Bewertung der Stellung").font(.callout.weight(.semibold))
+                                    Spacer()
+                                    Text("\(rationale.value)")
+                                        .font(.callout.monospacedDigit().weight(.bold))
+                                }
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Aussichten sind Erwartungswerte, keine Punkte: "
+                                         + "der Gewinn mal der Wahrscheinlichkeit, ihn zu "
+                                         + "erreichen. Verglichen wird auf der Bewertung — "
+                                         + "sonst könnte ein Zug ohne sofortige Punkte nie "
+                                         + "der beste sein.")
+                                    if let note = rationale.probabilityNote {
+                                        Text(note)
+                                    }
+                                }
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
 
                     TitledBlock("Die Alternative") {
                         VStack(alignment: .leading, spacing: 8) {
-                            HStack(alignment: .firstTextBaseline) {
-                                Text(rationale.runnerUp).font(.callout)
-                                Spacer(minLength: 12)
-                                Text("\(rationale.runnerUpTotal)")
-                                    .font(.callout.monospacedDigit())
+                            Text(rationale.runnerUp).font(.callout)
+                            HStack {
+                                Text(rationale.isProspective
+                                     ? "\(rationale.runnerUpImmediate) Punkte jetzt, "
+                                       + "Bewertung \(rationale.runnerUpValue)"
+                                     : "\(rationale.runnerUpValue) Punkte")
+                                    .font(.callout)
                                     .foregroundStyle(.secondary)
+                                Spacer()
                             }
-                            Text("Abstand: \(rationale.gap) Punkte")
+                            Text("Abstand: \(rationale.gap)")
                                 .font(.callout.weight(.semibold))
                             Text(rationale.gapExplanation)
                                 .font(.footnote)
