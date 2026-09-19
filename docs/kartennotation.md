@@ -110,13 +110,13 @@ Feld, der Tierwürfel liegt auf Zelle 3, die Punkte sind 5 und 11.
 | `W` | Wasser |
 | `F` | Feld |
 | `B1` `B2` `B3` | Baum |
-| `M1` `M2` `M3` | Berg (Massiv) |
+| `M1` `M2` `M3` | Berg |
 | `G` | Gebäude |
 | `T <Zelle>` | Tierwürfel auf dieser Zelle |
 | `P <Zahlen>` | Punkte, von unten aufsteigend |
 
-Berg heißt `M` für Massiv, weil **B** sonst doppelt belegt wäre — Baum und
-Berg. Der Tierwürfel heißt `T`, weil **W** bereits an Wasser vergeben ist.
+Berg heißt `M`, weil **B** sonst doppelt belegt wäre — Baum und Berg. Der
+Tierwürfel heißt `T`, weil **W** bereits an Wasser vergeben ist.
 Ein Kürzel, das beim Diktieren nachgefragt werden muss, spart keine Zeit.
 
 Das Gebäude behält dagegen sein `G`. Der zunächst befürchtete Zusammenstoß
@@ -124,7 +124,8 @@ mit „Gebirge" tritt nicht ein, sobald der Berg `M` heißt — die Befürchtung
 rechnete die drei Kollisionen gleichzeitig, obwohl die erste die dritte
 auflöst. Das hält `H` frei für Holz in der **Steinnotation**, die
 `pruefverfahren.md` festlegt: Diese Notation beschreibt Landschaften,
-jene die Farben, aus denen sie gebaut werden.
+jene die Farben, aus denen sie gebaut werden. Die beiden teilen sich außer
+`W` keinen Buchstaben, und das ist Absicht.
 
 Claude überträgt die Kurzform in die Langform und zeichnet wie gehabt zurück;
 die Prüfschleife bleibt unverändert.

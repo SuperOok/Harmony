@@ -190,29 +190,31 @@ dasselbe, auch wenn es sich an drei Stellen deckt.
 | Zeichen | Farbe | Merkhilfe | Anzahl |
 | --- | --- | --- | --- |
 | `W` | blau | Wasser | 23 |
-| `M` | grau | Massiv | 23 |
+| `S` | grau | Stein | 23 |
 | `H` | braun | Holz | 21 |
 | `L` | grün | Laub | 19 |
-| `F` | gelb | Feld | 19 |
+| `K` | gelb | Korn | 19 |
 | `Z` | rot | Ziegel | 15 |
 
 Jeder Name bezeichnet das **Material**, das der Stein in jedem Fall ist,
-nicht die Rolle, die er manchmal spielt. Ein roter Stein kann Unterbau
+nie eine Rolle, die er nur manchmal spielt. Ein roter Stein kann Unterbau
 statt Dach sein — ein Gebäude darf aus zwei roten Steinen bestehen —, ein
-brauner Gerüst statt Stamm. Ziegel und Holz bleiben sie dabei.
+brauner Gerüst statt Stamm. Ziegel und Holz bleiben sie dabei. So liest
+sich auch ein Gebäude natürlich: Ziegel auf Holz, Stein oder Ziegel.
 
-`W`, `F` und `M` decken sich mit den Landschaftskürzeln aus
-`kartennotation.md`, weil Wasser, Feld und Berg aus **je einer** Farbe
-bestehen: Dort ist Stein gleich Landschaft. `H`, `L` und `Z` sind eigene
-Buchstaben, weil die übrigen beiden Landschaften **zwei** Farben brauchen —
-Laub auf Holz ergibt den Baum, Ziegel auf Holz, Massiv oder Ziegel das
-Gebäude.
+Die Steinnotation teilt sich mit den Landschaftskürzeln aus
+`kartennotation.md` bewusst **keine** Buchstaben außer `W`.
+Landschaften sind, was man baut; Steine sind, woraus man baut. Eine frühere
+Fassung ließ `W`, `F` und `M` in beiden Notationen dasselbe bedeuten, weil
+Wasser, Feld und Berg einfarbig sind — das war hübsch, zwang aber für Grau
+und Gelb Landschaftsnamen auf („Massiv", „Feld"), wo ein Material gemeint
+ist. Die Trennung ist wichtiger; `kartennotation.md` verlangt sie ohnehin.
 
-Damit `H` für Holz frei wurde, heißt das Gebäude in `kartennotation.md`
-jetzt `G` statt `H`; es hieß dort „Haus", obwohl die Regeln durchgehend von
-Gebäuden sprechen. Die Kurzform wird nur zum Diktieren benutzt, die
-abgelegten Kartendaten stehen in Langform — die Umbenennung berührt sie
-nicht.
+Gelb heißt `K` für Korn, nicht `G` für Getreide: `G` ist dort bereits das
+Gebäude. Umgekehrt wurde `H` für Holz frei, indem das Gebäude von „Haus"
+auf „Gebäude" umbenannt wurde — so sprechen auch die Regeln durchgehend.
+Die Kurzform dient nur dem Diktieren, die abgelegten Kartendaten stehen in
+Langform; keine Umbenennung berührt sie.
 
 Wie in `kartennotation.md` sind die Buchstaben nach Eindeutigkeit gewählt,
 nicht nach Anfangsbuchstaben: Blau und Braun beginnen beide mit B, Grau,
@@ -222,7 +224,7 @@ Grün und Gelb alle drei mit G.
 
 ```
 Ziehfolge: akzeptanz-01
-Beutel:    WMH LFF ZMM WWL HHF ...     (120 Steine, in Ziehreihenfolge)
+Beutel:    WSH LKK ZSS WWL HHK ...     (120 Steine, in Ziehreihenfolge)
 Stapel:    Pinguin Biene Lachs Wolf Rabe Frosch ...   (32 Karten)
 ```
 
@@ -275,6 +277,9 @@ Nebenbei-Änderung, siehe `CLAUDE.md`. Bis dahin gilt dort weiterhin: keine
   Nutzen, den bei einer Oberfläche in Bewegung niemand einlöst.
 - **UI-Tests für Spiellogik** — sie liefe dort tausendmal langsamer und
   brächte keine einzige zusätzliche Erkenntnis.
-- **`S` für Stamm bei Braun** — benannte eine Rolle statt eines Materials,
-  und Braun liegt ebenso gut unter einem Gebäude. Die Kollision, die `H`
-  zunächst versperrte, ließ sich auflösen, statt sie zu umgehen.
+- **Rollennamen statt Materialien** — „Stamm" für Braun, „Dach" für Rot,
+  „Massiv" für Grau. Alle drei beschreiben, was der Stein manchmal wird,
+  nicht was er ist, und „Ziegel auf Massiv" für ein Steinhaus liest sich
+  schief. *Massiv* ist als Substantiv für ein Gebirge ohnehin selten.
+- **Buchstaben, die beide Notationen teilen** — siehe oben; die Ersparnis
+  kostete die Materialbenennung und damit mehr, als sie einbrachte.
