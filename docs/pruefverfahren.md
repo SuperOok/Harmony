@@ -191,31 +191,28 @@ dasselbe, auch wenn es sich an drei Stellen deckt.
 | --- | --- | --- | --- |
 | `W` | blau | Wasser | 23 |
 | `M` | grau | Massiv | 23 |
-| `S` | braun | Stamm | 21 |
+| `H` | braun | Holz | 21 |
 | `L` | grün | Laub | 19 |
 | `F` | gelb | Feld | 19 |
 | `Z` | rot | Ziegel | 15 |
 
-`W`, `F` und `M` decken sich mit den Landschaftskürzeln, weil diese
-Landschaften **einfarbig** sind — ein blauer Stein ist immer Wasser. `L`,
-`S` und `Z` weichen bewusst ab, weil Grün, Braun und Rot für sich genommen
-**keine** Landschaft ergeben. Die Abweichung markiert also genau dort,
-wo Stein und Landschaft auseinanderfallen.
+Jeder Name bezeichnet das **Material**, das der Stein in jedem Fall ist,
+nicht die Rolle, die er manchmal spielt. Ein roter Stein kann Unterbau
+statt Dach sein — ein Gebäude darf aus zwei roten Steinen bestehen —, ein
+brauner Gerüst statt Stamm. Ziegel und Holz bleiben sie dabei.
 
-Genauer: `Wasser`, `Feld` und `Berg` bestehen aus **je einer** Farbe, dort
-ist Stein gleich Landschaft. `Baum` und `Gebäude` brauchen **zwei** Farben,
-also braucht jede ihrer Zutaten einen eigenen Namen — Laub und Stamm für
-den Baum, Ziegel für das Gebäude.
+`W`, `F` und `M` decken sich mit den Landschaftskürzeln aus
+`kartennotation.md`, weil Wasser, Feld und Berg aus **je einer** Farbe
+bestehen: Dort ist Stein gleich Landschaft. `H`, `L` und `Z` sind eigene
+Buchstaben, weil die übrigen beiden Landschaften **zwei** Farben brauchen —
+Laub auf Holz ergibt den Baum, Ziegel auf Holz, Massiv oder Ziegel das
+Gebäude.
 
-Rot heißt deshalb `Z` für Ziegel und nicht `D` für Dach: Ein Gebäude darf
-aus **zwei roten** Steinen bestehen, ein roter Stein ist also nicht
-zwangsläufig das Dach. Braun heißt `S` für Stamm, obwohl es ebenso gut
-unter einem Gebäude liegen kann — dort ist es dann Holzgerüst statt
-Baumstamm, aber Holz bleibt es, und ein Stamm ohne Laub ist ohnehin
-wertlos.
-
-Die Merkhilfen sind Eselsbrücken, keine Systematik. Maßgeblich ist die
-Farbe in der zweiten Spalte.
+Damit `H` für Holz frei wurde, heißt das Gebäude in `kartennotation.md`
+jetzt `G` statt `H`; es hieß dort „Haus", obwohl die Regeln durchgehend von
+Gebäuden sprechen. Die Kurzform wird nur zum Diktieren benutzt, die
+abgelegten Kartendaten stehen in Langform — die Umbenennung berührt sie
+nicht.
 
 Wie in `kartennotation.md` sind die Buchstaben nach Eindeutigkeit gewählt,
 nicht nach Anfangsbuchstaben: Blau und Braun beginnen beide mit B, Grau,
@@ -225,7 +222,7 @@ Grün und Gelb alle drei mit G.
 
 ```
 Ziehfolge: akzeptanz-01
-Beutel:    WMS LFF ZMM WWL SSF ...     (120 Steine, in Ziehreihenfolge)
+Beutel:    WMH LFF ZMM WWL HHF ...     (120 Steine, in Ziehreihenfolge)
 Stapel:    Pinguin Biene Lachs Wolf Rabe Frosch ...   (32 Karten)
 ```
 
@@ -278,8 +275,6 @@ Nebenbei-Änderung, siehe `CLAUDE.md`. Bis dahin gilt dort weiterhin: keine
   Nutzen, den bei einer Oberfläche in Bewegung niemand einlöst.
 - **UI-Tests für Spiellogik** — sie liefe dort tausendmal langsamer und
   brächte keine einzige zusätzliche Erkenntnis.
-- **Durchgehende Materialnamen** — Wasser, Stein, Holz, Laub, Getreide,
-  Ziegel wäre in sich stimmiger als die gemischten Merkhilfen oben. Aber
-  Holz bekäme `H`, und `H` ist in `kartennotation.md` bereits das Haus.
-  Zwei Notationen im selben Projekt dürfen denselben Buchstaben nicht
-  verschieden belegen.
+- **`S` für Stamm bei Braun** — benannte eine Rolle statt eines Materials,
+  und Braun liegt ebenso gut unter einem Gebäude. Die Kollision, die `H`
+  zunächst versperrte, ließ sich auflösen, statt sie zu umgehen.
