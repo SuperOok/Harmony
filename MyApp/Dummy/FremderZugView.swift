@@ -23,6 +23,7 @@ struct FremderZugView: View {
     @State private var antipper = 0
     @State private var kartenwahlOffen = false
     @State private var verlaufOffen = false
+    @State private var seiteB = false
 
     struct Eintrag: Identifiable {
         let id = UUID()
@@ -196,13 +197,30 @@ struct FremderZugView: View {
     private var harmonysZug: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                TableauView(spalten: TableauView.seiteA,
-                            zellen: TableauView.musterZellen)
+                Picker("Seite", selection: $seiteB) {
+                    Text("Seite A").tag(false)
+                    Text("Seite B").tag(true)
+                }
+                .pickerStyle(.segmented)
+
+                TableauView(seite: seiteB ? .b : .a,
+                            spalten: seiteB ? TableauView.seiteB : TableauView.seiteA,
+                            zellen: seiteB ? TableauView.musterZellenB
+                                           : TableauView.musterZellen)
                     .padding(.horizontal, 4)
 
-                Text("Musterbrett — jeder Zellzustand einmal. Eine Zelle ist "
-                     + "ein Stapel und wird auch so gezeigt: eine Scheibe je "
-                     + "Stein, von unten nach oben.")
+                Text(seiteB
+                     ? "Seite B wertet keine Flüsse, sondern Inseln — die "
+                       + "Zusammenhangsgebiete der nicht-blauen Felder, leere "
+                       + "eingeschlossen. Wasser zählt hier nicht selbst, es "
+                       + "trennt: Satt ist nur, was an zwei verschiedene Inseln "
+                       + "grenzt. Die vierte Spalte trennt, das Wasser oben "
+                       + "links trennt nichts."
+                     : "Satte Tönung heißt: Diese Zelle bringt gerade Punkte. "
+                       + "Blass heißt Landschaft ohne Punkte — der Berg3 links "
+                       + "oben hat keinen Bergnachbarn, das einzelne Feld keinen "
+                       + "Partner, und der Ast neben dem längsten Fluss zählt "
+                       + "nicht mit.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 

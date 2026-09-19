@@ -24,6 +24,10 @@ struct ZelleView: View {
     var stapel: [Stein] = []
     var wuerfel = false
     var markierung: String? = nil
+    /// Bringt diese Zelle gerade Punkte? Satte Tönung heißt ja, blasse
+    /// heißt: Landschaft ja, Punkte nein — ein Berg ohne Bergnachbarn, ein
+    /// einzelnes Feld, ein Ast neben dem längsten Fluss.
+    var zaehlt = false
 
     /// Das Sechseck ist das **Feld**, der Stapel sein **Inhalt** — so wie am
     /// Tisch, wo runde Plättchen in einem Sechseckfeld liegen und es nicht
@@ -55,7 +59,7 @@ struct ZelleView: View {
                 // keine Landschaft und bleibt deshalb neutral.
                 Sechseck().fill(Color(.tertiarySystemFill))
                 if let landschaft = stapel.landschaft {
-                    Sechseck().fill(landschaft.tönung.opacity(0.22))
+                    Sechseck().fill(landschaft.tönung.opacity(zaehlt ? 0.45 : 0.15))
                 }
                 Sechseck().stroke(Color(.separator), lineWidth: 1)
 
@@ -105,12 +109,19 @@ struct TableauView: View {
         var markierung: String? = nil
     }
 
+    let seite: Planseite
     /// Felder je Spalte: Seite A ist 5-4-5-4-5, Seite B ist 4-3-4-3-4-3-4.
     let spalten: [Int]
     /// Zellen unter ihrem Namen `<Spalte><Zeile>`.
     var zellen: [Int: Zelle] = [:]
 
     private var maxZeilen: Int { spalten.max() ?? 0 }
+
+    private var zaehlende: Set<Int> {
+        Brettwertung(seite: seite, spalten: spalten,
+                     stapel: zellen.compactMapValues { $0.stapel.isEmpty ? nil : $0.stapel })
+            .zaehlende()
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -128,7 +139,8 @@ struct TableauView: View {
                         let versatz: CGFloat = spalte % 2 == 0 ? zellHoehe / 2 : 0
                         ZelleView(stapel: zellen[name]?.stapel ?? [],
                                   wuerfel: zellen[name]?.wuerfel ?? false,
-                                  markierung: zellen[name]?.markierung)
+                                  markierung: zellen[name]?.markierung,
+                                  zaehlt: zaehlende.contains(name))
                             .frame(width: 2 * r, height: zellHoehe)
                             .offset(x: 1.5 * r * CGFloat(si),
                                     y: zellHoehe * CGFloat(zeile - 1) + versatz)
@@ -146,34 +158,69 @@ extension TableauView {
     static let seiteA = [5, 4, 5, 4, 5]
     static let seiteB = [4, 3, 4, 3, 4, 3, 4]
 
-    /// Musterbrett: jeder mögliche Zellzustand genau einmal.
+    /// Seite B: Spalte 4 ist ganz Wasser und trennt das Brett in zwei
+    /// Inseln — diese drei Zellen zählen. Das Wasser bei 21 trennt nichts.
+    static var musterZellenB: [Int: Zelle] {
+        [
+            11: Zelle(stapel: [.laub]),
+            12: Zelle(stapel: [.holz, .laub]),
+            21: Zelle(stapel: [.wasser]),
+            31: Zelle(stapel: [.stein]),
+            32: Zelle(stapel: [.stein, .stein]),
+            41: Zelle(stapel: [.wasser]),
+            42: Zelle(stapel: [.wasser]),
+            43: Zelle(stapel: [.wasser]),
+            51: Zelle(stapel: [.feld]),
+            52: Zelle(stapel: [.feld]),
+            61: Zelle(stapel: [.stein]),
+            62: Zelle(stapel: [.holz, .ziegel]),
+            63: Zelle(stapel: [.laub]),
+            71: Zelle(stapel: [.holz, .ziegel]),
+        ]
+    }
+
+    /// Musterbrett: zeigt jeden Zellzustand und dazu jede Wertungsbedingung
+    /// einmal erfüllt und einmal verfehlt.
     static var musterZellen: [Int: Zelle] {
         [
-            12: Zelle(stapel: [.wasser]),
-            13: Zelle(stapel: [.feld]),
-            14: Zelle(stapel: [.laub]),                       // Baum 1
-            15: Zelle(stapel: [.holz, .laub]),                // Baum 2
-            21: Zelle(stapel: [.holz, .holz, .laub], wuerfel: true),  // Baum 3
-            22: Zelle(stapel: [.stein]),                      // Berg 1
-            23: Zelle(stapel: [.stein, .stein]),              // Berg 2
-            24: Zelle(stapel: [.stein, .stein, .stein]),      // Berg 3
-            31: Zelle(stapel: [.holz, .ziegel]),              // Gebäude auf Holz
-            32: Zelle(stapel: [.stein, .ziegel]),             // Gebäude auf Stein
-            33: Zelle(stapel: [.ziegel, .ziegel]),            // Gebäude auf Ziegel
-            34: Zelle(stapel: [.holz]),                       // nackter brauner Stein
-            35: Zelle(stapel: [.ziegel]),                     // nackter roter Stein
-            41: Zelle(stapel: [.wasser], wuerfel: true),
-            42: Zelle(stapel: [.stein], wuerfel: true),       // einzelner Berg, Erdmännchen
-            51: Zelle(markierung: "1"),
-            52: Zelle(stapel: [.holz], markierung: "2·3"),
+            // Fluss durch Spalte 1, mit einem Ast bei 23, der nicht zählt
+            11: Zelle(stapel: [.wasser]),
+            12: Zelle(stapel: [.wasser], wuerfel: true),
+            13: Zelle(stapel: [.wasser]),
+            14: Zelle(stapel: [.wasser]),
+            15: Zelle(stapel: [.wasser]),
+            23: Zelle(stapel: [.wasser]),
+
+            // Berg3 ohne Bergnachbarn — 7 Punkte wert und zählt trotzdem 0
+            21: Zelle(stapel: [.stein, .stein, .stein]),
+            22: Zelle(stapel: [.laub]),                        // Baum 1
+            24: Zelle(stapel: [.holz, .laub]),                 // Baum 2
+
+            // zwei angrenzende Berge — beide zählen
+            31: Zelle(stapel: [.stein]),
+            32: Zelle(stapel: [.stein, .stein]),
+
+            33: Zelle(stapel: [.stein, .ziegel]),              // Gebäude auf Stein
+            34: Zelle(stapel: [.feld]),                        // einzelnes Feld, zählt 0
+            35: Zelle(stapel: [.ziegel, .ziegel]),             // Gebäude am Rand, zu wenig Farben
+
+            41: Zelle(stapel: [.holz]),                        // nacktes Holz
+            42: Zelle(stapel: [.holz, .ziegel]),               // Gebäude auf Holz
+            43: Zelle(stapel: [.holz, .holz, .laub], wuerfel: true),  // Baum 3
+
+            51: Zelle(stapel: [.feld]),
+            52: Zelle(stapel: [.feld]),                        // Feldgruppe zu zweit — zählt
+            53: Zelle(stapel: [.wasser]),                      // kurzer Fluss, nicht der längste
+            54: Zelle(stapel: [.ziegel]),                      // nackter Ziegel
+            55: Zelle(stapel: [.stein]),                       // Berg ohne Nachbarn
         ]
     }
 }
 
 #Preview {
     VStack(spacing: 24) {
-        TableauView(spalten: TableauView.seiteA, zellen: TableauView.musterZellen)
-        TableauView(spalten: TableauView.seiteB)
+        TableauView(seite: .a, spalten: TableauView.seiteA, zellen: TableauView.musterZellen)
+        TableauView(seite: .b, spalten: TableauView.seiteB, zellen: TableauView.musterZellenB)
     }
     .padding()
 }
