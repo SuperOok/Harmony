@@ -1,15 +1,33 @@
 import SwiftUI
 
-/// Klickdummy aus Phase 5: der fremde Zug, der einzige zeitkritische
-/// Eingabeweg. Keine Funktion dahinter — gemessen wird der Weg selbst,
+/// Klickdummy aus Phase 5: das Erfassen fremder Züge, Zug um Zug.
+/// Keine Engine, keine Regelprüfung — gemessen wird der Eingabeweg selbst,
 /// in Antippern, wie `pruefverfahren.md` es für Stockwerk 3 vorsieht.
 struct FremderZugView: View {
+    // Spielzustand, so weit der Eingabeweg ihn braucht
+    @State private var auslage = Attrappe.auslage
+    @State private var offeneKarten = Attrappe.offeneKarten
+    @State private var gesehen = Set(Attrappe.offeneKarten)
+    @State private var spielerIndex = 0
+    @State private var verlauf: [Eintrag] = []
+
+    // Eingabe des laufenden Zuges
     @State private var genommen: Int?
     @State private var nachfuellung: [Stein] = []
     @State private var karteGenommen: String?
     @State private var karteNach: String?
     @State private var antipper = 0
     @State private var kartenwahlOffen = false
+    @State private var verlaufOffen = false
+
+    struct Eintrag: Identifiable {
+        let id = UUID()
+        let zeile: String
+        let antipper: Int
+    }
+
+    private var amZug: String { Attrappe.reihenfolge[spielerIndex] }
+    private var istHarmony: Bool { amZug == "Harmony" }
 
     private var vollstaendig: Bool {
         genommen != nil && nachfuellung.count == 3
@@ -18,36 +36,46 @@ struct FremderZugView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    auslage
-                    if genommen != nil { nachfuellen }
-                    karten
-                }
-                .padding()
+            Group {
+                if istHarmony { harmonysZug } else { eingabe }
             }
-            .navigationTitle("\(Attrappe.amZug) ist am Zug")
+            .navigationTitle(istHarmony ? "Harmony ist am Zug" : "\(amZug) ist am Zug")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Text("\(antipper) ×")
-                        .font(.footnote.monospacedDigit().weight(.semibold))
-                        .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(Capsule().fill(.quaternary))
-                        .accessibilityIdentifier("antipper")
+                    Button { verlaufOffen = true } label: {
+                        Text(istHarmony ? "\(verlauf.count) Züge" : "\(antipper) ×")
+                            .font(.footnote.monospacedDigit().weight(.semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 4)
+                            .background(Capsule().fill(.quaternary))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("antipper")
                 }
             }
-            .safeAreaInset(edge: .bottom) { fussleiste }
             .sheet(isPresented: $kartenwahlOffen) { kartenwahl }
+            .sheet(isPresented: $verlaufOffen) { verlaufListe }
         }
     }
 
-    // MARK: - Auslage
+    // MARK: - Eingabe eines fremden Zuges
 
-    private var auslage: some View {
+    private var eingabe: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                auslageAbschnitt
+                if genommen != nil { nachfuellen }
+                karten
+            }
+            .padding()
+        }
+        .safeAreaInset(edge: .bottom) { fussleiste }
+    }
+
+    private var auslageAbschnitt: some View {
         Abschnitt("Welches Feld wurde genommen?") {
             VStack(spacing: 8) {
-                ForEach(Array(Attrappe.auslage.enumerated()), id: \.element.id) { i, feld in
+                ForEach(Array(auslage.enumerated()), id: \.element.id) { i, feld in
                     Button {
                         antipper += 1
                         genommen = i
@@ -59,14 +87,14 @@ struct FremderZugView: View {
                             }
                             Spacer()
                             if genommen == i {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.tint)
+                                Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
                             }
                         }
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(genommen == i ? Color.accentColor.opacity(0.14) : Color(.secondarySystemBackground))
+                                .fill(genommen == i ? Color.accentColor.opacity(0.14)
+                                                    : Color(.secondarySystemBackground))
                         )
                     }
                     .buttonStyle(.plain)
@@ -75,8 +103,6 @@ struct FremderZugView: View {
             }
         }
     }
-
-    // MARK: - Nachfüllung
 
     private var nachfuellen: some View {
         Abschnitt("Was wurde nachgefüllt?") {
@@ -114,13 +140,11 @@ struct FremderZugView: View {
         }
     }
 
-    // MARK: - Karten
-
     private var karten: some View {
         Abschnitt("Wurde eine Karte genommen?") {
             VStack(alignment: .leading, spacing: 12) {
                 FlussLayout(abstand: 8) {
-                    ForEach(Attrappe.offeneKarten, id: \.self) { name in
+                    ForEach(offeneKarten, id: \.self) { name in
                         Button {
                             antipper += 1
                             if karteGenommen == name {
@@ -163,34 +187,58 @@ struct FremderZugView: View {
         }
     }
 
+    // MARK: - Harmonys Zug (Platzhalter)
+
+    private var harmonysZug: some View {
+        VStack(spacing: 18) {
+            Spacer()
+            Image(systemName: "hourglass").font(.system(size: 44)).foregroundStyle(.tertiary)
+            Text("Dieser Bildschirm fehlt noch.")
+                .font(.headline)
+            Text("Hier stünde Harmonys Zug als Handlungsanweisung — welches Feld, "
+                 + "wohin die drei Steine, welche Karte, welche Tierwürfel.\n\n"
+                 + "Ihr Zug verändert die Auslage ebenso wie ein fremder; der Dummy "
+                 + "lässt sie vorerst unverändert.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Spacer()
+            Button("Harmony hat gezogen") { naechsterSpieler() }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("harmony-fertig")
+        }
+        .padding(28)
+    }
+
+    // MARK: - Auswahllisten
+
     /// Zwei Spalten, alphabetisch und **spaltenweise** gefüllt wie ein
-    /// Telefonbuch: links A bis zur Mitte, rechts der Rest. Beim Suchen
-    /// nach einem Namen läuft der Blick dann eine Spalte hinunter, statt
-    /// zwischen beiden zu zickzacken.
+    /// Telefonbuch: links A bis zur Mitte, rechts der Rest.
     private var kartenwahl: some View {
         let uebrig = Attrappe.alleKarten
-            .filter { !Attrappe.offeneKarten.contains($0) }
+            .filter { !gesehen.contains($0) }
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         let umbruch = (uebrig.count + 1) / 2
         let links = Array(uebrig.prefix(umbruch))
         let rechts = Array(uebrig.dropFirst(umbruch))
 
         return NavigationStack {
-            VStack(spacing: 8) {
-                ForEach(links.indices, id: \.self) { i in
-                    HStack(spacing: 8) {
-                        karteZelle(links[i])
-                        if i < rechts.count {
-                            karteZelle(rechts[i])
-                        } else {
-                            Color.clear.frame(height: 42).frame(maxWidth: .infinity)
+            ScrollView {
+                VStack(spacing: 8) {
+                    ForEach(links.indices, id: \.self) { i in
+                        HStack(spacing: 8) {
+                            karteZelle(links[i])
+                            if i < rechts.count {
+                                karteZelle(rechts[i])
+                            } else {
+                                Color.clear.frame(height: 42).frame(maxWidth: .infinity)
+                            }
                         }
                     }
                 }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
-            .frame(maxHeight: .infinity, alignment: .top)
-            .navigationTitle("Nachgerückt")
+            .navigationTitle("Nachgerückt · \(uebrig.count) im Stapel")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -206,23 +254,35 @@ struct FremderZugView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, minHeight: 42)
-                .background(RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color(.secondarySystemBackground)))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("nachruecker-\(name)")
     }
 
-    // MARK: - Notation und Fußleiste
-
-    private var zeile: String {
-        var teile = [Attrappe.amZug]
-        if let g = genommen { teile.append("-\(Attrappe.auslage[g].notation)") }
-        if let k = karteGenommen { teile.append("+\(k)") }
-        if nachfuellung.count == 3 { teile.append(">" + nachfuellung.map(\.rawValue).joined()) }
-        if let n = karteNach { teile.append(">\(n)") }
-        return teile.joined(separator: "  ")
+    private var verlaufListe: some View {
+        NavigationStack {
+            Group {
+                if verlauf.isEmpty {
+                    ContentUnavailableView("Noch kein Zug erfasst", systemImage: "list.bullet")
+                } else {
+                    List(verlauf) { e in
+                        HStack {
+                            Text(e.zeile).font(.system(.footnote, design: .monospaced))
+                            Spacer()
+                            Text("\(e.antipper) ×")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Verlauf")
+            .navigationBarTitleDisplayMode(.inline)
+        }
     }
+
+    // MARK: - Fußleiste und Zugwechsel
 
     /// Die Protokollzeile steht bei der Schaltfläche, nicht im Inhalt:
     /// Sie zeigt, was gleich eingetragen wird, und kann so nicht aus dem
@@ -237,21 +297,49 @@ struct FremderZugView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("notation")
 
-            Button {
-                antipper += 1
-            } label: {
-                Text("Zug eintragen")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+            Button { eintragen() } label: {
+                Text("Zug eintragen").frame(maxWidth: .infinity).padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
             .disabled(!vollstaendig)
             .accessibilityIdentifier("eintragen")
         }
-        .padding(.horizontal)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.horizontal).padding(.top, 10).padding(.bottom, 8)
         .background(.bar)
+    }
+
+    private var zeile: String {
+        var teile = [amZug]
+        if let g = genommen { teile.append("-\(auslage[g].notation)") }
+        if let k = karteGenommen { teile.append("+\(k)") }
+        if nachfuellung.count == 3 { teile.append(">" + nachfuellung.map(\.rawValue).joined()) }
+        if let n = karteNach { teile.append(">\(n)") }
+        return teile.joined(separator: "  ")
+    }
+
+    private func eintragen() {
+        verlauf.append(Eintrag(zeile: zeile, antipper: antipper + 1))
+
+        // Das geleerte Feld nimmt die nachgezogenen Steine auf.
+        if let g = genommen { auslage[g] = Feld(steine: nachfuellung) }
+
+        // Die genommene Karte wird durch die nachgerückte ersetzt.
+        if let k = karteGenommen, let n = karteNach,
+           let i = offeneKarten.firstIndex(of: k) {
+            offeneKarten[i] = n
+            gesehen.insert(n)
+        }
+
+        naechsterSpieler()
+    }
+
+    private func naechsterSpieler() {
+        genommen = nil
+        nachfuellung = []
+        karteGenommen = nil
+        karteNach = nil
+        antipper = 0
+        spielerIndex = (spielerIndex + 1) % Attrappe.reihenfolge.count
     }
 }
 

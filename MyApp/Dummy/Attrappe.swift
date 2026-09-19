@@ -55,6 +55,9 @@ enum Attrappe {
 
     static let offeneKarten = ["Pinguin", "Biene", "Lachs", "Wolf", "Rabe"]
 
+    /// Zwei Menschen und Harmony — der Regelfall aus Phase 2.
+    static let reihenfolge = ["Anke", "Bernd", "Harmony"]
+
     static let alleKarten = [
         "Eisvogel",
         "Hase",
@@ -90,5 +93,4 @@ enum Attrappe {
         "Marienkäfer"
     ]
 
-    static let amZug = "Anke"
 }
