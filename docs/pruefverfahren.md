@@ -340,32 +340,57 @@ der Momentaufnahme, im **Zugverlauf** für die Rücknahme aus Störfall A, in de
 **Begründung**, die den zweitbesten Zug benennen muss, und beim **Debuggen**
 der Suche.
 
-Ein Zug ist eine **geordnete Folge von Aktionen**. Drei Formen genügen:
+Ein Zug ist eine **geordnete Folge von Aktionen**. Fünf Formen genügen,
+und ein Zug benutzt nie alle:
 
 | Form | Bedeutung |
 | --- | --- |
 | `<Stein><Zelle>` | Spielstein legen, z. B. `H32` |
 | `T<Zelle>` | Tierwürfel setzen |
 | `+<Karte>` | Tierkarte nehmen |
+| `-<Steine>` | Auslagenfeld genommen, über seinen Inhalt benannt |
+| `><Steine>` oder `><Karte>` | aus dem verdeckten Vorrat nachgerückt |
+
+Jede Zeile beginnt mit dem Spieler. Harmonys Zug:
 
 ```
-H32 L32 S43 T32 +Pinguin
+Harmony  H32 L32 S43 T32 +Pinguin  >WSF >Wolf
 ```
 
 Holz auf 3.2, Laub darauf — zusammen ein Baum der Höhe 2 —, Stein auf 4.3,
-Tierwürfel auf den Baum, Pinguinkarte genommen.
+Tierwürfel auf den Baum, Pinguinkarte genommen; nachgefüllt wurden Wasser,
+Stein, Feld und die Wolfskarte.
+
+Ein fremder Zug:
+
+```
+Anke     -HLZ  +Pinguin  >WSF >Wolf
+```
+
+Anke nahm das Feld mit Holz, Laub und Ziegel, nahm die Pinguinkarte;
+nachgerückt sind dieselben vier Dinge wie oben.
+
+Der Unterschied ist kein Sonderfall, sondern folgt aus dem, was sichtbar
+ist: Bei Harmony sind die Platzierungen bekannt und benennen das genommene
+Feld bereits, bei einem Mitspieler ist **nur** das genommene Feld bekannt
+und keine einzige Platzierung.
+
+Der Spielername vorn ist nicht bloß Zierde: Er ordnet die Kartennahme einem
+Mitspieler zu, woraus dessen Farbnachfrage folgt — siehe
+`04-architektur.md`.
 
 ### Stapeln braucht kein Zeichen
 
 Dieselbe Zelle zweimal heißt, der zweite Stein kommt obenauf. `H32 L32` ist
 die Brettnotation `32=HL`, nur zeitlich statt räumlich aufgeschrieben.
 
-### Das genommene Auslagenfeld steht nicht dabei
+### Bei Harmony steht das genommene Feld nicht dabei
 
 Man nimmt alle 3 Steine eines Feldes und legt alle 3. Die gelegten Steine
 **sind** also das genommene Feld — oben `H`, `L`, `S`. Es zusätzlich
 hinzuschreiben wäre nicht nur überflüssig, sondern eine Stelle, an der sich
-ein Protokoll selbst widersprechen kann.
+ein Protokoll selbst widersprechen kann. Bei einem fremden Zug gibt es
+diese Wahl nicht: Dort ist `-HLZ` das einzige, was überhaupt sichtbar war.
 
 Über eine Nummer ließe es sich ohnehin nicht benennen: Die fünf Felder des
 gemeinsamen Spielplans tragen keine Beschriftung und liegen im Kreis. Wer

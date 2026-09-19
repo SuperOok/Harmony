@@ -94,11 +94,32 @@ auftauchen kann und welche endgültig weg ist. Und für die Suche ist das
 Nachrücken einer Karte eine **zweite Zufallsschicht**, die sich genauso
 aufzählen lässt wie die Nachfüllung aus dem Beutel.
 
+### Mitspieler
+
+Ein Mitspieler ist eine Entität, keine Randnotiz: Platz in der
+Zugreihenfolge, Name, und die **Karten, die er genommen hat**. Geführt wird
+das je Zug, nicht erst zu Harmonys Zug — jeder fremde Zug ist ohnehin ein
+Ereignis im Protokoll, die Kartennahme hängt einfach daran.
+
+Damit wird aus der verstreuten Information „welche Karte ist verschwunden"
+eine zugeordnete: **wer** hat sie. Daraus folgt eine Farbnachfrage je
+Mitspieler, und die ist die billigste Verbesserung gegenüber der
+Gleichverteilung in der Zufallsschicht.
+
+Was die Entität **nicht** trägt: kein Tableau, keine Tierwürfel. Die
+genommenen Karten sind deshalb „genommen", nicht „unabgeschlossen" — ohne
+die Würfel ist nicht erkennbar, wann eine Karte fertig ist, und damit auch
+die Regelgrenze von 4 unabgeschlossenen Karten nicht. So schon in Phase 3
+vermerkt.
+
+Harmony selbst ist derselbe Typ, nur vollständig gefüllt: mit Tableau, mit
+Würfelständen. Ein Sonderfall im Datenmodell ist sie nicht.
+
 ### Was Harmony nicht hält
 
-Keine fremden Tableaus, keine fremden Tierwürfel. Nur, welche Karte wer
-genommen hat, und ein Merker „jemand ist fast fertig". So entschieden in
-Phase 3.
+Keine fremden Tableaus, keine fremden Tierwürfel, keine fremden
+Würfelstände. Dazu ein Merker „jemand ist fast fertig", den der Betreuer
+von Hand setzt. So entschieden in Phase 3.
 
 ## Geometrie
 
