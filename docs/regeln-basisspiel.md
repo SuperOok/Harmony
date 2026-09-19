@@ -210,15 +210,15 @@ unbesetzte Felder“ greift auf Seite B zwei Spielsteine später.
 Spalten von links nach rechts: 5 – 4 – 5 – 4 – 5
 
 ```
- 1       10      19
-    6       15
- 2       11      20
-    7       16
- 3       12      21
-    8       17
- 4       13      22
-    9       18
- 5       14      23
+ 11      31      51
+    21      41
+ 12      32      52
+    22      42
+ 13      33      53
+    23      43
+ 14      34      54
+    24      44
+ 15      35      55
 ```
 
 ### Seite B (blau): 25 Felder
@@ -226,18 +226,27 @@ Spalten von links nach rechts: 5 – 4 – 5 – 4 – 5
 Spalten von links nach rechts: 4 – 3 – 4 – 3 – 4 – 3 – 4
 
 ```
- 1       8      15      22
-    5      12      19
- 2       9      16      23
-    6      13      20
- 3      10      17      24
-    7      14      21
- 4      11      18      25
+ 11      31      51      71
+    21      41      61
+ 12      32      52      72
+    22      42      62
+ 13      33      53      73
+    23      43      63
+ 14      34      54      74
 ```
 
-Die Nummerierung läuft spaltenweise von links nach rechts, innerhalb jeder
-Spalte von oben nach unten. Sie dient der Verständigung; welches
-Koordinatensystem die Engine intern nutzt, entscheidet Phase 4.
+Eine Zelle heißt `<Spalte><Zeile>`, beide ab 1 gezählt und immer
+zweistellig: erste Ziffer die Spalte von links, zweite die Zelle von oben
+innerhalb dieser Spalte. Jede Spalte beginnt also bei `.1`, auf beiden
+Seiten und auf der Kartenschablone in `kartennotation.md` gleichermaßen.
+
+Die frühere durchlaufende Nummerierung von 1 an war schlechter zu merken:
+Die zweite Spalte begann je nach Geometrie bei 6, bei 5 oder bei 4. Keine
+Geometrie hat mehr als 9 Spalten oder 9 Zeilen, zwei Ziffern reichen
+deshalb ohne Trennzeichen.
+
+Die Bezeichnung dient der Verständigung; welches Koordinatensystem die
+Engine intern nutzt, entscheidet Phase 4.
 
 ## Folgerungen für die Notation
 

@@ -42,13 +42,19 @@ sind flat-top-Sechsecke wie auf dem Spielplan, die geraden Spalten sitzen eine
 halbe Zelle tiefer:
 
 ```
-  1       7
-      4      10
-  2       8
-      5      11
-  3       9
-      6      12
+  11      31
+      21      41
+  12      32
+      22      42
+  13      33
+      23      43
 ```
+
+Eine Zelle heißt `<Spalte><Zeile>`, beide ab 1 gezählt und immer
+zweistellig: erste Ziffer die Spalte von links, zweite die Zelle von oben
+innerhalb dieser Spalte. Dieselbe Regel gilt für beide Spielplanseiten in
+`regeln-basisspiel.md` — jede Spalte beginnt überall bei `.1`, es gibt
+nichts weiter zu merken.
 
 Vier Spalten zu drei Feldern reichen für die bislang gesehenen Muster. Braucht
 eine Karte mehr Platz, wird die Schablone nach rechts oder unten erweitert und
@@ -62,8 +68,8 @@ oben links.
 
 ```
 Karte:   Beispieltier
-Muster:  2=Wasser  4=Berg1
-Würfel:  auf 4
+Muster:  12=Wasser  21=Berg1
+Würfel:  auf 21
 Punkte:  3 / 8 / 14
 ```
 
@@ -92,8 +98,11 @@ Daraus folgt:
 
 - Der Name muss **eindeutig** und am Bild **wiedererkennbar** sein, aber nicht
   zoologisch korrekt. „Affe“ genügt, solange es nur eine Affenkarte gibt.
-- Für die vollständige Erfassung ist eine **stabile Nummerierung** robuster
-  als Namen. Wie die Karten intern identifiziert werden, entscheidet Phase 4.
+- Eine **Nummerierung wird nicht eingeführt.** Sie wäre ein zweiter
+  erfundener Identifikator neben dem ersten, ohne dessen Vorteil: Ein Name
+  ist am Tisch vorlesbar und am Bild wiedererkennbar, eine Nummer nicht.
+  `tools/pruefe-tierkarten.py` erzwingt die Eindeutigkeit der Namen, womit
+  sie das leisten, was eine Nummer leisten sollte.
 
 ### Kurzform zum Diktieren
 
@@ -101,11 +110,11 @@ Die Langform oben ist die Ablageform in `tierkarten.md`. Zum Diktieren am
 Tisch gibt es eine Kurzform in einer Zeile:
 
 ```
-Panther: 1 B2 2 B2 3 F T 3 P 5 11
+Panther: 11 B2 12 B2 13 F T 13 P 5 11
 ```
 
-Gelesen als: Zellen 1 und 2 tragen je einen Baum der Höhe 2, Zelle 3 ein
-Feld, der Tierwürfel liegt auf Zelle 3, die Punkte sind 5 und 11.
+Gelesen als: Zellen 11 und 12 tragen je einen Baum der Höhe 2, Zelle 13 ein
+Feld, der Tierwürfel liegt auf Zelle 13, die Punkte sind 5 und 11.
 
 | Zeichen | Bedeutung |
 | --- | --- |

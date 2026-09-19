@@ -25,16 +25,17 @@ namen = Counter(n for n,_,_,_ in karten)
 for n,c in namen.items():
     pruef(c == 1, f"Name doppelt vergeben: {n}")
 
-# Nachbarschaft der Schablone: Spalten 1-3 / 4-6 / 7-9 / 10-12,
-# ungerade Spaltenindizes sitzen eine halbe Zelle tiefer.
-def cr(n): return (n-1)//3, (n-1)%3
+# Zellen heißen <Spalte><Zeile>, beide ab 1: 11..13, 21..23, 31..33, 41..43.
+# Ungerade Spaltenindizes (0-basiert) sitzen eine halbe Zelle tiefer.
+SCHABLONE = {c*10 + r for c in range(1, 5) for r in range(1, 4)}
+def cr(n): return n//10 - 1, n%10 - 1
 def nachbarn(n):
     c, r = cr(n)
     aus = [(c, r-1), (c, r+1)]
     versatz = (0,-1) if c % 2 == 0 else (0,1)
     for dc in (-1, 1):
         aus += [(c+dc, r+versatz[0]), (c+dc, r+versatz[1])]
-    return {c2*3+r2+1 for c2,r2 in aus if 0 <= c2 <= 3 and 0 <= r2 <= 2}
+    return {(c2+1)*10 + (r2+1) for c2,r2 in aus if 0 <= c2 <= 3 and 0 <= r2 <= 2}
 
 def cube(n):
     c, r = cr(n)
@@ -52,7 +53,7 @@ def kanonisch(zellen):
 
 for name, zellen, w, pts in karten:
     for z, s in zellen.items():
-        pruef(1 <= z <= 12, f"{name}: Zelle {z} außerhalb der Schablone")
+        pruef(z in SCHABLONE, f"{name}: Zelle {z} außerhalb der Schablone")
         pruef(s in STEINE, f"{name}: unbekannter Stein {s!r}")
     pruef(w in zellen, f"{name}: Würfelzelle {w} kommt im Muster nicht vor")
     pruef(pts == sorted(set(pts)), f"{name}: Punkte nicht streng steigend: {pts}")

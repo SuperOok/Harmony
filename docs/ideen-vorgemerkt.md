@@ -17,9 +17,10 @@ Beide hier geparkten Punkte sind in `03-funktionsumfang.md` entschieden:
 
 ## Für Phase 4 — Daten und Architektur
 
-**Karten brauchen einen stabilen Identifikator.** Die Karten tragen weder
-Namen noch Nummern; unsere Etiketten sind frei erfunden. Eine Nummerierung ist
-robuster als Namen, sobald alle 32 erfasst werden.
+**Karten brauchen einen stabilen Identifikator.** ✅ Entschieden: Es bleibt
+bei den Namen. Sie sind erfunden, aber eindeutig — `tools/pruefe-tierkarten.py`
+erzwingt das — und am Tisch vorlesbar, was eine Nummer nicht ist. Siehe
+`pruefverfahren.md`, Zugnotation.
 
 **Karten sind nicht über ihre Gesamtpunktzahl vergleichbar.** Die Biene bringt
 mit zwei Würfeln 8 und 18, das Erdmännchen mit vieren 2/5/9/14. Maßgeblich ist

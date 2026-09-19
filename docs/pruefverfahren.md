@@ -235,7 +235,8 @@ Stapel:    Pinguin Biene Lachs Wolf Rabe Frosch ...   (32 Karten)
 ```
 
 Die Dreiergruppen im Beutel sind reine Lesehilfe — so werden die Steine
-gezogen. Eine Ziehfolge ist gültig, wenn sie genau 120 Steine mit der
+gezogen. Innerhalb einer Gruppe bedeutet die Reihenfolge nichts, siehe
+Zugnotation. Eine Ziehfolge ist gültig, wenn sie genau 120 Steine mit der
 richtigen Farbverteilung und genau 32 verschiedene Karten enthält. Das
 prüft ein Werkzeug, nicht ein Mensch.
 
@@ -313,14 +314,16 @@ vergleichen.
 ```
 Stellung:  berg-ohne-nachbarn
 Seite:     A
-Felder:    11=SS  19=W
+Felder:    32=SS  51=W
 Würfel:    —
 Erwartet:  Berge 0 · Wasser 0 · gesamt 0
 ```
 
-- **Felder** listet nur belegte Zellen, alles andere ist leer. Die
-  Zellnummern stehen in `regeln-basisspiel.md`: Seite A hat 23, Seite B
-  hat 25, beide spaltenweise von links nach rechts nummeriert.
+- **Felder** listet nur belegte Zellen, alles andere ist leer. Eine Zelle
+  heißt `<Spalte><Zeile>`, beide ab 1 und immer zweistellig — `32` ist die
+  zweite Zelle der dritten Spalte. Dieselbe Regel gilt auf beiden
+  Spielplanseiten und auf der Kartenschablone, siehe
+  `regeln-basisspiel.md`.
 - **Würfel** nennt die Zellen mit einem Tierwürfel. Er macht den Stein
   besetzt und damit für weitere Muster unbrauchbar.
 - **Erwartet** ist der von Hand gerechnete Sollwert, **nie** ein
@@ -329,6 +332,82 @@ Erwartet:  Berge 0 · Wasser 0 · gesamt 0
 
 Die Prüfschleife gilt wie bei den Karten — die Stellung wird aus der
 Notation zurückgezeichnet, bevor ihr Sollwert festgeschrieben wird.
+
+## Zugnotation
+
+Gebraucht an vier Stellen, die schon festgeschrieben sind: im **Zugprotokoll**
+der Momentaufnahme, im **Zugverlauf** für die Rücknahme aus Störfall A, in der
+**Begründung**, die den zweitbesten Zug benennen muss, und beim **Debuggen**
+der Suche.
+
+Ein Zug ist eine **geordnete Folge von Aktionen**. Drei Formen genügen:
+
+| Form | Bedeutung |
+| --- | --- |
+| `<Stein><Zelle>` | Spielstein legen, z. B. `H32` |
+| `T<Zelle>` | Tierwürfel setzen |
+| `+<Karte>` | Tierkarte nehmen |
+
+```
+H32 L32 S43 T32 +Pinguin
+```
+
+Holz auf 3.2, Laub darauf — zusammen ein Baum der Höhe 2 —, Stein auf 4.3,
+Tierwürfel auf den Baum, Pinguinkarte genommen.
+
+### Stapeln braucht kein Zeichen
+
+Dieselbe Zelle zweimal heißt, der zweite Stein kommt obenauf. `H32 L32` ist
+die Brettnotation `32=HL`, nur zeitlich statt räumlich aufgeschrieben.
+
+### Das genommene Auslagenfeld steht nicht dabei
+
+Man nimmt alle 3 Steine eines Feldes und legt alle 3. Die gelegten Steine
+**sind** also das genommene Feld — oben `H`, `L`, `S`. Es zusätzlich
+hinzuschreiben wäre nicht nur überflüssig, sondern eine Stelle, an der sich
+ein Protokoll selbst widersprechen kann.
+
+Über eine Nummer ließe es sich ohnehin nicht benennen: Die fünf Felder des
+gemeinsamen Spielplans tragen keine Beschriftung und liegen im Kreis. Wer
+am Tisch „Feld 3" sagt, muss erst klären, wo gezählt wird. Über den Inhalt
+findet man es sofort.
+
+### Die Auslage hat keine Reihenfolge
+
+Weder die fünf Felder untereinander noch die drei Steine innerhalb eines
+Feldes. Bei der Eingabe darf es deshalb auf keine Reihenfolge ankommen —
+wer `HLS` tippt, meint dasselbe Feld wie mit `SLH`.
+
+Liegen zwei Felder gleich, sind sie austauschbar: Welches physisch genommen
+wurde, ändert den Zustand nicht. Für Phase 4 heißt das, die Auslage ist eine
+**Mehrfachmenge aus fünf Tripeln**, kein Array mit Plätzen.
+
+### Die Reihenfolge der Aktionen dagegen zählt
+
+Und zwar wirklich. Man darf einen Stein auf einen soeben gelegten setzen,
+und ein Tierwürfel sperrt seinen Stein fürs Weiterbauen — „nie auf oder
+unter einen Tierwürfel". `H32 T32 L32` ist deshalb **unzulässig**,
+`H32 L32 T32` gültig. Nur eine geordnete Folge kann diesen Unterschied
+ausdrücken und damit prüfbar machen.
+
+**Konvention:** Tierwürfel werden so weit hinten geschrieben, wie es
+dasselbe Ergebnis liefert. In der großen Mehrzahl der Züge stehen die drei
+Steine dann vorn, und das genommene Auslagenfeld steht auf den ersten Blick
+da.
+
+Eine Ausnahme bleibt, und sie ist beabsichtigt: Wer ein Muster vollendet,
+den Würfel setzt und mit einem weiteren Stein darüberbaut, **muss**
+verschachteln — später ginge es nicht mehr, weil das Muster dann zerstört
+ist. Diese Züge fallen im Protokoll auf, und das ist richtig so; sie sind
+eine der Möglichkeiten, die ein naiver Bewerter nie erwägt. Nebenbei hat
+damit jedes Ergebnis genau eine Schreibweise, was die Diffs stabil hält.
+
+### Karten heißen beim Namen
+
+`+Pinguin`, nicht `+K07`. Die Namen sind laut `kartennotation.md` unsere
+Etiketten, aber sie sind eindeutig — `tools/pruefe-tierkarten.py` erzwingt
+das —, und am Tisch vorlesbar. Eine Nummer wäre ein zweiter erfundener
+Identifikator ohne diesen Vorteil.
 
 ## Vorschlag zum Zeitpunkt
 
@@ -370,6 +449,12 @@ Nebenbei-Änderung, siehe `CLAUDE.md`. Bis dahin gilt dort weiterhin: keine
   Getreidefeld, sondern ebenso offenes Land. `F` für Feld trifft es und
   deckt sich mit der Landschaft, weil ein gelber Stein nie etwas anderes
   wird.
+- **Nummern für die Tierkarten** — die Namen sind erfunden, aber eindeutig
+  und vorlesbar; eine Nummer wäre ein zweiter erfundener Identifikator ohne
+  diesen Vorteil.
+- **Das genommene Auslagenfeld im Zug benennen** — überflüssig, weil die
+  drei gelegten Steine es bereits sind, und eine Gelegenheit für
+  Widersprüche im Protokoll.
 - **`GZ`, `GH`, `GS` für die drei Gebäudetypen** — die Unterscheidung wird
   gebraucht, aber sie fällt aus der Stapelschreibweise ohnehin ab. Ein
   eigenes Zeichen wäre ein zweiter Weg, dasselbe zu sagen, und das

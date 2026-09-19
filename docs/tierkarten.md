@@ -3,12 +3,12 @@
 Erfasst nach `kartennotation.md`. Schablone:
 
 ```
-  1       7
-      4      10
-  2       8
-      5      11
-  3       9
-      6      12
+  11      31
+      21      41
+  12      32
+      22      42
+  13      33
+      23      43
 ```
 
 **Status: 32 von 32 Karten — vollständig.** Die ersten neun dienten der
@@ -34,31 +34,31 @@ Formen auf:
 
 | Zellen | Form | Anzahl | Karten |
 | --- | --- | --- | --- |
-| `1,2` | zwei benachbarte Zellen | 10 | Erdmännchen, Frosch, Marienkäfer, Koala, Ente, Lachs, Fledermaus, Schwein, Adler, Eichhörnchen |
-| `1,2,3` | Dreierkette | 7 | Wüstenfuchs, Otter, Hase, Echse, Lama, Panther, Krokodil |
-| `1,2,4` | Dreieck aus drei paarweise benachbarten Zellen | 7 | Rochen, Flamingo, Affe, Papagei, Bär, Wolf, Igel |
-| `2,4,8` | Mitte mit zwei Nachbarn unten links und unten rechts | 6 | Pinguin, Eisfuchs, Pfau, Maus, Eisvogel, Rabe |
-| `2,4,5,8` | Mitte mit drei Nachbarn darunter | 2 | Waschbär, Biene |
+| `11,12` | zwei benachbarte Zellen | 10 | Erdmännchen, Frosch, Marienkäfer, Koala, Ente, Lachs, Fledermaus, Schwein, Adler, Eichhörnchen |
+| `11,12,13` | Dreierkette | 7 | Wüstenfuchs, Otter, Hase, Echse, Lama, Panther, Krokodil |
+| `11,12,21` | Dreieck aus drei paarweise benachbarten Zellen | 7 | Rochen, Flamingo, Affe, Papagei, Bär, Wolf, Igel |
+| `12,21,32` | Mitte mit zwei Nachbarn unten links und unten rechts | 6 | Pinguin, Eisfuchs, Pfau, Maus, Eisvogel, Rabe |
+| `12,21,22,32` | Mitte mit drei Nachbarn darunter | 2 | Waschbär, Biene |
 
 Zwei Folgerungen für die Engine:
 
 **Die Mustersuche muss nur fünf Formen kennen.** Die Vielfalt steckt in der
 Füllung, nicht in der Geometrie. Da Musterinstanzen sich überlappen dürfen,
 kann ein einzelner Spielstein gleichzeitig über mehrere Karten entscheiden —
-die sechs Karten der Form `2,4,8` etwa unterscheiden sich nur in der Füllung
+die sechs Karten der Form `12,21,32` etwa unterscheiden sich nur in der Füllung
 derselben drei Zellen.
 
 **Die Lage des Zielsteins folgt aus der Form.** Bei den verzweigten Formen
-`1,2,4`, `2,4,8` und `2,4,5,8` liegt der Tierwürfel ausnahmslos auf der
-Zelle, die alle anderen berührt. Bei der Dreierkette `1,2,3` liegt er
+`11,12,21`, `12,21,32` und `12,21,22,32` liegt der Tierwürfel ausnahmslos auf der
+Zelle, die alle anderen berührt. Bei der Dreierkette `11,12,13` liegt er
 ausnahmslos an einem **Ende**, nie in der Mitte. Keine Karte weicht davon ab.
 
 --- | --- | --- |
-| `1,2` | zwei senkrecht übereinander | Eichhörnchen, Erdmännchen, Lachs, Frosch, Schwein, Koala |
-| `1,2,3` | drei senkrecht übereinander | Hase, Panther, Lama, Wüstenfuchs, Echse |
-| `1,2,4` | Mitte mit zwei Nachbarn **auf derselben Seite** | Affe, Papagei |
-| `2,4,8` | Mitte mit zwei Nachbarn **unten links und unten rechts** | Eisvogel, Pinguin, Pfau, Eisfuchs |
-| `2,4,5,8` | Mitte mit drei Nachbarn darunter | Biene, Waschbär |
+| `11,12` | zwei senkrecht übereinander | Eichhörnchen, Erdmännchen, Lachs, Frosch, Schwein, Koala |
+| `11,12,13` | drei senkrecht übereinander | Hase, Panther, Lama, Wüstenfuchs, Echse |
+| `11,12,21` | Mitte mit zwei Nachbarn **auf derselben Seite** | Affe, Papagei |
+| `12,21,32` | Mitte mit zwei Nachbarn **unten links und unten rechts** | Eisvogel, Pinguin, Pfau, Eisfuchs |
+| `12,21,22,32` | Mitte mit drei Nachbarn darunter | Biene, Waschbär |
 
 Das ist für die Engine erheblich: Ein einzelner Spielstein kann gleichzeitig
 über mehrere Karten entscheiden, und die Mustersuche muss nur wenige Formen
@@ -68,8 +68,8 @@ kennen — die Vielfalt steckt in der Füllung, nicht in der Geometrie.
 
 ```
 Karte:   Eisvogel
-Muster:  2=Wasser  4=Baum3  8=Wasser
-Würfel:  auf 4
+Muster:  12=Wasser  21=Baum3  32=Wasser
+Würfel:  auf 21
 Punkte:  5 / 11 / 18
 ```
 
@@ -79,8 +79,8 @@ Baum der Höhe 3, darunter links und rechts je ein Wasserstein. Bestätigt.
 
 ```
 Karte:   Hase
-Muster:  1=Gebäude  2=Baum1  3=Baum1
-Würfel:  auf 3
+Muster:  11=Gebäude  12=Baum1  13=Baum1
+Würfel:  auf 13
 Punkte:  5 / 10 / 17
 ```
 
@@ -91,8 +91,8 @@ Höhe 1. Bestätigt.
 
 ```
 Karte:   Eichhörnchen
-Muster:  1=Baum3  2=Gebäude
-Würfel:  auf 2
+Muster:  11=Baum3  12=Gebäude
+Würfel:  auf 12
 Punkte:  4 / 9 / 15
 ```
 
@@ -103,8 +103,8 @@ Bestätigt.
 
 ```
 Karte:   Erdmännchen
-Muster:  1=Feld  2=Berg1
-Würfel:  auf 2
+Muster:  11=Feld  12=Berg1
+Würfel:  auf 12
 Punkte:  2 / 5 / 9 / 14
 ```
 
@@ -115,8 +115,8 @@ Tierwürfel. Bestätigt.
 
 ```
 Karte:   Biene
-Muster:  2=Feld  4=Baum2  5=Feld  8=Feld
-Würfel:  auf 4
+Muster:  12=Feld  21=Baum2  22=Feld  32=Feld
+Würfel:  auf 21
 Punkte:  8 / 18
 ```
 
@@ -127,8 +127,8 @@ unten rechts. Vier Zellen über drei Spalten, **zwei** Tierwürfel. Bestätigt.
 
 ```
 Karte:   Pinguin
-Muster:  2=Wasser  4=Berg1  8=Wasser
-Würfel:  auf 4
+Muster:  12=Wasser  21=Berg1  32=Wasser
+Würfel:  auf 21
 Punkte:  4 / 10 / 16
 ```
 
@@ -139,8 +139,8 @@ Berg der Höhe 1 mit je einem Wasserstein unten links und unten rechts.
 
 ```
 Karte:   Affe
-Muster:  1=Wasser  2=Wasser  4=Berg2
-Würfel:  auf 4
+Muster:  11=Wasser  12=Wasser  21=Berg2
+Würfel:  auf 21
 Punkte:  5 / 11
 ```
 
@@ -152,8 +152,8 @@ Bestätigt.
 
 ```
 Karte:   Lachs
-Muster:  1=Berg3  2=Wasser
-Würfel:  auf 2
+Muster:  11=Berg3  12=Wasser
+Würfel:  auf 12
 Punkte:  3 / 6 / 10 / 16
 ```
 
@@ -164,8 +164,8 @@ Zielstein Wasser ist. Bestätigt.
 
 ```
 Karte:   Frosch
-Muster:  1=Baum1  2=Wasser
-Würfel:  auf 2
+Muster:  11=Baum1  12=Wasser
+Würfel:  auf 12
 Punkte:  2 / 4 / 6 / 10 / 15
 ```
 
@@ -176,8 +176,8 @@ die höchste belegte Zahl. Formgleich mit dem Lachs, siehe dort. Bestätigt.
 
 ```
 Karte:   Panther
-Muster:  1=Baum2  2=Baum2  3=Feld
-Würfel:  auf 3
+Muster:  11=Baum2  12=Baum2  13=Feld
+Würfel:  auf 13
 Punkte:  5 / 11
 ```
 
@@ -189,8 +189,8 @@ Bestätigt.
 
 ```
 Karte:   Papagei
-Muster:  1=Wasser  2=Wasser  4=Baum2
-Würfel:  auf 4
+Muster:  11=Wasser  12=Wasser  21=Baum2
+Würfel:  auf 21
 Punkte:  4 / 9 / 14
 ```
 
@@ -202,8 +202,8 @@ Baum2 statt Berg2. Bestätigt.
 
 ```
 Karte:   Schwein
-Muster:  1=Gebäude  2=Baum2
-Würfel:  auf 2
+Muster:  11=Gebäude  12=Baum2
+Würfel:  auf 12
 Punkte:  4 / 8 / 13
 ```
 
@@ -215,8 +215,8 @@ Zielstein und Gebäude umgekehrt. Bestätigt.
 
 ```
 Karte:   Koala
-Muster:  1=Baum1  2=Baum2
-Würfel:  auf 2
+Muster:  11=Baum1  12=Baum2
+Würfel:  auf 12
 Punkte:  3 / 6 / 10 / 15
 ```
 
@@ -227,8 +227,8 @@ Zielstein ist der untere. Vier Tierwürfel. Bestätigt.
 
 ```
 Karte:   Pfau
-Muster:  2=Wasser  4=Gebäude  8=Wasser
-Würfel:  auf 4
+Muster:  12=Wasser  21=Gebäude  32=Wasser
+Würfel:  auf 21
 Punkte:  5 / 10 / 17
 ```
 
@@ -239,8 +239,8 @@ der Form von Eisvogel und Pinguin. Bestätigt.
 
 ```
 Karte:   Lama
-Muster:  1=Berg2  2=Feld  3=Feld
-Würfel:  auf 3
+Muster:  11=Berg2  12=Feld  13=Feld
+Würfel:  auf 13
 Punkte:  5 / 12
 ```
 
@@ -252,8 +252,8 @@ damit nebenbei als Feldgruppe. Bestätigt.
 
 ```
 Karte:   Wüstenfuchs
-Muster:  1=Feld  2=Berg1  3=Berg1
-Würfel:  auf 3
+Muster:  11=Feld  12=Berg1  13=Berg1
+Würfel:  auf 13
 Punkte:  4 / 9 / 16
 ```
 
@@ -265,8 +265,8 @@ Nachbarschaftsbedingung der Bergwertung. Bestätigt.
 
 ```
 Karte:   Eisfuchs
-Muster:  2=Baum1  4=Feld  8=Baum1
-Würfel:  auf 4
+Muster:  12=Baum1  21=Feld  32=Baum1
+Würfel:  auf 21
 Punkte:  5 / 10 / 17
 ```
 
@@ -277,8 +277,8 @@ der Form von Eisvogel, Pinguin und Pfau. Bestätigt.
 
 ```
 Karte:   Waschbär
-Muster:  2=Wasser  4=Feld  5=Wasser  8=Wasser
-Würfel:  auf 4
+Muster:  12=Wasser  21=Feld  22=Wasser  32=Wasser
+Würfel:  auf 21
 Punkte:  6 / 12
 ```
 
@@ -290,8 +290,8 @@ Bestätigt.
 
 ```
 Karte:   Echse
-Muster:  1=Feld  2=Feld  3=Gebäude
-Würfel:  auf 3
+Muster:  11=Feld  12=Feld  13=Gebäude
+Würfel:  auf 13
 Punkte:  5 / 10 / 16
 ```
 
@@ -302,8 +302,8 @@ Gebäude. Bestätigt.
 
 ```
 Karte:   Igel
-Muster:  1=Baum2  2=Baum2  4=Gebäude
-Würfel:  auf 4
+Muster:  11=Baum2  12=Baum2  21=Gebäude
+Würfel:  auf 21
 Punkte:  5 / 12
 ```
 
@@ -314,8 +314,8 @@ Mit sechs Steinen das teuerste Muster des Satzes. Bestätigt.
 
 ```
 Karte:   Maus
-Muster:  2=Feld  4=Gebäude  8=Feld
-Würfel:  auf 4
+Muster:  12=Feld  21=Gebäude  32=Feld
+Würfel:  auf 21
 Punkte:  5 / 10 / 17
 ```
 
@@ -326,8 +326,8 @@ wie Pfau und Hase. Bestätigt.
 
 ```
 Karte:   Rabe
-Muster:  2=Gebäude  4=Feld  8=Gebäude
-Würfel:  auf 4
+Muster:  12=Gebäude  21=Feld  32=Gebäude
+Würfel:  auf 21
 Punkte:  4 / 9
 ```
 
@@ -339,8 +339,8 @@ knappste Farbe. Bestätigt.
 
 ```
 Karte:   Fledermaus
-Muster:  1=Baum3  2=Berg1
-Würfel:  auf 2
+Muster:  11=Baum3  12=Berg1
+Würfel:  auf 12
 Punkte:  3 / 6 / 10 / 16
 ```
 
@@ -351,8 +351,8 @@ Punktleiste wie der Lachs. Bestätigt.
 
 ```
 Karte:   Krokodil
-Muster:  1=Baum3  2=Wasser  3=Wasser
-Würfel:  auf 3
+Muster:  11=Baum3  12=Wasser  13=Wasser
+Würfel:  auf 13
 Punkte:  4 / 9 / 15
 ```
 
@@ -363,8 +363,8 @@ Zielstein ist der untere Wasserstein. Bestätigt.
 
 ```
 Karte:   Rochen
-Muster:  1=Berg1  2=Berg1  4=Wasser
-Würfel:  auf 4
+Muster:  11=Berg1  12=Berg1  21=Wasser
+Würfel:  auf 21
 Punkte:  4 / 10 / 16
 ```
 
@@ -375,8 +375,8 @@ links. Die beiden Berge grenzen aneinander. Bestätigt.
 
 ```
 Karte:   Adler
-Muster:  1=Feld  2=Berg3
-Würfel:  auf 2
+Muster:  11=Feld  12=Berg3
+Würfel:  auf 12
 Punkte:  5 / 11
 ```
 
@@ -386,8 +386,8 @@ Feld über einem Berg der Höhe 3, Zielstein ist der Berg. Bestätigt.
 
 ```
 Karte:   Bär
-Muster:  1=Berg2  2=Berg2  4=Baum1
-Würfel:  auf 4
+Muster:  11=Berg2  12=Berg2  21=Baum1
+Würfel:  auf 21
 Punkte:  5 / 11
 ```
 
@@ -398,8 +398,8 @@ links. Bestätigt.
 
 ```
 Karte:   Ente
-Muster:  1=Gebäude  2=Wasser
-Würfel:  auf 2
+Muster:  11=Gebäude  12=Wasser
+Würfel:  auf 12
 Punkte:  2 / 4 / 8 / 13
 ```
 
@@ -410,8 +410,8 @@ Bestätigt.
 
 ```
 Karte:   Otter
-Muster:  1=Baum1  2=Baum1  3=Wasser
-Würfel:  auf 3
+Muster:  11=Baum1  12=Baum1  13=Wasser
+Würfel:  auf 13
 Punkte:  5 / 10 / 16
 ```
 
@@ -422,8 +422,8 @@ Zielstein ist das Wasser. Bestätigt.
 
 ```
 Karte:   Flamingo
-Muster:  1=Feld  2=Feld  4=Wasser
-Würfel:  auf 4
+Muster:  11=Feld  12=Feld  21=Wasser
+Würfel:  auf 21
 Punkte:  4 / 10 / 16
 ```
 
@@ -434,8 +434,8 @@ beiden gelben Steine grenzen aneinander. Bestätigt.
 
 ```
 Karte:   Wolf
-Muster:  1=Feld  2=Feld  4=Baum3
-Würfel:  auf 4
+Muster:  11=Feld  12=Feld  21=Baum3
+Würfel:  auf 21
 Punkte:  4 / 10 / 16
 ```
 
@@ -447,8 +447,8 @@ zwei Steine mehr kostet. Bestätigt.
 
 ```
 Karte:   Marienkäfer
-Muster:  1=Baum1  2=Feld
-Würfel:  auf 2
+Muster:  11=Baum1  12=Feld
+Würfel:  auf 12
 Punkte:  2 / 5 / 8 / 12 / 17
 ```
 
