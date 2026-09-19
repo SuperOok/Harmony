@@ -6,20 +6,14 @@ entgleisen lassen.
 
 Nichts hiervon ist entschieden.
 
-## Für Phase 3 — Funktionsumfang
+## Für Phase 3 — Funktionsumfang ✅ erledigt
 
-**Wie viel weiß Harmony über die Mitspieler?** Das Partieende kann auch ein
-fremdes Tableau auslösen. Die Obergrenze der Partiedauer kennt Harmony
-kostenlos aus dem Zugzähler; Eingabeaufwand lohnt also nur noch für die Frage,
-ob jemand **früher** fertig wird. Siehe `regeln-basisspiel.md`.
+Beide hier geparkten Punkte sind in `03-funktionsumfang.md` entschieden:
 
-**Mitzählen, was im Beutel liegt.** Die Farbverteilung der 120 Steine ist
-bekannt. Wer mitzählt, weiß gegen Spielende recht genau, was noch kommen kann.
-Das ist echte Spielstärke — und seit Phase 2 vermutlich **umsonst zu haben**:
-Die Szenarien erfassen ohnehin jede Nachfüllung des gemeinsamen Spielplans,
-und genau das sind die Züge aus dem Beutel (15 beim Aufbau, 3 pro Zug). Es
-braucht also keine zusätzliche Eingabe, nur die Auswertung der vorhandenen.
-Siehe `02-szenarien.md`, Szenario 2.
+- **Wie viel weiß Harmony über die Mitspieler?** → geteilte Auslagen,
+  Kartenzuordnung und eine manuelle Endemeldung; keine fremden Tableaus.
+- **Mitzählen, was im Beutel liegt.** → in v1 enthalten, ohne zusätzliche
+  Eingabe, weil die Szenarien jede Nachfüllung ohnehin erfassen.
 
 ## Für Phase 4 — Daten und Architektur
 
