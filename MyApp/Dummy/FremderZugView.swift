@@ -19,11 +19,10 @@ struct FremderZugView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 20) {
                     auslage
                     if genommen != nil { nachfuellen }
                     karten
-                    notation
                 }
                 .padding()
             }
@@ -47,7 +46,7 @@ struct FremderZugView: View {
 
     private var auslage: some View {
         Abschnitt("Welches Feld wurde genommen?") {
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 ForEach(Array(Attrappe.auslage.enumerated()), id: \.element.id) { i, feld in
                     Button {
                         antipper += 1
@@ -56,7 +55,7 @@ struct FremderZugView: View {
                     } label: {
                         HStack(spacing: 10) {
                             ForEach(Array(feld.steine.enumerated()), id: \.offset) { _, s in
-                                SteinPunkt(stein: s)
+                                SteinPunkt(stein: s, groesse: 30)
                             }
                             Spacer()
                             if genommen == i {
@@ -64,7 +63,7 @@ struct FremderZugView: View {
                                     .foregroundStyle(.tint)
                             }
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(genommen == i ? Color.accentColor.opacity(0.14) : Color(.secondarySystemBackground))
@@ -216,18 +215,6 @@ struct FremderZugView: View {
 
     // MARK: - Notation und Fußleiste
 
-    private var notation: some View {
-        Abschnitt("So steht der Zug im Protokoll") {
-            Text(zeile)
-                .font(.system(.footnote, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color(.secondarySystemBackground)))
-                .accessibilityIdentifier("notation")
-        }
-    }
-
     private var zeile: String {
         var teile = [Attrappe.amZug]
         if let g = genommen { teile.append("-\(Attrappe.auslage[g].notation)") }
@@ -237,19 +224,34 @@ struct FremderZugView: View {
         return teile.joined(separator: "  ")
     }
 
+    /// Die Protokollzeile steht bei der Schaltfläche, nicht im Inhalt:
+    /// Sie zeigt, was gleich eingetragen wird, und kann so nicht aus dem
+    /// Bild geschoben werden.
     private var fussleiste: some View {
-        Button {
-            antipper += 1
-        } label: {
-            Text("Zug eintragen")
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+        VStack(spacing: 8) {
+            Text(zeile)
+                .font(.system(.footnote, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("notation")
+
+            Button {
+                antipper += 1
+            } label: {
+                Text("Zug eintragen")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!vollstaendig)
+            .accessibilityIdentifier("eintragen")
         }
-        .buttonStyle(.borderedProminent)
-        .disabled(!vollstaendig)
-        .padding()
+        .padding(.horizontal)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
         .background(.bar)
-        .accessibilityIdentifier("eintragen")
     }
 }
 
