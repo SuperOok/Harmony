@@ -50,7 +50,13 @@ struct ZelleView: View {
             let boden = hoehe - hoehe * 0.09
 
             ZStack {
+                // Die Tönung zeigt die abgeleitete Landschaft, die Plättchen
+                // die Steine. Ein nackter brauner oder roter Stein bildet
+                // keine Landschaft und bleibt deshalb neutral.
                 Sechseck().fill(Color(.tertiarySystemFill))
+                if let landschaft = stapel.landschaft {
+                    Sechseck().fill(landschaft.tönung.opacity(0.22))
+                }
                 Sechseck().stroke(Color(.separator), lineWidth: 1)
 
                 ForEach(Array(stapel.enumerated()), id: \.offset) { vonUnten, stein in

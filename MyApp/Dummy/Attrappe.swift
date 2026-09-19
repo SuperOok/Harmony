@@ -31,6 +31,42 @@ enum Stein: String, CaseIterable, Identifiable {
     }
 }
 
+/// Was aus einem Stapel wird. Abgeleitet, nie gespeichert — dieselbe
+/// Entscheidung wie in `04-architektur.md`: Wer die Landschaft ablegt, hat
+/// die Einordnung schon vorgenommen und kann sie nicht mehr prüfen.
+///
+/// Im Dummy steht diese Ableitung noch hier; ihr Platz ist später das
+/// Engine-Modul, wo sie genau einmal existiert.
+enum Landschaft {
+    case wasser, feld, baum, berg, gebaeude
+
+    var tönung: Color {
+        switch self {
+        case .wasser:   Stein.wasser.farbe
+        case .feld:     Stein.feld.farbe
+        case .baum:     Stein.laub.farbe
+        case .berg:     Stein.stein.farbe
+        case .gebaeude: Stein.ziegel.farbe
+        }
+    }
+}
+
+extension Array where Element == Stein {
+    /// `nil` heißt: keine Landschaft. Ein nackter brauner oder roter Stein
+    /// bildet keine und zählt 0 Punkte.
+    var landschaft: Landschaft? {
+        guard let oben = last else { return nil }
+        switch oben {
+        case .wasser: return count == 1 ? .wasser : nil
+        case .feld:   return count == 1 ? .feld : nil
+        case .laub:   return count <= 3 && dropLast().allSatisfy { $0 == .holz } ? .baum : nil
+        case .stein:  return count <= 3 && allSatisfy { $0 == .stein } ? .berg : nil
+        case .ziegel: return count == 2 ? .gebaeude : nil
+        case .holz:   return nil
+        }
+    }
+}
+
 struct Feld: Identifiable {
     let id = UUID()
     var steine: [Stein]
