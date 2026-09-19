@@ -133,11 +133,16 @@ Zahl ist der letzte Schritt: Die nachgerückte Karte wird aus einer Liste von
 27 Namen gewählt, die gescrollt werden muss. Der Betreuer hat die Karte in
 der Hand und müsste **unseren** erfundenen Namen dafür kennen.
 
-Ein Ausweg steckt im Material: Jede Karte trägt laut `regeln-basisspiel.md`
-einen **Farbstreifen**, der an die Farbe des Zielsteins erinnert. Den sieht
-man, ohne einen Namen zu wissen. Ein Tipp auf diese Farbe würde 27 Karten
-auf eine Handvoll verengen — danach ein kleines Raster statt einer Liste.
-Zu erproben am nächsten Dummy.
+Die Liste ist inzwischen ein **Raster aus zwei Spalten**, alphabetisch
+sortiert: Alle 27 passen auf einen Bildschirm, das Scrollen entfällt. Die
+Antippzahl bleibt bei 8, aber die teure Sucherei ist weg — sie war das
+eigentliche Problem, nicht die Taps.
+
+Offen bleibt, dass der Betreuer weiterhin **unseren** Namen für die Karte in
+seiner Hand kennen muss. Zwei Ideen dagegen, beide unerprobt: Jede Karte
+trägt laut `regeln-basisspiel.md` einen **Farbstreifen** in der Farbe des
+Zielsteins — ein Tipp darauf verengte 27 Karten auf eine Handvoll, ohne dass
+ein Name fällt. Und Piktogramme (siehe unten) ersetzten den Namen ganz.
 
 **Bildsymbole statt Namen.** Karten am Tisch über ein kleines Tierbild
 auszuwählen ist schneller und sicherer als über einen Namen, den sich niemand

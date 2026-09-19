@@ -164,16 +164,36 @@ struct FremderZugView: View {
         }
     }
 
+    /// Zwei Spalten, alphabetisch: alle verbliebenen Karten auf einen Blick,
+    /// ohne Scrollen. Eine Liste zwang zum Suchen im Vorbeiziehen.
     private var kartenwahl: some View {
         NavigationStack {
-            List(Attrappe.alleKarten.filter { !Attrappe.offeneKarten.contains($0) }, id: \.self) { name in
-                Button(name) {
-                    antipper += 1
-                    karteNach = name
-                    kartenwahlOffen = false
+            let uebrig = Attrappe.alleKarten
+                .filter { !Attrappe.offeneKarten.contains($0) }
+                .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
+                                GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                ForEach(uebrig, id: \.self) { name in
+                    Button {
+                        antipper += 1
+                        karteNach = name
+                        kartenwahlOffen = false
+                    } label: {
+                        Text(name)
+                            .font(.callout)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity, minHeight: 42)
+                            .background(RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.secondarySystemBackground)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("nachruecker-\(name)")
                 }
-                .accessibilityIdentifier("nachruecker-\(name)")
             }
+            .padding(.horizontal)
+            .frame(maxHeight: .infinity, alignment: .top)
             .navigationTitle("Nachgerückt")
             .navigationBarTitleDisplayMode(.inline)
         }
