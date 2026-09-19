@@ -208,6 +208,10 @@ ist verlässlich das, wozu er meistens wird, also heißen sie nach dem
 Material, das sie immer sind: Stein, Holz, Laub, Ziegel. Ein Gebäude liest
 sich damit natürlich — Ziegel auf Holz, Stein oder Ziegel.
 
+`S` taucht drüben ebenfalls auf, aber nur mit Höhenziffer: `S1` bis `S3`
+ist der Berg, also ein Stapel aus so vielen Steinen. Ohne Ziffer ist `S`
+hier ein einzelner grauer Stein.
+
 Weder „Massiv" für Grau noch „Korn" für Gelb wären richtig gewesen. Das
 erste ist ein Landschaftswort für einen Stein, der ebenso gut ein Gebäude
 trägt; das zweite behauptet ein angelegtes Getreidefeld, wo die Anleitung

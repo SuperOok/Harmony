@@ -110,13 +110,15 @@ Feld, der Tierwürfel liegt auf Zelle 3, die Punkte sind 5 und 11.
 | `W` | Wasser |
 | `F` | Feld |
 | `B1` `B2` `B3` | Baum |
-| `M1` `M2` `M3` | Berg |
+| `S1` `S2` `S3` | Berg |
 | `G` | Gebäude |
 | `T <Zelle>` | Tierwürfel auf dieser Zelle |
 | `P <Zahlen>` | Punkte, von unten aufsteigend |
 
-Berg heißt `M`, weil **B** sonst doppelt belegt wäre — Baum und Berg. Der
-Tierwürfel heißt `T`, weil **W** bereits an Wasser vergeben ist.
+Berg heißt `S1` bis `S3`: Die Ziffer ist die Höhe, der Buchstabe der Stein,
+aus dem er besteht — ein Berg ist nichts als gestapelter Stein. `B` war für
+ihn ohnehin nicht zu haben, das beansprucht der Baum. Der Tierwürfel heißt
+`T`, weil **W** bereits an Wasser vergeben ist.
 Ein Kürzel, das beim Diktieren nachgefragt werden muss, spart keine Zeit.
 
 Das Gebäude behält dagegen sein `G`. Der zunächst befürchtete Zusammenstoß
@@ -124,10 +126,11 @@ mit „Gebirge" tritt nicht ein, sobald der Berg `M` heißt — die Befürchtung
 rechnete die drei Kollisionen gleichzeitig, obwohl die erste die dritte
 auflöst. Das hält `H` frei für Holz in der **Steinnotation**, die
 `pruefverfahren.md` festlegt: Diese Notation beschreibt Landschaften,
-jene die Farben, aus denen sie gebaut werden. Geteilt sind nur `W` und `F`:
-Auf Blau und Gelb darf nie gestapelt werden, diese Steine sind ihre
-Landschaft. Die übrigen vier Farben sind Zutaten und heißen dort nach dem
-Material.
+jene die Farben, aus denen sie gebaut werden. Geteilt sind `W`, `F` und `S`.
+Bei Blau und Gelb ist der Stein die Landschaft — auf ihnen darf nie
+gestapelt werden. Bei Grau steht hier immer eine Höhenziffer dabei: `S2`
+ist ein Berg aus zwei Steinen, `S` allein drüben ein einzelner grauer
+Stein.
 
 Claude überträgt die Kurzform in die Langform und zeichnet wie gehabt zurück;
 die Prüfschleife bleibt unverändert.
