@@ -194,13 +194,28 @@ dasselbe, auch wenn es sich an drei Stellen deckt.
 | `S` | braun | Stamm | 21 |
 | `L` | grün | Laub | 19 |
 | `F` | gelb | Feld | 19 |
-| `D` | rot | Dach | 15 |
+| `Z` | rot | Ziegel | 15 |
 
 `W`, `F` und `M` decken sich mit den Landschaftskürzeln, weil diese
 Landschaften **einfarbig** sind — ein blauer Stein ist immer Wasser. `L`,
-`S` und `D` weichen bewusst ab, weil Grün, Braun und Rot für sich genommen
+`S` und `Z` weichen bewusst ab, weil Grün, Braun und Rot für sich genommen
 **keine** Landschaft ergeben. Die Abweichung markiert also genau dort,
 wo Stein und Landschaft auseinanderfallen.
+
+Genauer: `Wasser`, `Feld` und `Berg` bestehen aus **je einer** Farbe, dort
+ist Stein gleich Landschaft. `Baum` und `Gebäude` brauchen **zwei** Farben,
+also braucht jede ihrer Zutaten einen eigenen Namen — Laub und Stamm für
+den Baum, Ziegel für das Gebäude.
+
+Rot heißt deshalb `Z` für Ziegel und nicht `D` für Dach: Ein Gebäude darf
+aus **zwei roten** Steinen bestehen, ein roter Stein ist also nicht
+zwangsläufig das Dach. Braun heißt `S` für Stamm, obwohl es ebenso gut
+unter einem Gebäude liegen kann — dort ist es dann Holzgerüst statt
+Baumstamm, aber Holz bleibt es, und ein Stamm ohne Laub ist ohnehin
+wertlos.
+
+Die Merkhilfen sind Eselsbrücken, keine Systematik. Maßgeblich ist die
+Farbe in der zweiten Spalte.
 
 Wie in `kartennotation.md` sind die Buchstaben nach Eindeutigkeit gewählt,
 nicht nach Anfangsbuchstaben: Blau und Braun beginnen beide mit B, Grau,
@@ -210,7 +225,7 @@ Grün und Gelb alle drei mit G.
 
 ```
 Ziehfolge: akzeptanz-01
-Beutel:    WMS LFF DMM WWL SSF ...     (120 Steine, in Ziehreihenfolge)
+Beutel:    WMS LFF ZMM WWL SSF ...     (120 Steine, in Ziehreihenfolge)
 Stapel:    Pinguin Biene Lachs Wolf Rabe Frosch ...   (32 Karten)
 ```
 
@@ -263,3 +278,8 @@ Nebenbei-Änderung, siehe `CLAUDE.md`. Bis dahin gilt dort weiterhin: keine
   Nutzen, den bei einer Oberfläche in Bewegung niemand einlöst.
 - **UI-Tests für Spiellogik** — sie liefe dort tausendmal langsamer und
   brächte keine einzige zusätzliche Erkenntnis.
+- **Durchgehende Materialnamen** — Wasser, Stein, Holz, Laub, Getreide,
+  Ziegel wäre in sich stimmiger als die gemischten Merkhilfen oben. Aber
+  Holz bekäme `H`, und `H` ist in `kartennotation.md` bereits das Haus.
+  Zwei Notationen im selben Projekt dürfen denselben Buchstaben nicht
+  verschieden belegen.
