@@ -33,12 +33,18 @@ struct OpponentTurnView: View {
     /// stacks because a cube stays put even when its pattern is destroyed
     /// — `04-architektur.md` asks for both.
     @State private var harmonyCubes: [Int: String] = [:]
+    /// The reason currently on screen. Offered, not forced: the move stands
+    /// on its own and the why is one tap away.
+    @State private var shownRationale: MoveRationale?
     @State private var pendingMove: HarmonyMove? = Sample.harmonyMove
 
     struct Entry: Identifiable {
         let id = UUID()
         let line: String
         let taps: Int
+        /// Only Harmony's own turns carry one, and it stays retrievable
+        /// after play has moved on — Störfall C.
+        var rationale: MoveRationale? = nil
     }
 
     private var currentPlayer: String { Sample.turnOrder[seatIndex] }
@@ -70,6 +76,7 @@ struct OpponentTurnView: View {
             }
             .sheet(isPresented: $cardPickerOpen) { cardPicker }
             .sheet(isPresented: $historyOpen) { historyList }
+            .sheet(item: $shownRationale) { rationaleSheet($0) }
         }
     }
 
@@ -231,6 +238,24 @@ struct OpponentTurnView: View {
                         }
                     }
 
+                    Button {
+                        shownRationale = move.rationale
+                    } label: {
+                        HStack {
+                            Image(systemName: "questionmark.circle")
+                            Text("Warum dieser Zug? \(move.rationale.total) Punkte, "
+                                 + "\(move.rationale.gap) mehr als der nächstbeste")
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.footnote)
+                        }
+                        .font(.callout)
+                        .padding(.horizontal, 14).padding(.vertical, 11)
+                        .background(RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.secondarySystemBackground)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("why")
+
                     Text("Gezeigt ist der Zielzustand. Der Ausgangszustand liegt "
                          + "auf dem Tisch. Ringe markieren, was sich ändert.")
                         .font(.footnote)
@@ -281,6 +306,9 @@ struct OpponentTurnView: View {
 
             Button(pendingMove == nil ? "Weiter" : "Zug ausgeführt") {
                 if let move = pendingMove {
+                    history.append(Entry(line: "Harmony  \(move.notation)",
+                                         taps: 1,
+                                         rationale: move.rationale))
                     harmonyBoard = move.applied(to: harmonyBoard)
                     for cube in move.cubes { harmonyCubes[cube.cell] = cube.card }
                     pendingMove = nil
@@ -376,9 +404,21 @@ struct OpponentTurnView: View {
                         HStack {
                             Text(entry.line).font(.system(.footnote, design: .monospaced))
                             Spacer()
-                            Text("\(entry.taps) ×")
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
+                            if let rationale = entry.rationale {
+                                Button {
+                                    historyOpen = false
+                                    shownRationale = rationale
+                                } label: {
+                                    Label("Warum", systemImage: "questionmark.circle")
+                                        .labelStyle(.iconOnly)
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.tint)
+                            } else {
+                                Text("\(entry.taps) ×")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -386,6 +426,59 @@ struct OpponentTurnView: View {
             .navigationTitle("Verlauf")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    /// Störfall C: what does this move bring, and what would the
+    /// alternative have been. A number without a comparison answers
+    /// neither — "this move brings 14" means nothing until the next best
+    /// one is known.
+    private func rationaleSheet(_ rationale: MoveRationale) -> some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    TitledBlock("Was der Zug bringt") {
+                        VStack(spacing: 10) {
+                            ForEach(Array(rationale.terms.enumerated()), id: \.offset) { _, term in
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(term.name).font(.callout)
+                                    Spacer(minLength: 12)
+                                    Text("+\(term.points)")
+                                        .font(.callout.monospacedDigit().weight(.semibold))
+                                }
+                            }
+                            Divider()
+                            HStack {
+                                Text("Zusammen").font(.callout.weight(.semibold))
+                                Spacer()
+                                Text("\(rationale.total)")
+                                    .font(.callout.monospacedDigit().weight(.bold))
+                            }
+                        }
+                    }
+
+                    TitledBlock("Die Alternative") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(rationale.runnerUp).font(.callout)
+                                Spacer(minLength: 12)
+                                Text("\(rationale.runnerUpTotal)")
+                                    .font(.callout.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text("Abstand: \(rationale.gap) Punkte")
+                                .font(.callout.weight(.semibold))
+                            Text(rationale.gapExplanation)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Begründung")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
     }
 
     // MARK: - Footer and turn change

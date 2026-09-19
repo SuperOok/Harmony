@@ -144,7 +144,7 @@ enum Sample {
     static let harmonyBoard: [Int: [Stone]] = [
         11: [.water], 12: [.water], 13: [.water],
         22: [.field], 23: [.field],
-        31: [.stone, .stone], 32: [.stone],
+        31: [.stone, .stone, .stone], 32: [.stone, .stone, .stone],
         43: [.wood, .wood],
         51: [.leaves],
     ]
@@ -160,8 +160,42 @@ enum Sample {
             Placement(stone: .stone, cell: 44),
             Placement(stone: .stone, cell: 54),
         ],
-        cubes: [CubePlacement(card: "Fledermaus", cell: 44)]
+        cubes: [CubePlacement(card: "Fledermaus", cell: 44)],
+        rationale: MoveRationale(
+            total: 12,
+            terms: [
+                ScoreTerm(name: "Baum der Höhe 3 auf 4.3", points: 7),
+                ScoreTerm(name: "Zwei benachbarte Berge, 4.4 und 5.4", points: 2),
+                ScoreTerm(name: "Tierwürfel Fledermaus, erster von vier", points: 3),
+            ],
+            runnerUp: "Laub auf 4.3, beide Steine auf 5.3 und 5.4",
+            runnerUpTotal: 9,
+            gapExplanation: "Der Abstand ist genau der Tierwürfel. Ohne einen "
+                + "Berg neben dem Baum ist das Muster der Fledermaus nicht "
+                + "vollständig, und der Würfel bliebe auf der Karte liegen."
+        )
     )
+}
+
+/// One named contribution to the score. Named, because the reason shows the
+/// largest of them and a nameless summand cannot be shown.
+struct ScoreTerm {
+    let name: String
+    let points: Int
+}
+
+/// Why this move and not the next best one. Phase 2 asks both questions:
+/// what does the move bring, and what would the alternative have been — a
+/// number without a comparison answers neither.
+struct MoveRationale: Identifiable {
+    let id = UUID()
+    let total: Int
+    let terms: [ScoreTerm]
+    let runnerUp: String
+    let runnerUpTotal: Int
+    let gapExplanation: String
+
+    var gap: Int { total - runnerUpTotal }
 }
 
 struct Placement {
@@ -180,6 +214,7 @@ struct CubePlacement {
 struct HarmonyMove {
     let placements: [Placement]
     let cubes: [CubePlacement]
+    let rationale: MoveRationale
 
     /// The space taken is not stored: all three stones taken are placed,
     /// so the placements already say which space it was.
