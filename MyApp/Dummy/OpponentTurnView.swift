@@ -243,7 +243,7 @@ struct OpponentTurnView: View {
                     } label: {
                         HStack {
                             Image(systemName: "questionmark.circle")
-                            Text("Warum dieser Zug? \(move.rationale.total) Punkte, "
+                            Text("\(move.rationale.total) Punkte, "
                                  + "\(move.rationale.gap) mehr als der nächstbeste")
                             Spacer()
                             Image(systemName: "chevron.right").font(.footnote)
