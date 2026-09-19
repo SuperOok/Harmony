@@ -124,8 +124,10 @@ mit „Gebirge" tritt nicht ein, sobald der Berg `M` heißt — die Befürchtung
 rechnete die drei Kollisionen gleichzeitig, obwohl die erste die dritte
 auflöst. Das hält `H` frei für Holz in der **Steinnotation**, die
 `pruefverfahren.md` festlegt: Diese Notation beschreibt Landschaften,
-jene die Farben, aus denen sie gebaut werden. Die beiden teilen sich außer
-`W` keinen Buchstaben, und das ist Absicht.
+jene die Farben, aus denen sie gebaut werden. Geteilt sind nur `W` und `F`:
+Auf Blau und Gelb darf nie gestapelt werden, diese Steine sind ihre
+Landschaft. Die übrigen vier Farben sind Zutaten und heißen dort nach dem
+Material.
 
 Claude überträgt die Kurzform in die Langform und zeichnet wie gehabt zurück;
 die Prüfschleife bleibt unverändert.
