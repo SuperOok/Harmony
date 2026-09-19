@@ -48,7 +48,13 @@ Vor dem ersten Zug gibt der Betreuer ein, was auf dem Tisch liegt:
 - die **5 Felder** des gemeinsamen Spielplans mit je 3 Steinen,
 - die **5 offen ausliegenden Tierkarten**,
 - welche **Seite** des persönlichen Spielplans gespielt wird,
-- Harmonys **Platz in der Zugreihenfolge**.
+- die **Zugreihenfolge**: wer sitzt wo, und an welcher Stelle Harmony,
+- die **Namen** der Mitspieler.
+
+Namen sind eine Bequemlichkeit, kein Zwang. Die Zugreihenfolge allein
+genügt der Engine; der Name macht die Zuganweisung und die Begründung
+lesbar — „Anke hat den Pinguin" statt „Platz 2 hat den Pinguin". Wer nicht
+tippen will, bekommt Voreinstellungen.
 
 Das sind 15 Steine und 5 Karten in einem Rutsch — die größte
 zusammenhängende Eingabe der ganzen Partie. Sie fällt in die Aufbauphase,

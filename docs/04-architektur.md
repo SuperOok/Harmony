@@ -97,7 +97,9 @@ aufzählen lässt wie die Nachfüllung aus dem Beutel.
 ### Mitspieler
 
 Ein Mitspieler ist eine Entität, keine Randnotiz: Platz in der
-Zugreihenfolge, Name, und die **Karten, die er genommen hat**. Geführt wird
+Zugreihenfolge, Name, und die **Karten, die er genommen hat**. Identität
+ist der **Platz**, nicht der Name — der ist ein Etikett für Menschen und
+darf fehlen. Geführt wird
 das je Zug, nicht erst zu Harmonys Zug — jeder fremde Zug ist ohnehin ein
 Ereignis im Protokoll, die Kartennahme hängt einfach daran.
 

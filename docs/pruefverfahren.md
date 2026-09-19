@@ -247,6 +247,11 @@ sie sich neu erzeugen lässt, aber **maßgeblich ist die Datei**, nicht der
 Startwert: Sobald die Engine Zufallszahlen anders verbraucht, liefert
 derselbe Startwert eine andere Folge — die abgelegte Ziehfolge bleibt.
 
+Abgelegte Protokolle tragen **neutrale Spielernamen**, „Spieler 1" und so
+fort. Das Repository ist öffentlich, und ein Testfall aus einer echten
+Partie enthielte sonst die Vornamen von Leuten, die davon nichts wissen.
+Beim Ablegen wird ersetzt, nicht beim Spielen.
+
 Mitgeschriebene echte Partien sind vorerst nicht vorgesehen. Sie werden
 allerdings fast umsonst, sobald v1 steht: Der Zugverlauf mit Rücknahme
 (Funktion 5 aus Phase 3) ist bereits eine Aufzeichnung genau dieser Daten.

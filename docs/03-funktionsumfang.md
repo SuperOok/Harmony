@@ -26,7 +26,7 @@ Suche und Oberfläche. Das ist eine Auflage an Phase 4.
 
 | | Funktion | Quelle |
 | --- | --- | --- |
-| 1 | Aufbau erfassen: 5 Felder à 3 Steine, 5 offene Tierkarten, Planseite, Harmonys Platz in der Zugreihenfolge, Zahl der Mitspieler | Szenario 1 |
+| 1 | Aufbau erfassen: 5 Felder à 3 Steine, 5 offene Tierkarten, Planseite, Zugreihenfolge mit Harmonys Platz, Namen der Mitspieler (mit Voreinstellung) | Szenario 1 |
 | 2 | Fremden Zug erfassen: geleertes Feld, 3 nachgefüllte Steine, genommene Tierkarte samt Nachrücker | Szenario 2 |
 | 3 | Den eigenen Zug des Betreuers erfassen — identische Eingabe, kein Sonderfall | Szenario 2 |
 | 4 | Harmonys Zug berechnen, als Handlungsanweisung anzeigen, bestätigen lassen | Szenario 3 |
