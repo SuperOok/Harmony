@@ -391,7 +391,7 @@ struct SteinPunkt: View {
         Group {
             if let stein {
                 Circle().fill(stein.farbe)
-                    .overlay(Circle().strokeBorder(.black.opacity(0.15), lineWidth: 1))
+                    .overlay(Circle().strokeBorder(.primary.opacity(0.2), lineWidth: 1))
             } else {
                 Circle().strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
                     .foregroundStyle(.tertiary)

@@ -66,8 +66,11 @@ struct ZelleView: View {
                 ForEach(Array(stapel.enumerated()), id: \.offset) { vonUnten, stein in
                     RoundedRectangle(cornerRadius: dicke * 0.4)
                         .fill(stein.farbe)
+                        // Passt sich dem Erscheinungsbild an: Schwarz wäre
+                        // auf dunklem Grund unsichtbar, und dann ließen sich
+                        // zwei gleichfarbige Plättchen nicht auseinanderhalten.
                         .overlay(RoundedRectangle(cornerRadius: dicke * 0.4)
-                            .strokeBorder(.black.opacity(0.22), lineWidth: 0.8))
+                            .strokeBorder(.primary.opacity(0.25), lineWidth: 0.8))
                         .frame(width: breite * 0.48, height: dicke)
                         .position(x: breite / 2,
                                   y: boden - CGFloat(vonUnten) * (dicke + fuge) - dicke / 2)
