@@ -8,7 +8,11 @@ struct FremderZugView: View {
     @State private var auslage = Attrappe.auslage
     @State private var offeneKarten = Attrappe.offeneKarten
     @State private var gesehen = Set(Attrappe.offeneKarten)
-    @State private var spielerIndex = 0
+    /// Startparameter für Tests und zum Ansehen einzelner Bildschirme,
+    /// wie `pruefverfahren.md` es für Stockwerk 3 vorsieht.
+    @State private var spielerIndex =
+        ProcessInfo.processInfo.arguments.contains("-harmonyAmZug")
+        ? Attrappe.reihenfolge.count - 1 : 0
     @State private var verlauf: [Eintrag] = []
 
     // Eingabe des laufenden Zuges

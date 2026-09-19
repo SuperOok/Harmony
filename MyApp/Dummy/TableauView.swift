@@ -25,37 +25,46 @@ struct ZelleView: View {
     var wuerfel = false
     var markierung: String? = nil
 
+    /// Jede Zelle hat drei Reihen, so hoch wie ein Stapel werden darf, und
+    /// wird **von unten** gefüllt. Ein Berg der Höhe 1 belegt damit ein
+    /// Drittel, einer der Höhe 3 die ganze Zelle — vorher war es umgekehrt
+    /// herum missverständlich: Eine einzelne volle Fläche wirkte massiver
+    /// als drei dünne Streifen. Nebenbei sitzt die Baumkrone nun dort, wo
+    /// sie am Tisch auch sitzt: oben.
+    private static let reihen = 3
+
     var body: some View {
         GeometryReader { geo in
             let hoehe = geo.size.height
-            let fuge: CGFloat = stapel.count > 1 ? 2 : 0
-            let scheibe = (hoehe - fuge * CGFloat(stapel.count - 1))
-                / CGFloat(max(stapel.count, 1))
+            let fuge: CGFloat = 2
+            let reiheHoehe = (hoehe - fuge * CGFloat(Self.reihen - 1)) / CGFloat(Self.reihen)
+            let obersteVonOben = Self.reihen - max(stapel.count, 1)
 
             ZStack {
-                if stapel.isEmpty {
-                    Sechseck()
-                        .fill(Color(.tertiarySystemFill))
-                    Sechseck()
-                        .stroke(Color(.separator), lineWidth: 1)
-                } else {
-                    VStack(spacing: fuge) {
-                        ForEach(Array(stapel.reversed().enumerated()), id: \.offset) { _, s in
-                            Rectangle().fill(s.farbe).frame(height: scheibe)
-                        }
+                Sechseck().fill(Color(.tertiarySystemFill))
+
+                VStack(spacing: fuge) {
+                    ForEach(0..<Self.reihen, id: \.self) { reiheVonOben in
+                        let vonUnten = Self.reihen - 1 - reiheVonOben
+                        Rectangle()
+                            .fill(vonUnten < stapel.count ? stapel[vonUnten].farbe : .clear)
+                            .frame(height: reiheHoehe)
                     }
-                    .clipShape(Sechseck())
-                    Sechseck().stroke(.black.opacity(0.18), lineWidth: 1)
                 }
+                .clipShape(Sechseck())
+
+                Sechseck().stroke(Color(.separator), lineWidth: 1)
 
                 if wuerfel {
                     // Die echten Tierwürfel sind durchscheinend orange.
+                    // Er liegt auf dem obersten Stein, nicht in der Mitte.
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color(red: 0.95, green: 0.55, blue: 0.10).opacity(0.82))
                         .overlay(RoundedRectangle(cornerRadius: 3)
                             .strokeBorder(.white.opacity(0.9), lineWidth: 1.5))
                         .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-                        .frame(width: hoehe * 0.34, height: hoehe * 0.34)
+                        .frame(width: reiheHoehe * 0.78, height: reiheHoehe * 0.78)
+                        .offset(y: (CGFloat(obersteVonOben) + 0.5) * (reiheHoehe + fuge) - hoehe / 2)
                 }
 
                 if let markierung {
@@ -65,7 +74,7 @@ struct ZelleView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 5).padding(.vertical, 2)
                         .background(Capsule().fill(Color.accentColor))
-                        .offset(y: -hoehe * 0.32)
+                        .offset(y: -hoehe * 0.3)
                 }
             }
         }
