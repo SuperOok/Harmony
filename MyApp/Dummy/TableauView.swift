@@ -25,58 +25,55 @@ struct ZelleView: View {
     var wuerfel = false
     var markierung: String? = nil
 
-    /// Das Sechseck ist das **Feld**, der Stapel ist sein **Inhalt** — so
-    /// wie am Tisch, wo runde Plättchen in einem Sechseckfeld liegen und
-    /// es nicht ausfüllen. Drei Reihen, so hoch wie ein Stapel werden darf,
-    /// von unten gefüllt: Ein Berg der Höhe 3 ragt sichtbar höher als einer
-    /// der Höhe 1. Von der Seite gesehen ist ein rundes Plättchen ein
-    /// Rechteck, deshalb Rechtecke mit weichen Ecken.
+    /// Das Sechseck ist das **Feld**, der Stapel sein **Inhalt** — so wie am
+    /// Tisch, wo runde Plättchen in einem Sechseckfeld liegen und es nicht
+    /// ausfüllen. Von der Seite gesehen ist ein rundes Plättchen ein flaches
+    /// Rechteck.
+    ///
+    /// Aufgebaut wird vom Zellboden nach oben: drei Plättchenhöhen, so hoch
+    /// wie ein Stapel werden darf, und darüber Platz für den Tierwürfel. Er
+    /// **liegt auf** dem obersten Plättchen, statt es zu verdecken — deshalb
+    /// sind die Plättchen flach und er ist würfelig.
     private static let reihen = 3
+    private static let wuerfelFaktor: CGFloat = 1.3
 
     var body: some View {
         GeometryReader { geo in
             let breite = geo.size.width
             let hoehe = geo.size.height
-            let stapelBreite = breite * 0.48
-            let blockHoehe = hoehe * 0.70
             let fuge: CGFloat = 2
-            let reiheHoehe = (blockHoehe - fuge * CGFloat(Self.reihen - 1)) / CGFloat(Self.reihen)
-            let unterrand = hoehe * 0.12
-            let blockOben = hoehe - unterrand - blockHoehe
-            let obersteVonOben = CGFloat(Self.reihen - max(stapel.count, 1))
+
+            let nutzhoehe = hoehe * 0.82
+            let dicke = (nutzhoehe - fuge * CGFloat(Self.reihen - 1) - fuge)
+                / (CGFloat(Self.reihen) + Self.wuerfelFaktor)
+            let wuerfelKante = dicke * Self.wuerfelFaktor
+            let boden = hoehe - hoehe * 0.09
 
             ZStack {
                 Sechseck().fill(Color(.tertiarySystemFill))
                 Sechseck().stroke(Color(.separator), lineWidth: 1)
 
-                VStack(spacing: fuge) {
-                    ForEach(0..<Self.reihen, id: \.self) { reiheVonOben in
-                        let vonUnten = Self.reihen - 1 - reiheVonOben
-                        if vonUnten < stapel.count {
-                            RoundedRectangle(cornerRadius: reiheHoehe * 0.35)
-                                .fill(stapel[vonUnten].farbe)
-                                .overlay(RoundedRectangle(cornerRadius: reiheHoehe * 0.35)
-                                    .strokeBorder(.black.opacity(0.22), lineWidth: 0.8))
-                                .frame(height: reiheHoehe)
-                        } else {
-                            Color.clear.frame(height: reiheHoehe)
-                        }
-                    }
+                ForEach(Array(stapel.enumerated()), id: \.offset) { vonUnten, stein in
+                    RoundedRectangle(cornerRadius: dicke * 0.4)
+                        .fill(stein.farbe)
+                        .overlay(RoundedRectangle(cornerRadius: dicke * 0.4)
+                            .strokeBorder(.black.opacity(0.22), lineWidth: 0.8))
+                        .frame(width: breite * 0.48, height: dicke)
+                        .position(x: breite / 2,
+                                  y: boden - CGFloat(vonUnten) * (dicke + fuge) - dicke / 2)
                 }
-                .frame(width: stapelBreite, height: blockHoehe)
-                .position(x: breite / 2, y: blockOben + blockHoehe / 2)
 
                 if wuerfel {
                     // Die echten Tierwürfel sind durchscheinend orange.
-                    // Er liegt auf dem obersten Stein, nicht in der Mitte.
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color(red: 0.95, green: 0.55, blue: 0.10).opacity(0.85))
                         .overlay(RoundedRectangle(cornerRadius: 2)
                             .strokeBorder(.white.opacity(0.9), lineWidth: 1.2))
                         .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
-                        .frame(width: reiheHoehe * 0.95, height: reiheHoehe * 0.95)
+                        .frame(width: wuerfelKante, height: wuerfelKante)
                         .position(x: breite / 2,
-                                  y: blockOben + (obersteVonOben + 0.5) * (reiheHoehe + fuge))
+                                  y: boden - CGFloat(max(stapel.count, 0)) * (dicke + fuge)
+                                     - wuerfelKante / 2)
                 }
 
                 if let markierung {
