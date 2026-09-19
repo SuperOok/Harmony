@@ -164,32 +164,29 @@ struct FremderZugView: View {
         }
     }
 
-    /// Zwei Spalten, alphabetisch: alle verbliebenen Karten auf einen Blick,
-    /// ohne Scrollen. Eine Liste zwang zum Suchen im Vorbeiziehen.
+    /// Zwei Spalten, alphabetisch und **spaltenweise** gefüllt wie ein
+    /// Telefonbuch: links A bis zur Mitte, rechts der Rest. Beim Suchen
+    /// nach einem Namen läuft der Blick dann eine Spalte hinunter, statt
+    /// zwischen beiden zu zickzacken.
     private var kartenwahl: some View {
-        NavigationStack {
-            let uebrig = Attrappe.alleKarten
-                .filter { !Attrappe.offeneKarten.contains($0) }
-                .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        let uebrig = Attrappe.alleKarten
+            .filter { !Attrappe.offeneKarten.contains($0) }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        let umbruch = (uebrig.count + 1) / 2
+        let links = Array(uebrig.prefix(umbruch))
+        let rechts = Array(uebrig.dropFirst(umbruch))
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
-                                GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                ForEach(uebrig, id: \.self) { name in
-                    Button {
-                        antipper += 1
-                        karteNach = name
-                        kartenwahlOffen = false
-                    } label: {
-                        Text(name)
-                            .font(.callout)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                            .frame(maxWidth: .infinity, minHeight: 42)
-                            .background(RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.secondarySystemBackground)))
+        return NavigationStack {
+            VStack(spacing: 8) {
+                ForEach(links.indices, id: \.self) { i in
+                    HStack(spacing: 8) {
+                        karteZelle(links[i])
+                        if i < rechts.count {
+                            karteZelle(rechts[i])
+                        } else {
+                            Color.clear.frame(height: 42).frame(maxWidth: .infinity)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("nachruecker-\(name)")
                 }
             }
             .padding(.horizontal)
@@ -197,6 +194,24 @@ struct FremderZugView: View {
             .navigationTitle("Nachgerückt")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private func karteZelle(_ name: String) -> some View {
+        Button {
+            antipper += 1
+            karteNach = name
+            kartenwahlOffen = false
+        } label: {
+            Text(name)
+                .font(.callout)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, minHeight: 42)
+                .background(RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(.secondarySystemBackground)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("nachruecker-\(name)")
     }
 
     // MARK: - Notation und Fußleiste
