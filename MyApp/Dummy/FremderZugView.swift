@@ -190,24 +190,40 @@ struct FremderZugView: View {
     // MARK: - Harmonys Zug (Platzhalter)
 
     private var harmonysZug: some View {
-        VStack(spacing: 18) {
-            Spacer()
-            Image(systemName: "hourglass").font(.system(size: 44)).foregroundStyle(.tertiary)
-            Text("Dieser Bildschirm fehlt noch.")
-                .font(.headline)
-            Text("Hier stünde Harmonys Zug als Handlungsanweisung — welches Feld, "
-                 + "wohin die drei Steine, welche Karte, welche Tierwürfel.\n\n"
-                 + "Ihr Zug verändert die Auslage ebenso wie ein fremder; der Dummy "
-                 + "lässt sie vorerst unverändert.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Spacer()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                TableauView(spalten: TableauView.seiteA,
+                            zellen: TableauView.musterZellen)
+                    .padding(.horizontal, 4)
+
+                Text("Musterbrett — jeder Zellzustand einmal. Eine Zelle ist "
+                     + "ein Stapel und wird auch so gezeigt: eine Scheibe je "
+                     + "Stein, von unten nach oben.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
+                Abschnitt("So sähe die Anweisung aus") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Nimm das Feld mit Holz, Laub, Stein.")
+                        Text("1  Stein auf die leere Zelle 5.1")
+                        Text("2  Holz auf 5.2, 3  Laub darauf — Baum der Höhe 2")
+                        Text("Tierwürfel auf 5.2")
+                    }
+                    .font(.callout)
+                }
+            }
+            .padding()
+        }
+        .safeAreaInset(edge: .bottom) {
             Button("Harmony hat gezogen") { naechsterSpieler() }
                 .buttonStyle(.borderedProminent)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.bar)
                 .accessibilityIdentifier("harmony-fertig")
         }
-        .padding(28)
     }
 
     // MARK: - Auswahllisten
@@ -363,7 +379,7 @@ struct SteinPunkt: View {
     }
 }
 
-private struct Abschnitt<Inhalt: View>: View {
+struct Abschnitt<Inhalt: View>: View {
     let titel: String
     @ViewBuilder let inhalt: Inhalt
 

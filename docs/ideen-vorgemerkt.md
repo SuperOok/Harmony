@@ -144,6 +144,12 @@ trägt laut `regeln-basisspiel.md` einen **Farbstreifen** in der Farbe des
 Zielsteins — ein Tipp darauf verengte 27 Karten auf eine Handvoll, ohne dass
 ein Name fällt. Und Piktogramme (siehe unten) ersetzten den Namen ganz.
 
+**Die Tierwürfel sind durchscheinend orange.** Für keine Regel erheblich —
+die Engine braucht die Farbe nicht —, aber die Oberfläche sollte sie
+trotzdem treffen, damit man am Tisch wiedererkennt, was auf dem Schirm
+steht. Steht hier und nicht in `regeln-basisspiel.md`, weil es keine Regel
+ist.
+
 **Bildsymbole statt Namen.** Karten am Tisch über ein kleines Tierbild
 auszuwählen ist schneller und sicherer als über einen Namen, den sich niemand
 merkt. Die Originalillustrationen sind allerdings geschützt — selbstgezeichnete
