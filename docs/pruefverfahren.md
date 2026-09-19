@@ -166,22 +166,7 @@ Stockwerk 2 benutzt.
 es gibt keine eingebaute Zusicherung „sieht aus wie beim letzten Mal".
 Echte visuelle Regression bräuchte eine Fremdbibliothek. Für v1 nicht.
 
-## Ziehfolgen
-
-Das gemeinsame Fixture-Format für Stockwerk 2 und 3.
-
-Eine Ziehfolge ersetzt den Zufall, sonst nichts. Sie besteht aus genau zwei
-Listen:
-
-- die **Reihenfolge des Beutels** — alle 120 Steine, aus denen die ersten
-  15 die Auslage füllen und je 3 eine Nachfüllung,
-- die **Reihenfolge des Kartenstapels** — alle 32 Karten, aus denen die
-  ersten 5 offen liegen.
-
-Mehr braucht es nicht. Wer wann welches Feld nimmt, ist eine Entscheidung
-der Spieler und gehört nicht ins Fixture.
-
-### Steinkürzel
+## Steinkürzel
 
 Steine sind **Farben**, keine Landschaften — eine Landschaft entsteht erst
 beim Legen. Das Vokabular aus `kartennotation.md` ist deshalb nicht
@@ -226,6 +211,21 @@ Wie in `kartennotation.md` sind die Buchstaben nach Eindeutigkeit gewählt,
 nicht nach Anfangsbuchstaben: Blau und Braun beginnen beide mit B, Grau,
 Grün und Gelb alle drei mit G.
 
+## Ziehfolgen
+
+Das gemeinsame Fixture-Format für Stockwerk 2 und 3.
+
+Eine Ziehfolge ersetzt den Zufall, sonst nichts. Sie besteht aus genau zwei
+Listen:
+
+- die **Reihenfolge des Beutels** — alle 120 Steine, aus denen die ersten
+  15 die Auslage füllen und je 3 eine Nachfüllung,
+- die **Reihenfolge des Kartenstapels** — alle 32 Karten, aus denen die
+  ersten 5 offen liegen.
+
+Mehr braucht es nicht. Wer wann welches Feld nimmt, ist eine Entscheidung
+der Spieler und gehört nicht ins Fixture.
+
 ### Form
 
 ```
@@ -251,6 +251,84 @@ allerdings fast umsonst, sobald v1 steht: Der Zugverlauf mit Rücknahme
 (Funktion 5 aus Phase 3) ist bereits eine Aufzeichnung genau dieser Daten.
 Ihn in eine Datei zu schreiben, macht aus einer Partie am Tisch einen
 Testfall. Vermerkt, nicht eingeplant.
+
+## Brettnotation
+
+Wie eine Stellung auf einem persönlichen Spielplan aufgeschrieben wird —
+das Fixture-Format für die Kleinstellungen aus Stockwerk 1.
+
+### Eine Zelle ist ein Stapel
+
+Geschrieben mit den Steinkürzeln, **von unten nach oben**. Die Richtung ist
+keine Erfindung dieser Datei: `regeln-basisspiel.md` legt sie für
+Datenstrukturen bereits fest, während Prosa umgekehrt liest — „X auf Y"
+heißt dort X oben.
+
+| Zelle | Bedeutung |
+| --- | --- |
+| `W` · `F` | Wasser · Feld |
+| `L` · `HL` · `HHL` | Baum der Höhe 1 · 2 · 3 |
+| `S` · `SS` · `SSS` | Berg der Höhe 1 · 2 · 3 |
+| `HZ` · `SZ` · `ZZ` | Gebäude, je nach Unterbau |
+| `H` · `Z` | nackter brauner bzw. roter Stein — keine Landschaft, 0 Punkte |
+
+### Kein Landschaftsvokabular
+
+Das Brett kommt ohne die Wörter Wasser, Baum, Berg und Gebäude aus, und das
+ist der Zweck der Übung. Wer eine Teststellung in Landschaften aufschreibt,
+setzt die Einordnung bereits voraus, die die Wertungsfunktion erst leisten
+soll: `Berg2` zu notieren behauptet schon, dass zwei graue Steine ein Berg
+sind. In Steinen notiert, prüft der Testfall diese Einordnung mit.
+
+Zweiter Gewinn: In Steinen lassen sich auch **unzulässige** Stapel
+hinschreiben — `ZZZ`, `WL`, `HHH`. Erst dadurch wird die Legalitätsprüfung
+überhaupt testbar. Ein Format, das nur Gültiges ausdrücken kann, taugt nicht
+zum Prüfen dessen, was Ungültiges erkennen soll.
+
+### Die drei Gebäudetypen
+
+Sie brauchen kein eigenes Zeichen; `HZ`, `SZ` und `ZZ` fallen aus der
+Stapelschreibweise ab.
+
+Für die **Wertung** ist der Unterbau ohnehin gleichgültig — bei der
+Gebäudebedingung zählt nur der oberste Stein jedes Nachbarfeldes. Für
+**Kartenmuster** ebenfalls, dort ist er laut Regeln beliebig. Und für
+**spätere Züge** auch: Auf einem roten Stein darf nichts liegen, die
+einzigen Dreierstapel sind `SSS` und `HHL`, ein Gebäude ist also endgültig.
+
+Gebraucht wird die Unterscheidung an genau einer Stelle, dafür an einer
+wichtigen: der **Steinerhaltung** als Invariante. Über Beutel, Auslage und
+alle Tableaus müssen je Farbe 23/23/21/19/19/15 Steine herauskommen.
+Vergisst das Brett den verdeckten Stein, ist diese Prüfung unmöglich — und
+sie fängt fast jeden Buchführungsfehler.
+
+In `kartennotation.md` bleibt es dagegen bei `G` ohne Zusatz. Dort wäre die
+Unterscheidung nicht nur überflüssig, sondern schädlich: Eine Notation, die
+einen für das Muster bedeutungslosen Unterschied ausdrücken **kann**,
+verleitet dazu, ihn zu erfassen — und später jemanden dazu, darauf zu
+vergleichen.
+
+### Form
+
+```
+Stellung:  berg-ohne-nachbarn
+Seite:     A
+Felder:    11=SS  19=W
+Würfel:    —
+Erwartet:  Berge 0 · Wasser 0 · gesamt 0
+```
+
+- **Felder** listet nur belegte Zellen, alles andere ist leer. Die
+  Zellnummern stehen in `regeln-basisspiel.md`: Seite A hat 23, Seite B
+  hat 25, beide spaltenweise von links nach rechts nummeriert.
+- **Würfel** nennt die Zellen mit einem Tierwürfel. Er macht den Stein
+  besetzt und damit für weitere Muster unbrauchbar.
+- **Erwartet** ist der von Hand gerechnete Sollwert, **nie** ein
+  Programmlauf. Er wird **aufgeschlüsselt** notiert, nicht nur als Summe:
+  Eine Gesamtzahl verbirgt zwei Fehler, die einander aufheben.
+
+Die Prüfschleife gilt wie bei den Karten — die Stellung wird aus der
+Notation zurückgezeichnet, bevor ihr Sollwert festgeschrieben wird.
 
 ## Vorschlag zum Zeitpunkt
 
@@ -292,6 +370,10 @@ Nebenbei-Änderung, siehe `CLAUDE.md`. Bis dahin gilt dort weiterhin: keine
   Getreidefeld, sondern ebenso offenes Land. `F` für Feld trifft es und
   deckt sich mit der Landschaft, weil ein gelber Stein nie etwas anderes
   wird.
+- **`GZ`, `GH`, `GS` für die drei Gebäudetypen** — die Unterscheidung wird
+  gebraucht, aber sie fällt aus der Stapelschreibweise ohnehin ab. Ein
+  eigenes Zeichen wäre ein zweiter Weg, dasselbe zu sagen, und das
+  Landschaftswort „Gebäude" gehört gar nicht aufs Brett.
 - **Alle sechs Buchstaben von den Landschaften trennen** — wäre eine
   klarere Ansage, aber `W` und `F` bedeuten in beiden Notationen wirklich
   dasselbe. Einen Unterschied zu erfinden, wo keiner ist, hilft niemandem.

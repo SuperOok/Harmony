@@ -25,7 +25,9 @@ Aus den Stapelregeln ergibt sich ein abgeschlossener Zeichensatz:
 Mehr wird nicht gebraucht:
 
 - `Gebäude` trägt **keine** Höhenangabe. Ein Gebäude ist immer genau zwei
-  Steine hoch, und welcher Stein unten liegt, ist für das Muster gleichgültig.
+  Steine hoch, und welcher Stein unten liegt, ist für das Muster gleichgültig. Die Brettnotation in `pruefverfahren.md` unterscheidet die drei
+  Unterbauten sehr wohl — dort geht es um wirkliche Steine, hier um ein
+  Muster, dem sie gleichgültig sind.
 - Es gibt **kein** Zeichen für „leer“. Unbelegte Zellen eines Musters sind
   grundsätzlich „egal“ — deshalb dürfen sich Lebensräume überlappen.
 - Es gibt **kein** Zeichen für einen nackten braunen Stein. Solche Zellen
