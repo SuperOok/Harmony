@@ -7,8 +7,8 @@ Die Partie läuft am echten Tisch mit echtem Material; die App verwaltet nur
 das Wissen eines einzelnen Spielers und schlägt dessen Züge vor. Sie ist
 keine Digitalfassung des Spiels. Siehe `docs/` für Produktkern und Konzept.
 
-Der Stand ist derzeit im Wesentlichen die Xcode-Vorlage. Was unten als
-Konvention steht, ist ein Ausgangspunkt, keine gewachsene Architektur.
+Der Code ist derzeit ein **Klickdummy** aus Phase 5: Ansichten über
+Attrappendaten, ohne Engine. Die Konzeptarbeit ist weiter, siehe `docs/`.
 
 ## Aufbau
 
@@ -17,9 +17,20 @@ Harmony.xcodeproj      ein Target und ein Schema, beide „Harmony“
 MyApp/                 sämtlicher Quellcode
   MyApp.swift          @main, WindowGroup
   ContentView.swift    Wurzel-View
+  Dummy/               Klickdummy aus Phase 5, keine Engine
+    SampleData.swift   Steine, Landschaften, Attrappendaten
+    Scoring.swift      Wertungsregeln — vorläufig, gehört ins Engine-Modul
+    BoardView.swift    Sechseckgitter, Zelldarstellung
+    OpponentTurnView.swift  Erfassung fremder Züge
   Assets.xcassets/
-docs/                  Konzeptdokumente, nach Phasen nummeriert
+docs/                  Konzeptdokumente; nummeriert nach Phasen, dazu
+                       phasenübergreifende wie `pruefverfahren.md`
+tools/                 Python-Werkzeuge zur Prüfung der Kartendaten
 ```
+
+`MyApp/` ist eine **synchronisierte Gruppe** (`PBXFileSystemSynchronizedRootGroup`).
+Neue Dateien darin landen ohne Eingriff in `project.pbxproj` im Target —
+anders als die Warnung oben zum Umbenennen vermuten lässt.
 
 Das Quellverzeichnis heißt `MyApp/`, das Target dagegen `Harmony` — ein
 Überbleibsel der Vorlage. Ein Umbenennen erfordert Anpassungen an den
@@ -38,10 +49,28 @@ welche Simulatoren gerade installiert sind:
 xcodebuild -project Harmony.xcodeproj -scheme Harmony -destination 'generic/platform=iOS Simulator' build
 ```
 
-Für ein konkretes Gerät `-destination 'platform=iOS Simulator,name=iPhone 18 Pro'`.
-Gerätenamen ändern sich zwischen Xcode-Versionen — vorher
-`xcrun simctl list devices available` prüfen, statt einen Namen fest
-einzutragen.
+Für einen konkreten Simulator **`id=` statt `name=`** benutzen:
+
+```bash
+xcodebuild ... -destination 'platform=iOS Simulator,id=<UDID>'
+```
+
+Gerätenamen sind nicht eindeutig. Den iPhone 15 Pro Max gibt es zweimal, mit
+iOS 17.0 und mit iOS 27.0, und der iOS-17-er kann die App wegen des
+Deployment-Targets von 27.0 gar nicht laden. `xcrun simctl list devices available`
+zeigt die UDIDs.
+
+### Auf das echte iPhone
+
+Signierung ist automatisch eingerichtet; das Profil gilt jeweils rund eine
+Woche und muss danach neu erzeugt werden.
+
+```bash
+xcodebuild ... -destination 'platform=iOS,id=<Geräte-UDID>' -allowProvisioningUpdates build
+xcrun devicectl device install app --device <Geräte-UDID> <Pfad>/Harmony.app
+```
+
+`xcrun devicectl list devices` zeigt gekoppelte Geräte.
 
 Es gibt **kein Test-Target**. Keine `xcodebuild test`-Aufrufe erfinden,
 solange keines existiert.
@@ -89,7 +118,15 @@ anzulegen.
   schnellste Rückmeldung in diesem Projekt.
 - Das Deployment-Target ist bewusst aktuell, neuere Plattform-APIs dürfen
   also ohne Verfügbarkeitsprüfung verwendet werden.
-- Dokumentation auf Deutsch, Quellcode und Commit-Nachrichten auf Englisch.
+- **Sprachen:** Bezeichner, Kommentare und Commit-Nachrichten auf Englisch.
+  Dokumentation und **sichtbare Texte in der Oberfläche** auf Deutsch. Die
+  Trennung hält die deutschen Zeichenketten beisammen, falls die App später
+  internationalisiert wird.
+- Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
+  Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
+  benutzen. Siehe `docs/pruefverfahren.md`.
+- Der Dummy kennt den Startparameter `-harmonyTurn`, der ihn direkt auf
+  Harmonys Bildschirm öffnet.
 
 ## Hinweise zum Repository
 

@@ -4,9 +4,9 @@ import SwiftUI
     var body: some Scene {
         WindowGroup {
             ContentView()
-                // Am Tisch wird meist im Dunkeln gespielt, und Hauke nutzt
-                // ohnehin das dunkle Erscheinungsbild. Bis Phase 5 das
-                // begründet festlegt, ist es hier die Vorgabe.
+                // The table is usually dimly lit and the dark appearance is
+                // what gets used anyway. Until Phase 5 settles it with a
+                // reason, this is simply the default.
                 .preferredColorScheme(.dark)
         }
     }

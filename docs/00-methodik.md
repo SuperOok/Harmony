@@ -78,8 +78,12 @@ stammt aus der Anleitung oder vom Spielmaterial.
 ## Sprachregelung
 
 Dokumentation und Konzeptdokumente auf Deutsch, weil wir darin denken und
-Nuancen in der eigenen Sprache schärfer werden. Quellcode, Bezeichner und
-Commit-Nachrichten auf Englisch.
+Nuancen in der eigenen Sprache schärfer werden. Quellcode, Bezeichner,
+Kommentare und Commit-Nachrichten auf Englisch.
+
+Ausgenommen sind **sichtbare Texte der Oberfläche**: Sie bleiben deutsch.
+Damit liegen alle deutschen Zeichenketten an einer Stelle, falls die App
+später internationalisiert wird, statt zwischen den Bezeichnern verstreut.
 
 ## Ablage
 

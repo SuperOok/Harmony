@@ -3,7 +3,7 @@ import Playgrounds
 
 struct ContentView: View {
     var body: some View {
-        FremderZugView()
+        OpponentTurnView()
     }
 }
 
@@ -12,6 +12,6 @@ struct ContentView: View {
 }
 
 #Playground {
-    let feld = Feld(steine: [.ziegel, .holz, .laub])
-    _ = feld.notation
+    let field = DisplayField(stones: [.brick, .wood, .leaves])
+    _ = field.notation
 }
