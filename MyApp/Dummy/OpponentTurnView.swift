@@ -5,17 +5,16 @@ import SwiftUI
 /// input path itself, in taps, as `pruefverfahren.md` foresees for storey
 /// three. User-facing text is German, everything else English.
 struct OpponentTurnView: View {
-    // Game state, as far as the input path needs it
-    @State private var display = Sample.display
-    @State private var openCards = Sample.openCards
-    @State private var seenCards = Set(Sample.openCards)
-    @State private var history: [Entry] = []
+    /// The game is the sequence of events; the position is replayed from
+    /// it. Phase 4 chose this so that undo, surviving the background and
+    /// producing a test case are one mechanism rather than three.
+    @State private var events: [GameEvent] = []
 
     /// Launch argument for tests and for looking at a single screen, the
     /// hook `pruefverfahren.md` foresees for storey three.
-    @State private var seatIndex =
-        ProcessInfo.processInfo.arguments.contains("-harmonyTurn")
-        ? Sample.turnOrder.count - 1 : 0
+    private let startState = GameState.initial(
+        seat: ProcessInfo.processInfo.arguments.contains("-harmonyTurn")
+              ? Sample.turnOrder.count - 1 : 0)
 
     // Input of the turn in progress
     @State private var takenIndex: Int?
@@ -26,30 +25,22 @@ struct OpponentTurnView: View {
     @State private var cardPickerOpen = false
     @State private var historyOpen = false
     @State private var showSideB = false
-
-    // Harmony's board and the move awaiting confirmation
-    @State private var harmonyBoard = Sample.harmonyBoard
-    /// Which cell carries a cube, and from which card. Kept apart from the
-    /// stacks because a cube stays put even when its pattern is destroyed
-    /// — `04-architektur.md` asks for both.
-    @State private var harmonyCubes: [Int: String] = [:]
+    @State private var showSetupExample = false
     /// The reason currently on screen. Offered, not forced: the move stands
     /// on its own and the why is one tap away.
     @State private var shownRationale: MoveRationale?
-    @State private var pendingMove: HarmonyMove? = Sample.harmonyMove
-    @State private var showSetupExample = false
 
-    struct Entry: Identifiable {
-        let id = UUID()
-        let line: String
-        let taps: Int
-        /// Only Harmony's own turns carry one, and it stays retrievable
-        /// after play has moved on — Störfall C.
-        var rationale: MoveRationale? = nil
+    private var state: GameState { events.state(from: startState) }
+    private var history: [LogEntry] { events.entries(from: startState) }
+
+    private var currentPlayer: String { state.currentPlayer }
+    private var isHarmony: Bool { state.isHarmonysTurn }
+
+    /// Harmony has a move to show whenever it is her turn. Undoing her turn
+    /// brings it back, which is the replay doing its work.
+    private var pendingMove: HarmonyMove? {
+        isHarmony ? (showSetupExample ? Sample.harmonyMoveSetup : Sample.harmonyMove) : nil
     }
-
-    private var currentPlayer: String { Sample.turnOrder[seatIndex] }
-    private var isHarmony: Bool { currentPlayer == "Harmony" }
 
     private var isComplete: Bool {
         takenIndex != nil && refill.count == 3
@@ -98,7 +89,7 @@ struct OpponentTurnView: View {
     private var displaySection: some View {
         TitledBlock("Welches Feld wurde genommen?") {
             VStack(spacing: 8) {
-                ForEach(Array(display.enumerated()), id: \.element.id) { index, field in
+                ForEach(Array(state.display.enumerated()), id: \.element.id) { index, field in
                     Button {
                         taps += 1
                         takenIndex = index
@@ -167,7 +158,7 @@ struct OpponentTurnView: View {
         TitledBlock("Wurde eine Karte genommen?") {
             VStack(alignment: .leading, spacing: 12) {
                 FlowLayout(spacing: 8) {
-                    ForEach(openCards, id: \.self) { name in
+                    ForEach(state.openCards, id: \.self) { name in
                         Button {
                             taps += 1
                             if cardTaken == name {
@@ -224,11 +215,6 @@ struct OpponentTurnView: View {
                     Text("Bereitet vor").tag(true)
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: showSetupExample) { _, setup in
-                    harmonyBoard = Sample.harmonyBoard
-                    harmonyCubes = [:]
-                    pendingMove = setup ? Sample.harmonyMoveSetup : Sample.harmonyMove
-                }
 
                 BoardView(side: .a, columns: BoardView.sideA, cells: harmonyCells)
                     .padding(.horizontal, 4)
@@ -291,13 +277,13 @@ struct OpponentTurnView: View {
     /// Target state while a move is pending, plain state afterwards.
     private var harmonyCells: [Int: BoardView.Cell] {
         guard let move = pendingMove else {
-            var cells = harmonyBoard.mapValues { BoardView.Cell(stack: $0) }
-            for (cell, _) in harmonyCubes { cells[cell]?.cube = true }
+            var cells = state.harmonyBoard.mapValues { BoardView.Cell(stack: $0) }
+            for (cell, _) in state.harmonyCubes { cells[cell]?.cube = true }
             return cells
         }
-        let target = move.applied(to: harmonyBoard)
+        let target = move.applied(to: state.harmonyBoard)
         let markers = move.markers
-        let cubeCells = Set(harmonyCubes.keys).union(move.cubes.map(\.cell))
+        let cubeCells = Set(state.harmonyCubes.keys).union(move.cubes.map(\.cell))
         let newCubes = Set(move.cubes.map(\.cell))
         var cells: [Int: BoardView.Cell] = [:]
         for (name, stack) in target {
@@ -320,17 +306,8 @@ struct OpponentTurnView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("notation")
 
-            Button(pendingMove == nil ? "Weiter" : "Zug ausgeführt") {
-                if let move = pendingMove {
-                    history.append(Entry(line: "Harmony  \(move.notation)",
-                                         taps: 1,
-                                         rationale: move.rationale))
-                    harmonyBoard = move.applied(to: harmonyBoard)
-                    for cube in move.cubes { harmonyCubes[cube.cell] = cube.card }
-                    pendingMove = nil
-                } else {
-                    nextSeat()
-                }
+            Button("Zug ausgeführt") {
+                if let move = pendingMove { events.append(.harmonyTurn(move)) }
             }
             .buttonStyle(.borderedProminent)
             .accessibilityIdentifier("harmony-done")
@@ -348,7 +325,7 @@ struct OpponentTurnView: View {
     }
 
     private func landscapeInWords(_ cell: Int, _ move: HarmonyMove) -> String {
-        let stack = move.applied(to: harmonyBoard)[cell] ?? []
+        let stack = move.applied(to: state.harmonyBoard)[cell] ?? []
         switch stack.landscape {
         case .tree:     return "Baum der Höhe \(stack.count)"
         case .mountain: return "Berg der Höhe \(stack.count)"
@@ -367,7 +344,7 @@ struct OpponentTurnView: View {
     /// both halves of every row.
     private var cardPicker: some View {
         let remaining = Sample.allCards
-            .filter { !seenCards.contains($0) }
+            .filter { !state.seenCards.contains($0) }
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         let split = (remaining.count + 1) / 2
         let left = Array(remaining.prefix(split))
@@ -441,6 +418,16 @@ struct OpponentTurnView: View {
             }
             .navigationTitle("Verlauf")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Zurücknehmen", systemImage: "arrow.uturn.backward") {
+                        undoLast()
+                        historyOpen = false
+                    }
+                    .disabled(events.isEmpty)
+                    .accessibilityIdentifier("undo")
+                }
+            }
         }
     }
 
@@ -564,7 +551,7 @@ struct OpponentTurnView: View {
 
     private var line: String {
         var parts = [currentPlayer]
-        if let index = takenIndex { parts.append("-\(display[index].notation)") }
+        if let index = takenIndex { parts.append("-\(state.display[index].notation)") }
         if let card = cardTaken { parts.append("+\(card)") }
         if refill.count == 3 { parts.append(">" + refill.map(\.rawValue).joined()) }
         if let drawn = cardDrawn { parts.append(">\(drawn)") }
@@ -572,28 +559,28 @@ struct OpponentTurnView: View {
     }
 
     private func record() {
-        history.append(Entry(line: line, taps: taps + 1))
-
-        // The emptied space takes the stones drawn for it.
-        if let index = takenIndex { display[index] = DisplayField(stones: refill) }
-
-        // The taken card is replaced by the one that came up.
-        if let taken = cardTaken, let drawn = cardDrawn,
-           let index = openCards.firstIndex(of: taken) {
-            openCards[index] = drawn
-            seenCards.insert(drawn)
-        }
-
-        nextSeat()
+        guard let index = takenIndex else { return }
+        events.append(.opponentTurn(taken: index, refill: refill,
+                                    cardTaken: cardTaken, cardDrawn: cardDrawn,
+                                    taps: taps + 1))
+        clearInput()
     }
 
-    private func nextSeat() {
+    /// Störfall A: dropping the last event and replaying. Everything the
+    /// event touched comes back by itself — the display, the open cards,
+    /// Harmony's board and whose turn it is.
+    private func undoLast() {
+        guard !events.isEmpty else { return }
+        events.removeLast()
+        clearInput()
+    }
+
+    private func clearInput() {
         takenIndex = nil
         refill = []
         cardTaken = nil
         cardDrawn = nil
         taps = 0
-        seatIndex = (seatIndex + 1) % Sample.turnOrder.count
     }
 }
 

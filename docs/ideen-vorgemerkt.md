@@ -150,6 +150,18 @@ trotzdem treffen, damit man am Tisch wiedererkennt, was auf dem Schirm
 steht. Steht hier und nicht in `regeln-basisspiel.md`, weil es keine Regel
 ist.
 
+**Stand des Klickdummys, 2026-09-20.** Abgedeckt sind aus der Funktionsliste
+von Phase 3: Punkt 2 und 3 (fremde Züge erfassen, 5 Antipper ohne
+Kartennahme, 8 mit), Punkt 4 (Harmonys Zug als Handlungsanweisung im
+Zielzustand, mit Bestätigung), Punkt 5 (Verlauf und Rücknahme) sowie die
+Punkte 16 bis 18 (Begründung mit Aussichten, Wahrscheinlichkeiten und
+zweitbestem Zug). Der Zustand liegt als Ereignisprotokoll vor und wird
+nachgespielt, wie Phase 4 es vorsieht.
+
+**Offen bleiben** Punkt 1 (Aufbau erfassen), Punkt 6 (Korrekturweg für
+Harmonys Tableau), Punkt 7 (Spielende) und Punkt 8 (Endwertung), dazu der
+Merker „jemand ist fast fertig". `05-ui.md` ist noch nicht geschrieben.
+
 **Bildsymbole statt Namen.** Karten am Tisch über ein kleines Tierbild
 auszuwählen ist schneller und sicherer als über einen Namen, den sich niemand
 merkt. Die Originalillustrationen sind allerdings geschützt — selbstgezeichnete
