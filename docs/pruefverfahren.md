@@ -351,7 +351,7 @@ und ein Zug benutzt nie alle:
 | Form | Bedeutung |
 | --- | --- |
 | `<Stein><Zelle>` | Spielstein legen, z. B. `H32` |
-| `T<Zelle>` | Tierwürfel setzen |
+| `T<Zelle>/<Karte>` | Tierwürfel setzen, von dieser Karte genommen |
 | `+<Karte>` | Tierkarte nehmen |
 | `-<Steine>` | Auslagenfeld genommen, über seinen Inhalt benannt |
 | `><Steine>` oder `><Karte>` | aus dem verdeckten Vorrat nachgerückt |
@@ -359,12 +359,18 @@ und ein Zug benutzt nie alle:
 Jede Zeile beginnt mit dem Spieler. Harmonys Zug:
 
 ```
-Harmony  H32 L32 S43 T32 +Pinguin  >WSF >Wolf
+Harmony  H32 L32 S43 T32/Pinguin  +Biene  >WSF >Wolf
 ```
 
 Holz auf 3.2, Laub darauf — zusammen ein Baum der Höhe 2 —, Stein auf 4.3,
-Tierwürfel auf den Baum, Pinguinkarte genommen; nachgefüllt wurden Wasser,
-Stein, Feld und die Wolfskarte.
+ein Tierwürfel **von der Pinguinkarte** auf den Baum, die Bienenkarte
+genommen; nachgefüllt wurden Wasser, Stein, Feld und die Wolfskarte.
+
+Die Karte beim Würfel ist nicht schmückend. Ein Würfel wird stets von einer
+bestimmten Karte genommen, und zwar ihr unterster; welche Karte, entscheidet
+über die Punkte. Am Tisch muss der Betreuer wissen, von welcher Karte er ihn
+nehmen soll, und im Protokoll wäre `T32` mehrdeutig, sobald zwei Karten
+dieselbe Zelle bedienen könnten.
 
 Ein fremder Zug:
 

@@ -27,6 +27,14 @@ struct OpponentTurnView: View {
     @State private var historyOpen = false
     @State private var showSideB = false
 
+    // Harmony's board and the move awaiting confirmation
+    @State private var harmonyBoard = Sample.harmonyBoard
+    /// Which cell carries a cube, and from which card. Kept apart from the
+    /// stacks because a cube stays put even when its pattern is destroyed
+    /// — `04-architektur.md` asks for both.
+    @State private var harmonyCubes: [Int: String] = [:]
+    @State private var pendingMove: HarmonyMove? = Sample.harmonyMove
+
     struct Entry: Identifiable {
         let id = UUID()
         let line: String
@@ -196,56 +204,114 @@ struct OpponentTurnView: View {
 
     // MARK: - Harmony's turn (placeholder around the board)
 
+    /// Szenario 3: the move as an instruction. Shown is the **target
+    /// state** — the starting state lies on the table next to the device —
+    /// with a ring around every space that changes and a number for each
+    /// stone in the order it is placed.
     private var harmonyTurn: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Picker("Seite", selection: $showSideB) {
-                    Text("Seite A").tag(false)
-                    Text("Seite B").tag(true)
-                }
-                .pickerStyle(.segmented)
-
-                BoardView(side: showSideB ? .b : .a,
-                          columns: showSideB ? BoardView.sideB : BoardView.sideA,
-                          cells: showSideB ? BoardView.sampleCellsB : BoardView.sampleCellsA)
+                BoardView(side: .a, columns: BoardView.sideA, cells: harmonyCells)
                     .padding(.horizontal, 4)
 
-                Text(showSideB
-                     ? "Seite B wertet keine Flüsse, sondern Inseln — die "
-                       + "Zusammenhangsgebiete der nicht-blauen Felder, leere "
-                       + "eingeschlossen. Wasser zählt hier nicht selbst, es "
-                       + "trennt: Satt ist nur, was an zwei verschiedene Inseln "
-                       + "grenzt. Die vierte Spalte trennt, das Wasser oben "
-                       + "links trennt nichts."
-                     : "Satte Tönung heißt: Diese Zelle bringt gerade Punkte. "
-                       + "Blass heißt Landschaft ohne Punkte — der Berg3 links "
-                       + "oben hat keinen Bergnachbarn, das einzelne Feld keinen "
-                       + "Partner, und der Ast neben dem längsten Fluss zählt "
-                       + "nicht mit.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                Divider()
-
-                TitledBlock("So sähe die Anweisung aus") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Nimm das Feld mit Holz, Laub, Stein.")
-                        Text("1  Stein auf die leere Zelle 5.1")
-                        Text("2  Holz auf 5.2, 3  Laub darauf — Baum der Höhe 2")
-                        Text("Tierwürfel auf 5.2")
+                if let move = pendingMove {
+                    TitledBlock("Was zu tun ist") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Nimm das Feld mit \(fieldInWords(move)).")
+                                .font(.callout.weight(.semibold))
+                            ForEach(Array(move.placements.enumerated()), id: \.offset) { index, p in
+                                Text("\(index + 1)  \(p.stone.name) auf \(cellInWords(p.cell)) — "
+                                     + landscapeInWords(p.cell, move))
+                                    .font(.callout)
+                            }
+                            ForEach(Array(move.cubes.enumerated()), id: \.offset) { _, c in
+                                Text("Würfel von **\(c.card)** auf \(cellInWords(c.cell))")
+                                    .font(.callout)
+                            }
+                        }
                     }
-                    .font(.callout)
+
+                    Text("Gezeigt ist der Zielzustand. Der Ausgangszustand liegt "
+                         + "auf dem Tisch. Ringe markieren, was sich ändert.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Zug eingetragen. Das Brett zeigt jetzt den Stand, "
+                         + "der auch auf dem Tisch liegen sollte.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding()
         }
-        .safeAreaInset(edge: .bottom) {
-            Button("Harmony hat gezogen") { nextSeat() }
-                .buttonStyle(.borderedProminent)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(.bar)
-                .accessibilityIdentifier("harmony-done")
+        .safeAreaInset(edge: .bottom) { harmonyFooter }
+    }
+
+    /// Target state while a move is pending, plain state afterwards.
+    private var harmonyCells: [Int: BoardView.Cell] {
+        guard let move = pendingMove else {
+            var cells = harmonyBoard.mapValues { BoardView.Cell(stack: $0) }
+            for (cell, _) in harmonyCubes { cells[cell]?.cube = true }
+            return cells
+        }
+        let target = move.applied(to: harmonyBoard)
+        let markers = move.markers
+        let cubeCells = Set(harmonyCubes.keys).union(move.cubes.map(\.cell))
+        let newCubes = Set(move.cubes.map(\.cell))
+        var cells: [Int: BoardView.Cell] = [:]
+        for (name, stack) in target {
+            cells[name] = BoardView.Cell(
+                stack: stack,
+                cube: cubeCells.contains(name),
+                marker: markers[name],
+                highlighted: markers[name] != nil || newCubes.contains(name))
+        }
+        return cells
+    }
+
+    private var harmonyFooter: some View {
+        VStack(spacing: 8) {
+            Text(pendingMove.map { "Harmony  \($0.notation)" } ?? "Harmony  —")
+                .font(.system(.footnote, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("notation")
+
+            Button(pendingMove == nil ? "Weiter" : "Zug ausgeführt") {
+                if let move = pendingMove {
+                    harmonyBoard = move.applied(to: harmonyBoard)
+                    for cube in move.cubes { harmonyCubes[cube.cell] = cube.card }
+                    pendingMove = nil
+                } else {
+                    nextSeat()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("harmony-done")
+        }
+        .padding(.horizontal).padding(.top, 10).padding(.bottom, 8)
+        .background(.bar)
+    }
+
+    private func fieldInWords(_ move: HarmonyMove) -> String {
+        move.placements.map(\.stone.name).joined(separator: ", ")
+    }
+
+    private func cellInWords(_ cell: Int) -> String {
+        "\(cell / 10).\(cell % 10)"
+    }
+
+    private func landscapeInWords(_ cell: Int, _ move: HarmonyMove) -> String {
+        let stack = move.applied(to: harmonyBoard)[cell] ?? []
+        switch stack.landscape {
+        case .tree:     return "Baum der Höhe \(stack.count)"
+        case .mountain: return "Berg der Höhe \(stack.count)"
+        case .water:    return "Wasser"
+        case .field:    return "Feld"
+        case .building: return "Gebäude"
+        case .none:     return "noch keine Landschaft"
         }
     }
 

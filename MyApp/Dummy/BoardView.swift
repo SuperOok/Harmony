@@ -28,6 +28,7 @@ struct CellView: View {
     var stack: [Stone] = []
     var cube = false
     var marker: String? = nil
+    var highlighted = false
     /// Does this cell earn points right now? A full tint means yes, a pale
     /// one means landscape without points — a mountain with no mountain
     /// neighbour, a lone field, a branch beside the longest river.
@@ -83,8 +84,10 @@ struct CellView: View {
                                   y: baseline - CGFloat(stack.count) * (thickness + gap) - cubeSide / 2)
                 }
 
-                if let marker {
+                if highlighted {
                     Hexagon().stroke(Color.accentColor, lineWidth: 3)
+                }
+                if let marker {
                     Text(marker)
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(.white)
@@ -104,6 +107,10 @@ struct BoardView: View {
         var stack: [Stone] = []
         var cube = false
         var marker: String? = nil
+        /// Ring around the cell: something changes here. A cell may change
+        /// without carrying a number, for instance when only a cube lands
+        /// on a stone that is already there.
+        var highlighted = false
     }
 
     let side: BoardSide
@@ -138,6 +145,7 @@ struct BoardView: View {
                         CellView(stack: cells[name]?.stack ?? [],
                                  cube: cells[name]?.cube ?? false,
                                  marker: cells[name]?.marker,
+                                 highlighted: cells[name]?.highlighted ?? false,
                                  scores: scoring.contains(name))
                             .frame(width: 2 * r, height: cellHeight)
                             .offset(x: 1.5 * r * CGFloat(index),

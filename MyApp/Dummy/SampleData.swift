@@ -137,4 +137,73 @@ enum Sample {
 
     /// Two humans and Harmony — the leading case from Phase 2.
     static let turnOrder = ["Anke", "Bernd", "Harmony"]
+
+    /// Harmony's board before her turn. Mid-game: a river, a pair of
+    /// fields, two adjacent mountains, and two wood tiles at 43 waiting
+    /// for a green one.
+    static let harmonyBoard: [Int: [Stone]] = [
+        11: [.water], 12: [.water], 13: [.water],
+        22: [.field], 23: [.field],
+        31: [.stone, .stone], 32: [.stone],
+        43: [.wood, .wood],
+        51: [.leaves],
+    ]
+
+    /// The move Harmony proposes. Taking the space with leaves and two
+    /// stones completes a tree of height three at 43 and a mountain of
+    /// height one at 44, which together match the Fledermaus pattern, so
+    /// its cube goes on the mountain. The third stone at 54 gives that
+    /// mountain a neighbour, which is what makes either of them score.
+    static let harmonyMove = HarmonyMove(
+        placements: [
+            Placement(stone: .leaves, cell: 43),
+            Placement(stone: .stone, cell: 44),
+            Placement(stone: .stone, cell: 54),
+        ],
+        cubes: [CubePlacement(card: "Fledermaus", cell: 44)]
+    )
+}
+
+struct Placement {
+    let stone: Stone
+    let cell: Int
+}
+
+struct CubePlacement {
+    let card: String
+    let cell: Int
+}
+
+/// A move Harmony proposes, as an ordered sequence of actions. Cubes are
+/// written last wherever that yields the same result, so the first three
+/// actions are the stones and the space they came from can be read off.
+struct HarmonyMove {
+    let placements: [Placement]
+    let cubes: [CubePlacement]
+
+    /// The space taken is not stored: all three stones taken are placed,
+    /// so the placements already say which space it was.
+    var takenField: String {
+        DisplayField(stones: placements.map(\.stone)).notation
+    }
+
+    var notation: String {
+        (placements.map { "\($0.stone.rawValue)\($0.cell)" }
+         + cubes.map { "T\($0.cell)/\($0.card)" }).joined(separator: " ")
+    }
+
+    /// The board after the move, which is what the operator has to produce.
+    func applied(to board: [Int: [Stone]]) -> [Int: [Stone]] {
+        var result = board
+        for p in placements { result[p.cell, default: []].append(p.stone) }
+        return result
+    }
+
+    /// Cell name to the number it carries in the instruction. A cell taking
+    /// two stones carries both, as in "2·3".
+    var markers: [Int: String] {
+        var byCell: [Int: [Int]] = [:]
+        for (index, p) in placements.enumerated() { byCell[p.cell, default: []].append(index + 1) }
+        return byCell.mapValues { $0.map(String.init).joined(separator: "·") }
+    }
 }
