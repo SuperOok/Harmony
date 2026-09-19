@@ -3,8 +3,7 @@ import Playgrounds
 
 struct ContentView: View {
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        FremderZugView()
     }
 }
 
@@ -13,5 +12,6 @@ struct ContentView: View {
 }
 
 #Playground {
-    _ = 1 + 2
+    let feld = Feld(steine: [.ziegel, .holz, .laub])
+    _ = feld.notation
 }

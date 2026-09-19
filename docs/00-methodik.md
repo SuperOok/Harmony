@@ -25,8 +25,16 @@ durchzuarbeiten. Ob Phase 6 die Daten unverändert übernehmen kann, ist damit
 nicht bewiesen — ein Umbau beträfe aber nur noch die Umwandlung in die
 interne Form, nicht die Erfassung selbst.
 
-Ab Phase 6 wird Code geschrieben, vorher nicht. Der Übergang läuft über den
-Plan-Modus: erst ein Umsetzungsplan zur Freigabe, dann Umsetzung.
+Ab Phase 6 wird **Engine-Code** geschrieben, vorher nicht. Der Übergang
+läuft über den Plan-Modus: erst ein Umsetzungsplan zur Freigabe, dann
+Umsetzung.
+
+Davon ausgenommen ist **Ansichtscode über Attrappendaten**. Der Satz war
+gegen verfrühte Architektur gedacht, nicht gegen einen Klickdummy: Die
+Eingabeeffizienz ist das erste Qualitätskriterium aus Phase 1 und lässt
+sich nicht aufschreiben, nur antippen. Ein Dummy ohne Regeln dahinter kann
+keine Architektur festzurren, aber er misst — in Antippern, siehe
+`pruefverfahren.md`. Präzisiert am 2026-09-19, als der erste Dummy entstand.
 
 ## Warum die Kartenerfassung zuletzt kommt
 

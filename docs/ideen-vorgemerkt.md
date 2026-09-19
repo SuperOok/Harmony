@@ -126,6 +126,19 @@ präzisiert werden: Ansichtscode über Attrappendaten ist etwas anderes als
 der Engine-Code, den „ab Phase 6 wird Code geschrieben" verhindern sollte.
 Messbar wird der Dummy über die Antippzahl, siehe `pruefverfahren.md`.
 
+**Die Kartenauswahl ist der Engpass, nicht die Steine.** Am ersten Dummy
+gemessen: Ein fremder Zug **ohne** Kartennahme kostet 5 Antipper — Feld,
+drei Farben, eintragen. **Mit** Kartennahme sind es 8, und schlimmer als die
+Zahl ist der letzte Schritt: Die nachgerückte Karte wird aus einer Liste von
+27 Namen gewählt, die gescrollt werden muss. Der Betreuer hat die Karte in
+der Hand und müsste **unseren** erfundenen Namen dafür kennen.
+
+Ein Ausweg steckt im Material: Jede Karte trägt laut `regeln-basisspiel.md`
+einen **Farbstreifen**, der an die Farbe des Zielsteins erinnert. Den sieht
+man, ohne einen Namen zu wissen. Ein Tipp auf diese Farbe würde 27 Karten
+auf eine Handvoll verengen — danach ein kleines Raster statt einer Liste.
+Zu erproben am nächsten Dummy.
+
 **Bildsymbole statt Namen.** Karten am Tisch über ein kleines Tierbild
 auszuwählen ist schneller und sicherer als über einen Namen, den sich niemand
 merkt. Die Originalillustrationen sind allerdings geschützt — selbstgezeichnete
