@@ -74,6 +74,14 @@ Sie ergibt sich aus 23/23/21/19/19/15 abzüglich alles Gesehenen — und
 gesehen wurde alles, weil jede Nachfüllung erfasst wird. Für Expectimax ist
 genau diese Verteilung die Wahrscheinlichkeitsquelle.
 
+Dieses Wissen ist **vollständig, nicht geschätzt**. Steine verlassen den
+Beutel ausschließlich über Nachfüllungen; was ein Mitspieler auf sein
+Tableau legt, lag vorher in der Auslage und ist längst verbucht. Eine
+Eingabe darüber, welche Steine die anderen genommen haben, brächte deshalb
+nichts — sie steckt ohnehin darin, dass ein geleertes Feld über seinen
+Inhalt benannt wird. Unbekannt bleibt allein, **wohin** sie damit gehen,
+und das ist die Eingabe, die Phase 3 verworfen hat.
+
 ### Was Harmony nicht hält
 
 Keine fremden Tableaus, keine fremden Tierwürfel. Nur, welche Karte wer
@@ -245,9 +253,14 @@ vom Fundament.
 
 ## Offene Punkte
 
-1. **Wie wählen die Mitspieler?** Gleichverteilung ist eine Annahme. Sobald
-   Selbstspiel läuft, lässt sich prüfen, ob eine pessimistische Annahme
-   stärker spielt.
+1. **Wie wählen die Mitspieler?** Gleichverteilung ist eine Annahme und die
+   schwächste Stelle der Suche. Zwei Verbesserungen kosten **keine**
+   zusätzliche Eingabe: Harmony weiß bereits, welche Tierkarten jeder
+   genommen hat (Phase 3) und welche Steine jeder je bekommen hat — ein
+   geleertes Feld wird ja über seinen Inhalt benannt. Daraus lässt sich
+   schätzen, worauf jemand hinarbeitet und welches Feld ihn reizt. Die
+   Alternative bleibt eine pessimistische Annahme. Was stärker spielt,
+   entscheidet das Selbstspiel, nicht dieses Dokument.
 2. **Trägt die Verzweigung wirklich?** Die Schätzung 10⁴ bis 10⁵ ist nicht
    gemessen. Fällt sie höher aus, wird zuerst die Zufallsschicht
    zusammengefasst, bevor an der Bewertung gespart wird.
