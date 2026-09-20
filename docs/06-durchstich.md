@@ -291,6 +291,37 @@ denen damals gerechnet wurde. Mit echter Bewertung überwiegt das Bewerten das
 Erzeugen um **zwei Größenordnungen**. Die Bremse ist nicht, dass es zu viele
 Züge gibt, sondern dass jeder einzelne zu teuer beurteilt wird.
 
+### Auf dem Gerät gemessen: Faktor zwei
+
+Am 2026-09-20 auf einem iPhone 15 Pro Max gemessen, gegen denselben
+Gerätetyp im Simulator auf dem Mac, bei **identischer Stellung und
+identischer Zugzahl**:
+
+| | Züge | Zeit | je Zug |
+| --- | --- | --- | --- |
+| Simulator auf dem Mac | 12.270 | 55,6 s | 4,53 ms |
+| iPhone 15 Pro Max | 12.270 | 110,2 s | 8,98 ms |
+
+**Genau doppelt so lang.** Der Faktor ist sauber genug, um die Mac-Zahlen
+umzurechnen, statt jede einzeln auf dem Gerät zu wiederholen: Was dort 24
+Sekunden bis 13 Minuten braucht, braucht am Tisch 48 Sekunden bis 26
+Minuten.
+
+Die 12.270 Züge sind dabei ein **Sonderfall nach unten**, und das ist lehrreich:
+Der Klickdummy hält vier unabgeschlossene Karten, also darf keine fünfte
+genommen werden, und der Kartenzweig entfällt samt seinem Faktor sechs. Mit
+freier Kartenhand wäre dieselbe Stellung rund 74.000 Züge groß und damit
+**elf Minuten** auf dem Gerät.
+
+Damit steht der Abstand zum Ziel fest. Szenario 2 gibt etwa eine halbe
+Minute — solange die Vorderfrau überlegt. Gebraucht wird also:
+
+| Stellung | heute auf dem Gerät | nötiger Faktor |
+| --- | --- | --- |
+| Brett fast voll | 48 s | 2 |
+| Brett zur Hälfte | 6 min | 12 |
+| frühe Partie | 17 min | 35 |
+
 ### Drei Abhilfen, nach Wirkung geordnet
 
 1. **Inkrementell bewerten.** Ein Zug ändert höchstens drei Felder. Die
@@ -314,9 +345,18 @@ Erzeugen.
 1. **Die Bewertung schneller machen**, nach der Liste oben. Erst danach lohnt
    sich Feinschliff an den Gewichten: Eine Stellschraube, deren Wirkung man
    erst nach Minuten sieht, wird nicht gedreht.
-2. **Den Klickdummy anschließen.** `Sample.harmonyMove` weicht dem gerechneten
-   Zug, der Dummy-Zustand dem `EngineState`. Dabei fällt der doppelte
-   `AnimalCard` weg, siehe die offenen Punkte.
+2. **Den Dummy-Zustand ablösen.** Eine **Brücke** steht seit dem 2026-09-20
+   (`MyApp/Dummy/EngineBridge.swift`): Sie übersetzt den Zustand des
+   Klickdummys in einen `EngineState` und den Vorschlag zurück in einen
+   `HarmonyMove`. Damit läuft die Engine auf dem Gerät, was die Messung oben
+   erst möglich gemacht hat. Die Ablösung selbst — `EngineState` als der
+   eine Zustand, der doppelte `AnimalCard` weg — steht weiter aus.
+
+   Zwei Dinge sind dabei entstanden, die bleiben sollten: Die Suche ist ein
+   **Anytime-Verfahren** geworden, sie gibt bei Abbruch den besten Zug
+   zurück, den sie gefunden hatte, und sagt über `complete`, dass es nicht
+   der beste ist. Und der Schirm zeigt **nichts**, solange gerechnet wird —
+   ein Beispielzug an der Stelle des Vorschlags würde am Tisch gespielt.
 3. **Stockwerk 2**, sobald eine Partie durchläuft.
 
 ## Offene Punkte

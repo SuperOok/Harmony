@@ -22,6 +22,14 @@ public struct Suggestion: Sendable {
     public let runnerUp: Move?
     public let runnerUpValue: Double?
 
+    /// How many turns were weighed before this came out.
+    public let weighed: Int
+    /// Whether every turn was weighed. A search that was stopped gives the
+    /// best it had found, which is worth more than nothing — but it is not
+    /// the best turn, and saying so is the difference between an answer and
+    /// a claim.
+    public let complete: Bool
+
     /// How far ahead the chosen turn is. Nothing to compare against means
     /// there was only one turn.
     public var margin: Double? {
@@ -35,8 +43,16 @@ public enum Search {
     /// Generating and weighing run together. `docs/06-durchstich.md` measures
     /// why: laying out a quarter of a million turns and then weighing them
     /// costs more in the laying out than in the weighing.
+    /// - Parameters:
+    ///   - cancelled: asked every so often. A search that runs for minutes
+    ///     has to be stoppable, or the interface in front of it looks hung.
+    ///   - progress: how many turns have been weighed so far. There is no
+    ///     total to compare it against — that would mean generating them all
+    ///     first, which is the very thing this avoids.
     public static func best(from state: EngineState,
-                            weights: Weights = Weights()) -> Suggestion? {
+                            weights: Weights = Weights(),
+                            cancelled: () -> Bool = { false },
+                            progress: (Int) -> Void = { _ in }) -> Suggestion? {
         var bestMove: Move? = nil
         var bestValue = -Double.infinity
         var bestTerms: [Term] = []
@@ -44,10 +60,13 @@ public enum Search {
         var secondMove: Move? = nil
         var secondValue = -Double.infinity
 
+        var weighed = 0
+        var stopped = false
         var offeredSpaces: Set<String> = []
         let anchors = Moves.standingHabitatCells(of: state)
 
         for (index, space) in state.display.enumerated() {
+            if stopped { break }
             let signature = space.map(\.rawValue).sorted().joined()
             guard offeredSpaces.insert(signature).inserted else { continue }
 
@@ -58,8 +77,11 @@ public enum Search {
             let available = availability(after: index, of: state)
 
             for board in Moves.boards(placing: space, on: state) {
+                if cancelled() { stopped = true; break }
                 for move in Moves.turns(space: index, board: board,
                                         from: state, anchors: anchors) {
+                    weighed += 1
+                    if weighed % 2000 == 0 { progress(weighed) }
                     let after = state.applying(move)
                     let evaluation = Evaluator.evaluate(after, weights: weights,
                                                         availability: available)
@@ -76,10 +98,12 @@ public enum Search {
             }
         }
 
+        progress(weighed)
         guard let bestMove else { return nil }
         return Suggestion(move: bestMove, value: bestValue, pointsNow: bestPoints,
                           terms: bestTerms, runnerUp: secondMove,
-                          runnerUpValue: secondMove == nil ? nil : secondValue)
+                          runnerUpValue: secondMove == nil ? nil : secondValue,
+                          weighed: weighed, complete: !stopped)
     }
 
     /// What the display is expected to offer once this space is taken and

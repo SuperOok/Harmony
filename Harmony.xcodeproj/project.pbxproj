@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		000000000000000000000320 /* HarmonyRules in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000310 /* HarmonyRules */; };
+		000000000000000000000321 /* HarmonyEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000311 /* HarmonyEngine */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				000000000000000000000320 /* HarmonyRules in Frameworks */,
+				000000000000000000000321 /* HarmonyEngine in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -85,6 +87,7 @@
 			name = Harmony;
 			packageProductDependencies = (
 				000000000000000000000310 /* HarmonyRules */,
+				000000000000000000000311 /* HarmonyEngine */,
 			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Harmony.app */;
@@ -122,6 +125,10 @@
 		000000000000000000000310 /* HarmonyRules */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HarmonyRules;
+		};
+		000000000000000000000311 /* HarmonyEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HarmonyEngine;
 		};
 /* End XCSwiftPackageProductDependency section */
 

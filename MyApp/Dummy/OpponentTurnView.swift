@@ -1,5 +1,6 @@
 import SwiftUI
 import HarmonyRules
+import HarmonyEngine
 
 /// Phase 5 click-through prototype: recording other players' turns, one
 /// after another. No engine and no rule checking — what is measured is the
@@ -39,6 +40,23 @@ struct OpponentTurnView: View {
     /// on its own and the why is one tap away.
     @State private var shownRationale: MoveRationale?
 
+    /// What the engine worked out, and how long it took.
+    ///
+    /// A bridge, not the merge — see `EngineBridge.swift`. The search runs
+    /// for seconds to minutes, so it runs off the main thread and the screen
+    /// says so while it does. That is the point of putting it on a device at
+    /// all: the figure from a Mac says nothing about the table.
+    @State private var computed: HarmonyMove?
+    @State private var thinkingSince: Date?
+    @State private var thinkingTook: TimeInterval?
+    @State private var thinkingWeighed = 0
+    @State private var thinkingComplete = true
+    @State private var engineFailed = false
+    /// Held so the caretaker can stop it. A search that runs for minutes
+    /// needs a way out, and stopping it is not giving up: the engine hands
+    /// back the best it had found by then.
+    @State private var thinker: Task<Void, Never>?
+
     private var state: GameState { events.state(from: startState) }
     private var end: EndStatus { events.endStatus(from: startState) }
     /// No refill is entered once the bag cannot serve three stones.
@@ -65,8 +83,55 @@ struct OpponentTurnView: View {
     /// The sample moves are built for side A; on side B their cells do not
     /// all exist, so none is offered there.
     private var pendingMove: HarmonyMove? {
-        guard isHarmony, !state.sideB else { return nil }
-        return showSetupExample ? Sample.harmonyMoveSetup : Sample.harmonyMove
+        guard isHarmony else { return nil }
+        // The sample move stays reachable through the picker, because it is
+        // what the screens were built against. Side B has no sample: its
+        // cells are not all there.
+        if showSetupExample { return state.sideB ? nil : Sample.harmonyMoveSetup }
+        // **Nothing while the engine thinks.** A made-up move standing where
+        // the suggestion will go is worse than an empty space: at the table
+        // somebody would play it.
+        return computed
+    }
+
+    /// Changes exactly when the position does, which is when the engine has
+    /// to think again.
+    private var positionKey: String {
+        "\(events.count)/\(state.seatIndex)/\(showSetupExample)"
+    }
+
+    /// Runs the search off the main thread. Cancelled by SwiftUI as soon as
+    /// the position changes, which the engine asks about while it works.
+    private func think() {
+        thinker?.cancel()
+        guard isHarmony, !showSetupExample else { return }
+        guard let position = state.engineState(events: events) else {
+            engineFailed = true
+            return
+        }
+        engineFailed = false
+        computed = nil
+        thinkingTook = nil
+        thinkingSince = Date()
+
+        thinker = Task {
+            let started = Date()
+            let work = Task.detached(priority: .userInitiated) {
+                HarmonyEngine.Search.best(from: position, cancelled: { Task.isCancelled })
+            }
+            // Stopping means "that is enough", not "forget it": the search
+            // returns the best turn it had reached.
+            let suggestion = await withTaskCancellationHandler {
+                await work.value
+            } onCancel: {
+                work.cancel()
+            }
+            thinkingSince = nil
+            thinkingTook = Date().timeIntervalSince(started)
+            thinkingWeighed = suggestion?.weighed ?? 0
+            thinkingComplete = suggestion?.complete ?? true
+            computed = suggestion?.asHarmonyMove
+        }
     }
 
     private var isComplete: Bool {
@@ -97,6 +162,8 @@ struct OpponentTurnView: View {
                     .accessibilityIdentifier("taps")
                 }
             }
+            .onChange(of: positionKey, initial: true) { think() }
+            .onDisappear { thinker?.cancel() }
             .sheet(isPresented: $cardPickerOpen) { cardPicker }
             .sheet(isPresented: $historyOpen) { historyList }
             .sheet(isPresented: $correctionOpen) {
@@ -266,6 +333,15 @@ struct OpponentTurnView: View {
                           cells: harmonyCells)
                     .padding(.horizontal, 4)
 
+                engineStatus
+
+                if pendingMove == nil && thinkingSince != nil {
+                    Text("Der Vorschlag erscheint, sobald die Rechnung steht. "
+                         + "Bis dahin steht hier nichts — ein ausgedachter Zug "
+                         + "an dieser Stelle würde am Tisch gespielt.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+
                 if let move = pendingMove {
                     TitledBlock("Was zu tun ist") {
                         VStack(alignment: .leading, spacing: 8) {
@@ -346,6 +422,38 @@ struct OpponentTurnView: View {
         return cells
     }
 
+    /// What the engine is doing, and what it cost. On the table this line
+    /// is the whole experiment: a suggestion nobody waits for is no
+    /// suggestion.
+    @ViewBuilder private var engineStatus: some View {
+        if engineFailed {
+            Label("Die Engine kennt eine dieser Karten nicht — gezeigt wird der "
+                  + "Beispielzug.", systemImage: "exclamationmark.triangle")
+                .font(.footnote).foregroundStyle(.secondary)
+        } else if let since = thinkingSince {
+            TimelineView(.periodic(from: since, by: 0.5)) { context in
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Harmony rechnet — "
+                         + String(format: "%.0f s", context.date.timeIntervalSince(since)))
+                        .font(.footnote.monospacedDigit())
+                    Spacer()
+                    Button("Das genügt") { thinker?.cancel() }
+                        .font(.footnote)
+                        .accessibilityIdentifier("stop-thinking")
+                }
+                .accessibilityIdentifier("thinking")
+            }
+        } else if let took = thinkingTook {
+            Label(String(format: "%@ in %.1f Sekunden, %d Züge geprüft",
+                         thinkingComplete ? "Gerechnet" : "Abgebrochen",
+                         took, thinkingWeighed),
+                  systemImage: thinkingComplete ? "stopwatch" : "hand.raised")
+                .font(.footnote).foregroundStyle(.secondary)
+                .accessibilityIdentifier("thinking-took")
+        }
+    }
+
     private var harmonyFooter: some View {
         VStack(spacing: 8) {
             Text(pendingMove.map { "Harmony  \($0.notation)" } ?? "Harmony  —")
@@ -360,6 +468,9 @@ struct OpponentTurnView: View {
                 if let move = pendingMove { events.append(.harmonyTurn(move)) }
             }
             .buttonStyle(.borderedProminent)
+            // Solange nichts dasteht, gibt es nichts auszuführen. Ein Knopf,
+            // der nichts tut, sieht am Tisch aus wie ein Fehler.
+            .disabled(pendingMove == nil)
             .accessibilityIdentifier("harmony-done")
         }
         .padding(.horizontal).padding(.top, 10).padding(.bottom, 8)
