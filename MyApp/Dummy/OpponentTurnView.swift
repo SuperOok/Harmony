@@ -14,10 +14,16 @@ struct OpponentTurnView: View {
 
     /// The position the log starts from — what the setup produced.
     let startState: GameState
+    /// What was already played when the app came back.
+    var restored: [GameEvent] = []
     /// Opens straight on the final score, the way `-harmonyTurn` opens on
     /// Harmony's screen. The position it shows is a real end position; only
     /// the round being over is asserted rather than played.
     var finished = false
+    /// Called after every event, so the game survives being put away.
+    var onEventsChanged: ([GameEvent]) -> Void = { _ in }
+    /// Throws the game away and returns to the setup.
+    var onNewGame: () -> Void = {}
 
     // Input of the turn in progress
     @State private var takenIndex: Int?
@@ -175,6 +181,8 @@ struct OpponentTurnView: View {
                     .accessibilityIdentifier("taps")
                 }
             }
+            .onAppear { if events.isEmpty, !restored.isEmpty { events = restored } }
+            .onChange(of: events.count) { onEventsChanged(events) }
             .onChange(of: positionKey, initial: true) { think() }
             .sheet(isPresented: Binding(get: { harmonyReport != nil },
                                         set: { if !$0 { harmonyReport = nil } })) {
@@ -849,6 +857,21 @@ struct OpponentTurnView: View {
                     .accessibilityIdentifier("correct-board")
 
                     Text("Nur wenn auf dem Tisch etwas anderes liegt als hier.")
+                        .font(.caption).foregroundStyle(.secondary)
+
+                    Divider().padding(.vertical, 4)
+
+                    // Eine Partie überdauert das Weglegen des Geräts; ohne
+                    // diesen Weg käme man aus der letzten nie wieder heraus.
+                    Button(role: .destructive) {
+                        historyOpen = false
+                        onNewGame()
+                    } label: {
+                        Label("Neue Partie", systemImage: "trash").font(.callout)
+                    }
+                    .accessibilityIdentifier("new-game")
+
+                    Text("Verwirft den gespeicherten Stand und fragt den Aufbau neu ab.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)

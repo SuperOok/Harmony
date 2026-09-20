@@ -239,7 +239,13 @@ Drei Anforderungen fallen damit zusammen:
   erneutes Abspielen.
 - **Überleben des Hintergrundwechsels** ist das Schreiben nach jedem
   Ereignis. Mehr verlangt Phase 2 nicht; eine Partie über Tage ist
-  ausdrücklich kein Szenario.
+  ausdrücklich kein Szenario. Umgesetzt am 2026-09-20 als
+  `MyApp/Dummy/GameStore.swift`: ein ausdrückliches Speicherformat, nicht
+  `Codable` auf den Ansichtstypen — eine Spielstandsdatei ist eine
+  Schnittstelle, und eine, die jeder Aufräumarbeit an einem `struct` folgt,
+  bricht beim ersten Mal. Unlesbares wird verworfen statt geraten: Eine
+  falsche Stellung ist schlimmer als ein Neuanfang, weil am Tisch niemand
+  sagen könnte, woher sie kommt.
 - **Testfälle** entstehen durch Ablegen derselben Datei, siehe
   `pruefverfahren.md`.
 

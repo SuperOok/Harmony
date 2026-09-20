@@ -184,7 +184,8 @@ Tisch liegt kein Mac.
 - Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
   Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
   benutzen. Siehe `docs/pruefverfahren.md`.
-- Fünf Startparameter: `-harmonyTurn` öffnet direkt auf Harmonys
+- Sechs Startparameter: `-forgetGame` verwirft einen gespeicherten Stand
+  beim Start, was die Persistenztests brauchen; `-harmonyTurn` öffnet direkt auf Harmonys
   Bildschirm, mit einer Attrappenstellung mitten in der Partie;
   `-sampleMove` hält zusätzlich die Engine heraus und zeigt den
   Beispielzug, was die Oberflächentests brauchen; `-longCards` legt die
@@ -196,6 +197,13 @@ Tisch liegt kein Mac.
   keine Karten in Harmonys Hand — und füllt sich über die Züge. Die
   Attrappenstellung hängt seit dem 2026-09-20 nur noch an
   `-harmonyTurn`.
+
+  Eine angefangene Partie **überdauert das Weglegen**: Der Ereignisverlauf
+  liegt als `spielstand.json` in Application Support und wird nach jedem
+  Ereignis geschrieben. Die Prüfeinstiege schreiben **nicht** — sonst käme
+  die Attrappenstellung beim nächsten echten Start zurück und sähe aus wie
+  eine gespielte Partie. Verworfen wird sie über *Neue Partie* im
+  Verlauf.
 
 ## Hinweise zum Repository
 
