@@ -80,13 +80,15 @@ struct DisplayField: Identifiable {
     let id = UUID()
     var stones: [Stone]
 
-    /// A space is unordered. For writing it down one spelling applies, so
-    /// the same space always looks the same and diffs stay stable.
-    var notation: String {
+    /// A space is unordered. One fixed order applies to both writing it
+    /// down and showing it, so the same space always looks the same —
+    /// which is what makes two equal spaces recognisable at a glance.
+    var ordered: [Stone] {
         Stone.allCases
-            .flatMap { s in Array(repeating: s.rawValue, count: stones.filter { $0 == s }.count) }
-            .joined()
+            .flatMap { s in Array(repeating: s, count: stones.filter { $0 == s }.count) }
     }
+
+    var notation: String { ordered.map(\.rawValue).joined() }
 }
 
 enum Sample {

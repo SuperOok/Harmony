@@ -96,7 +96,7 @@ struct OpponentTurnView: View {
                         refill = []
                     } label: {
                         HStack(spacing: 10) {
-                            ForEach(Array(field.stones.enumerated()), id: \.offset) { _, stone in
+                            ForEach(Array(field.ordered.enumerated()), id: \.offset) { _, stone in
                                 StoneDot(stone: stone, size: 30)
                             }
                             Spacer()
@@ -343,53 +343,17 @@ struct OpponentTurnView: View {
 
     // MARK: - Pickers
 
-    /// Two columns, alphabetical and filled **column by column** like a
-    /// printed list: A to the middle on the left, the rest on the right.
-    /// Looking a name up then means scanning one column instead of checking
-    /// both halves of every row.
+    /// The same picker the setup uses, limited to the one card that came
+    /// up. It closes by itself once chosen.
     private var cardPicker: some View {
-        let remaining = Sample.allCards
-            .filter { !state.seenCards.contains($0) }
-            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        let split = (remaining.count + 1) / 2
-        let left = Array(remaining.prefix(split))
-        let right = Array(remaining.dropFirst(split))
-
-        return NavigationStack {
-            VStack(spacing: 8) {
-                ForEach(left.indices, id: \.self) { i in
-                    HStack(spacing: 8) {
-                        cardCell(left[i])
-                        if i < right.count {
-                            cardCell(right[i])
-                        } else {
-                            Color.clear.frame(height: 42).frame(maxWidth: .infinity)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal)
-            .frame(maxHeight: .infinity, alignment: .top)
-            .navigationTitle("Nachgerückt · \(remaining.count) im Stapel")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private func cardCell(_ name: String) -> some View {
-        Button {
-            taps += 1
-            cardDrawn = name
-            cardPickerOpen = false
-        } label: {
-            Text(name)
-                .font(.callout)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, minHeight: 42)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color(.secondarySystemBackground)))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("draw-\(name)")
+        CardPickerView(
+            title: "Nachgerückt",
+            unavailable: state.seenCards,
+            limit: 1,
+            chosen: Binding(get: { cardDrawn.map { [$0] } ?? [] },
+                            set: { cardDrawn = $0.first }),
+            onTap: { taps += 1 },
+            onComplete: { cardPickerOpen = false })
     }
 
     private var historyList: some View {

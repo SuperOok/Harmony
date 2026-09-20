@@ -12,6 +12,8 @@ import SwiftUI
 struct SetupView: View {
     var onStart: (GameState) -> Void
 
+    /// Harmonies seats four. One to three humans plus Harmony therefore
+    /// covers every case in which she can play at all.
     @State private var humanCount = 2
     @State private var names = ["", "", ""]
     @State private var harmonySeat = 2
@@ -22,8 +24,16 @@ struct SetupView: View {
     @State private var taps = 0
     @State private var cardPickerOpen = false
 
-    private var seatCount: Int { humanCount + 1 }
     private var isComplete: Bool { stones.count == 15 && cards.count == 5 }
+
+    /// The five spaces as they are shown: each in the fixed order, so two
+    /// equal spaces look equal.
+    private var rows: [[Stone]] {
+        (0..<5).map { field in
+            let slice = Array(stones.dropFirst(field * 3).prefix(3))
+            return DisplayField(stones: slice).ordered
+        }
+    }
 
     private func name(_ index: Int) -> String {
         names[index].isEmpty ? "Spieler \(index + 1)" : names[index]
@@ -69,8 +79,9 @@ struct SetupView: View {
         TitledBlock("Wer spielt mit?") {
             VStack(alignment: .leading, spacing: 12) {
                 Picker("Menschen", selection: $humanCount) {
-                    Text("2 Menschen").tag(2)
-                    Text("3 Menschen").tag(3)
+                    Text("1").tag(1)
+                    Text("2").tag(2)
+                    Text("3").tag(3)
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: humanCount) { _, count in
@@ -133,8 +144,7 @@ struct SetupView: View {
                     ForEach(0..<5, id: \.self) { field in
                         HStack(spacing: 10) {
                             ForEach(0..<3, id: \.self) { slot in
-                                let index = field * 3 + slot
-                                StoneDot(stone: index < stones.count ? stones[index] : nil,
+                                StoneDot(stone: slot < rows[field].count ? rows[field][slot] : nil,
                                          size: 30)
                             }
                             Spacer()
@@ -171,7 +181,10 @@ struct SetupView: View {
                 }
 
                 Text("Die Steine werden der Reihe nach eingesetzt, von oben "
-                     + "links. Kein Feld muss vorher ausgewählt werden.")
+                     + "links; kein Feld muss vorher ausgewählt werden. "
+                     + "Innerhalb eines Feldes stehen sie in fester Ordnung, "
+                     + "damit gleiche Felder sofort als gleich zu erkennen "
+                     + "sind — die Reihenfolge in einem Feld bedeutet nichts.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -221,56 +234,17 @@ struct SetupView: View {
         }
     }
 
-    /// The picker stays open until five are chosen, so each card costs one
-    /// tap instead of two. Two columns, alphabetical, filled column by
-    /// column like a printed list.
+    /// The same picker the game uses, here for five cards in a row. They
+    /// stay highlighted as they are chosen, and after the fifth the view
+    /// closes on its own.
     private var cardPicker: some View {
-        let remaining = Sample.allCards
-            .filter { !cards.contains($0) }
-            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        let split = (remaining.count + 1) / 2
-
-        return NavigationStack {
-            ScrollView {
-                VStack(spacing: 8) {
-                    ForEach(0..<split, id: \.self) { row in
-                        HStack(spacing: 8) {
-                            cardCell(remaining[row])
-                            if split + row < remaining.count {
-                                cardCell(remaining[split + row])
-                            } else {
-                                Color.clear.frame(height: 42).frame(maxWidth: .infinity)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .navigationTitle("Noch \(5 - cards.count) wählen")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fertig") { cardPickerOpen = false }
-                }
-            }
-        }
-    }
-
-    private func cardCell(_ name: String) -> some View {
-        Button {
-            taps += 1
-            if cards.count < 5 { cards.append(name) }
-            if cards.count == 5 { cardPickerOpen = false }
-        } label: {
-            Text(name)
-                .font(.callout)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, minHeight: 42)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color(.secondarySystemBackground)))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("pick-\(name)")
+        CardPickerView(
+            title: cards.count == 5 ? "Fünf gewählt" : "Noch \(5 - cards.count) wählen",
+            unavailable: [],
+            limit: 5,
+            chosen: $cards,
+            onTap: { taps += 1 },
+            onComplete: { cardPickerOpen = false })
     }
 
     // MARK: - Fußleiste
