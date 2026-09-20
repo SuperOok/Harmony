@@ -190,7 +190,14 @@ vier Paare zu, damit eine spätere Änderung an der Stapelliste hier auffällt.
 
 ## Offene Punkte
 
-1. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
+1. **`AnimalCard` gibt es zweimal.** Der Klickdummy führt in
+   `MyApp/Dummy/SampleData.swift` einen eigenen Typ dieses Namens, der nur
+   Name und Punktleiste kennt; seit dem 2026-09-20 gibt es den Typ auch in
+   `HarmonyRules`, mit Muster und Würfelzelle. Übersetzt wird beides, weil
+   der modul-eigene Typ den eingeführten verdeckt — auffallen wird es erst
+   bei der Anbindung. Dort fällt der Dummy-Typ ersatzlos weg; bis dahin ist
+   es eine Falle und steht deshalb hier.
+2. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
    Punkte jetzt, Aussicht aus Anwärtern, Aussicht aus Landschaften,
    Optionenvielfalt — greifen zu verschiedenen Zeiten der Partie. Womit sie
    gegeneinander zu verrechnen sind, gehört gemessen, sobald Selbstspiel

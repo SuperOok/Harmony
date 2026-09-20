@@ -1,0 +1,241 @@
+import HarmonyRules
+
+// What Harmony knows, as she knows it. Not the game — `04-architektur.md`
+// draws the line: no foreign boards, no foreign cubes, and no guessing at
+// what the others hold. What she does know, she knows **exactly**, and that
+// includes the bag.
+
+// MARK: - The bag
+
+/// What is left in the bag, per colour.
+///
+/// Not an estimate. Stones leave the bag only through refills, every refill
+/// passes through the input, and a stone a player puts on their board was in
+/// the display before and is long since accounted for. So the count is
+/// arithmetic, and `04-architektur.md` builds the whole chance layer on it.
+public struct BagKnowledge: Sendable, Hashable {
+    /// `regeln-basisspiel.md`: 23 blue, 23 grey, 21 brown, 19 green,
+    /// 19 yellow, 15 red — 120 stones.
+    public static let total: [Stone: Int] = [
+        .water: 23, .stone: 23, .wood: 21, .leaves: 19, .field: 19, .brick: 15,
+    ]
+
+    /// Everything that has ever left the bag: the fifteen of the setup and
+    /// three per turn since.
+    public let drawn: [Stone: Int]
+
+    public init(drawn: [Stone: Int]) { self.drawn = drawn }
+
+    public func remaining(_ stone: Stone) -> Int {
+        (Self.total[stone] ?? 0) - (drawn[stone] ?? 0)
+    }
+
+    public var remaining: [Stone: Int] {
+        Stone.allCases.reduce(into: [:]) { $0[$1] = remaining($1) }
+    }
+
+    public var count: Int { Stone.allCases.reduce(0) { $0 + remaining($1) } }
+
+    /// The chance that a single stone drawn now is this colour.
+    public func chance(of stone: Stone) -> Double {
+        count > 0 ? Double(remaining(stone)) / Double(count) : 0
+    }
+}
+
+// MARK: - A card in hand
+
+/// One of Harmony's cards, with how many of its cubes are already on the
+/// board.
+public struct HeldCard: Sendable, Hashable {
+    public let card: AnimalCard
+    public var cubesPlaced: Int
+
+    public init(card: AnimalCard, cubesPlaced: Int = 0) {
+        self.card = card
+        self.cubesPlaced = cubesPlaced
+    }
+
+    /// Scored is the **highest visible number**, which is the one under the
+    /// cube laid last — `regeln-basisspiel.md`. None laid, nothing scored.
+    public var score: Int {
+        cubesPlaced < 1 ? 0 : card.points[min(cubesPlaced, card.points.count) - 1]
+    }
+
+    /// Finished once the last cube is down. It then stops counting against
+    /// the limit of four.
+    public var isFinished: Bool { cubesPlaced >= card.points.count }
+
+    /// What laying the next cube would add. This, not the card's total, is
+    /// what a move is worth — `04-architektur.md` says so explicitly, because
+    /// cards are not comparable by their sums.
+    public var nextCubeGain: Int? {
+        guard !isFinished else { return nil }
+        return card.points[cubesPlaced] - score
+    }
+}
+
+// MARK: - The position
+
+/// Everything Harmony holds between two of her turns.
+public struct EngineState: Sendable {
+    public var side: BoardSide
+    /// Her own board: space to stack.
+    public var stacks: [Int: [Stone]]
+    /// Space to the card whose cube lies there. Both questions that
+    /// `04-architektur.md` asks are answered from this one map — which
+    /// spaces are taken, and how many cubes each card has down. Counting
+    /// cubes off the board's patterns would not do: a cube stays when its
+    /// pattern is destroyed.
+    public var cubes: [Int: String]
+    /// Her cards, finished ones included.
+    public var hand: [HeldCard]
+    /// The five spaces of the shared display, three stones each. Unordered
+    /// within a space, and the spaces themselves carry no label — see
+    /// `04-architektur.md`. Fewer once the bag runs dry.
+    public var display: [[Stone]]
+    /// The five cards lying open.
+    public var openCards: [AnimalCard]
+    /// What no one has seen yet. Known exactly, because every card that ever
+    /// lay open was recorded.
+    public var deck: [AnimalCard]
+    /// Everything that has left the bag, per colour.
+    public var drawn: [Stone: Int]
+    /// Turns played in the game, by everyone.
+    public var turnsPlayed: Int
+    /// How many are playing, and where Harmony sits. Only the remaining turn
+    /// count needs them.
+    public var players: Int
+    public var seat: Int
+
+    public init(side: BoardSide = .a,
+                stacks: [Int: [Stone]] = [:],
+                cubes: [Int: String] = [:],
+                hand: [HeldCard] = [],
+                display: [[Stone]] = [],
+                openCards: [AnimalCard] = [],
+                deck: [AnimalCard] = [],
+                drawn: [Stone: Int] = [:],
+                turnsPlayed: Int = 0,
+                players: Int = 3,
+                seat: Int = 0) {
+        self.side = side
+        self.stacks = stacks
+        self.cubes = cubes
+        self.hand = hand
+        self.display = display
+        self.openCards = openCards
+        self.deck = deck
+        self.drawn = drawn
+        self.turnsPlayed = turnsPlayed
+        self.players = players
+        self.seat = seat
+    }
+}
+
+// MARK: - What follows from it
+
+extension EngineState {
+    public var board: Board { side.board }
+
+    public var bag: BagKnowledge { BagKnowledge(drawn: drawn) }
+
+    /// The spaces carrying a cube — what the pattern search has to treat as
+    /// frozen, because nothing goes on top of a stone with a cube on it.
+    public var cubeCells: Set<Int> { Set(cubes.keys) }
+
+    public var cubesPlaced: Int { cubes.count }
+
+    /// Cards still waiting for cubes. `regeln-basisspiel.md` allows at most
+    /// four, and a fifth may not be taken while they are held.
+    public var unfinishedCards: [HeldCard] { hand.filter { !$0.isFinished } }
+
+    public var mayTakeACard: Bool { unfinishedCards.count < 4 }
+
+    public var freeCells: Int { board.cells.count - stacks.count }
+
+    /// The second trigger: two or fewer free spaces end the game.
+    public var boardIsFull: Bool { freeCells <= 2 }
+
+    /// `regeln-basisspiel.md` counts it out: 105 stones in the bag, three a
+    /// turn, so the bag carries exactly 35 turns. An upper bound — a full
+    /// board can end it sooner, and the round is played out after either
+    /// trigger.
+    public static let turnsInTheBag = 35
+
+    public var turnsLeftInGame: Int { max(0, Self.turnsInTheBag - turnsPlayed) }
+
+    /// How many turns are left for Harmony herself. The evaluation needs
+    /// this one, not the game's: whether a candidate is still reachable is a
+    /// question about **her** remaining turns.
+    public var ownTurnsLeft: Int {
+        guard players > 0 else { return 0 }
+        return (turnsPlayed..<Self.turnsInTheBag).count { $0 % players == seat }
+    }
+
+    /// The cards she could still draw or take — everything not already hers
+    /// and not already gone.
+    public var reachableCards: [AnimalCard] { openCards + deck }
+}
+
+// MARK: - Checking itself
+
+extension EngineState {
+    /// What does not add up. Empty means consistent.
+    ///
+    /// Only what Harmony can actually check: she does not see the others'
+    /// boards, so the full stone balance from `pruefverfahren.md` is out of
+    /// reach. What is in reach is that nothing was invented — no colour
+    /// drawn more often than it exists, no card carrying more cubes than it
+    /// has, no stack that could not lie on a table.
+    public var inconsistencies: [String] {
+        var found: [String] = []
+
+        for stone in Stone.allCases where bag.remaining(stone) < 0 {
+            found.append("\(stone.name): \(-bag.remaining(stone)) mehr gezogen als es gibt")
+        }
+
+        let expected = 15 + 3 * turnsPlayed
+        let actual = Stone.allCases.reduce(0) { $0 + (drawn[$1] ?? 0) }
+        if actual > expected {
+            found.append("\(actual) Steine gezogen, höchstens \(expected) möglich")
+        }
+
+        for (cell, stack) in stacks where !stack.isLegal {
+            found.append("\(cellName(cell)): \(stack.map(\.rawValue).joined()) gibt es nicht")
+        }
+
+        for (cell, _) in cubes where stacks[cell] == nil {
+            found.append("\(cellName(cell)): Würfel auf leerem Feld")
+        }
+
+        let held = Set(hand.map(\.card.name))
+        for name in Set(cubes.values) where !held.contains(name) {
+            found.append("Würfel von \(name), aber die Karte liegt nicht hier")
+        }
+
+        for card in hand {
+            let onBoard = cubes.values.count { $0 == card.card.name }
+            if onBoard != card.cubesPlaced {
+                found.append("\(card.card.name): \(card.cubesPlaced) gezählt, \(onBoard) auf dem Brett")
+            }
+            if card.cubesPlaced > card.card.points.count {
+                found.append("\(card.card.name): mehr Würfel als Felder")
+            }
+        }
+
+        if unfinishedCards.count > 4 {
+            found.append("\(unfinishedCards.count) unabgeschlossene Karten, erlaubt sind 4")
+        }
+
+        if openCards.count > 5 {
+            found.append("\(openCards.count) offene Karten, es sind fünf")
+        }
+
+        let names = openCards.map(\.name) + deck.map(\.name) + hand.map(\.card.name)
+        if Set(names).count != names.count {
+            found.append("eine Karte kommt doppelt vor")
+        }
+
+        return found
+    }
+}
