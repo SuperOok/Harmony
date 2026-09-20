@@ -23,6 +23,14 @@ struct NamePickerView: View {
     /// Shown above the list when new names may be added, as for players.
     var addPrompt: String? = nil
     var onAdd: ((String) -> Void)? = nil
+    /// Removing a name for good. Offered for players, not for cards — the
+    /// thirty-two animals are given, the people are not.
+    ///
+    /// Held down rather than tapped, so it cannot happen by accident, and
+    /// **without a confirmation**: a name may be removed for reasons that
+    /// make seeing it again the thing to avoid. It can be entered anew if
+    /// that was a mistake.
+    var onDelete: ((String) -> Void)? = nil
     /// Counts a tap, so the input path stays measurable.
     var onTap: () -> Void = {}
     var onComplete: () -> Void
@@ -57,6 +65,12 @@ struct NamePickerView: View {
                             .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
                             .accessibilityIdentifier("add-name")
                         }
+                    }
+
+                    if onDelete != nil {
+                        Text("Zum Entfernen einen Namen gedrückt halten.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
                     let split = (offered.count + 1) / 2
@@ -107,20 +121,48 @@ struct NamePickerView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("pick-\(name)")
+        .contextMenu {
+            if let onDelete {
+                Button("Entfernen", systemImage: "trash", role: .destructive) {
+                    onDelete(name)
+                }
+            }
+        }
     }
 }
 
-/// Players Harmony has seen before.
+/// Players Harmony has seen before, kept on the device across launches.
 ///
-/// **Not persisted yet.** Version two is to add up everyone's score so the
-/// pad from the box is no longer needed, and to keep past games; then this
-/// list has to survive the app and carry results. Recognising a player
-/// again is what makes an old game attachable to them.
+/// Stored in the user defaults: it is a handful of names, and anything
+/// heavier would be machinery without a purpose. **Local only**, as Phase 1
+/// requires — nothing leaves the device, and the public repository never
+/// sees a real name, which is why recorded transcripts use neutral ones
+/// (`pruefverfahren.md`).
+///
+/// Version two is to add up everyone's score so the pad from the box is no
+/// longer needed, and to keep past games; those results attach to the names
+/// kept here. Removing a name is therefore a real deletion, not a filter —
+/// see `onDelete` above for why it asks nothing back.
 enum KnownPlayers {
-    static var all: [String] = ["Anke", "Bernd", "Clara", "Dieter", "Eva"]
+    private static let key = "knownPlayers"
+    private static let seed = ["Anke", "Bernd", "Clara", "Dieter", "Eva"]
+
+    static var all: [String] {
+        get {
+            if let stored = UserDefaults.standard.stringArray(forKey: key) { return stored }
+            // Seeded once, so emptying the list does not bring them back.
+            UserDefaults.standard.set(seed, forKey: key)
+            return seed
+        }
+        set { UserDefaults.standard.set(newValue, forKey: key) }
+    }
 
     static func add(_ name: String) {
         guard !all.contains(name) else { return }
         all.append(name)
+    }
+
+    static func remove(_ name: String) {
+        all.removeAll { $0 == name }
     }
 }

@@ -43,6 +43,10 @@ struct SetupPlayersView: View {
 
     @State private var humanCount = 2
     @State private var pickerOpen = false
+    /// Held as view state, not read from the store on the fly: a change to
+    /// a static store is invisible to SwiftUI, so the list would not
+    /// refresh when a name is added or removed.
+    @State private var knownPlayers = KnownPlayers.all
 
     var body: some View {
         NavigationStack {
@@ -146,11 +150,19 @@ struct SetupPlayersView: View {
                 NamePickerView(
                     title: players.count == humanCount
                            ? "Vollzählig" : "Noch \(humanCount - players.count) wählen",
-                    options: KnownPlayers.all,
+                    options: knownPlayers,
                     limit: humanCount,
                     chosen: $players,
                     addPrompt: "Neuer Spieler",
-                    onAdd: { KnownPlayers.add($0) },
+                    onAdd: { name in
+                        KnownPlayers.add(name)
+                        knownPlayers = KnownPlayers.all
+                    },
+                    onDelete: { name in
+                        KnownPlayers.remove(name)
+                        knownPlayers = KnownPlayers.all
+                        players.removeAll { $0 == name }
+                    },
                     onTap: { taps += 1 },
                     onComplete: { pickerOpen = false })
             }

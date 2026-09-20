@@ -243,6 +243,17 @@ Drei Anforderungen fallen damit zusammen:
 - **Testfälle** entstehen durch Ablegen derselben Datei, siehe
   `pruefverfahren.md`.
 
+### Die Spielerliste gehört nicht ins Protokoll
+
+Das Ereignisprotokoll **ist** eine Partie; die Spielerliste überdauert sie.
+Sie liegt deshalb getrennt und dauerhaft in den Benutzereinstellungen, nicht
+im Protokoll — sonst wäre sie mit jeder Partie neu da und mit jeder
+Rücknahme mit betroffen.
+
+Lokal, wie Phase 1 verlangt. Für v2 kommen die Ergebnisse vergangener
+Partien dazu; sie hängen an denselben Namen. Deshalb ist das Entfernen
+eines Namens eine echte Löschung und keine Ausblendung.
+
 Eine Genauigkeit: Harmonys Zug steht **als Ereignis** im Protokoll, nicht
 als Auftrag, ihn neu zu berechnen. Die Wiedergabe braucht die Engine also
 nicht und bleibt auch dann gültig, wenn sich die Bewertung ändert.

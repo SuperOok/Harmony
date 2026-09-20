@@ -141,11 +141,16 @@ Nichts davon ist verworfen, nur vertagt.
   ersetzt den Block aus der Packung. Das war in Phase 1 unter „Kommt nie"
   geführt und ist am 2026-09-20 hierher verschoben worden — die Methodik
   erlaubt Rückwärtsgehen, und der Nutzen am Tisch ist offensichtlich.
-- **Spielerverwaltung.** Voraussetzung für das Vorige: Spieler werden
-  wiedererkannt, damit sich Ergebnisse vergangener Partien ihnen zuordnen
-  lassen. Erster Schritt ist in v1 schon getan — die Spielerauswahl beim
-  Aufbau greift auf eine Liste bekannter Namen zu. Dauerhaft gespeichert
-  wird noch nichts.
+- **Ergebnisse vergangener Partien.** Ebenfalls v2. Sie hängen an den
+  Namen aus der Spielerverwaltung; ohne Wiedererkennung ließe sich keine
+  alte Partie zuordnen. In v1 **nicht** enthalten.
+- **Spielerverwaltung.** Voraussetzung für die beiden Vorigen und in v1
+  bereits enthalten, aber nur zur Hälfte: Die Spielerauswahl beim Aufbau
+  greift auf eine Liste bekannter Namen zu, die **über Programmstarts
+  hinweg erhalten bleibt**. Namen lassen sich hinzufügen und entfernen.
+
+  Was v1 **nicht** speichert, sind Ergebnisse. Die Grenze verläuft
+  zwischen „wer spielt hier öfter mit" und „wie ist es ausgegangen".
 
   Zwei Punkte gehören dazu bedacht, bevor gespeichert wird: Das Repository
   ist **öffentlich**, Namen und Ergebnisse realer Personen gehören nicht
