@@ -45,7 +45,13 @@ Suche muss abbrechbar sein, sobald sich die Stellung ändert.
 
 Was offen ist, steht in `docs/06-durchstich.md` unter *Fünf Abhilfen*: die
 Landschaft wird weiter je Legung ganz gerechnet und ist damit der größte
-Posten des Vorrechnens. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am
+Posten des Vorrechnens.
+
+**Zwei Regelfragen sind offen**, beide beim Spielen am 2026-09-21
+aufgeworfen und in `docs/ideen-vorgemerkt.md` festgehalten: ob ein Gebäude
+ohne drei Farben ringsum 0 zählt (so der Regeltext dieses Projekts und der
+Code) oder **−2** (so der Einwand am Tisch — die Broschüre entscheidet), und
+dass die Bewertung nur die Karten in Harmonys Hand kennt, nie die offenen. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am
 Ende auf.
 
 **Fürs Gerät `-configuration Release` bauen.** Das Schema baut beim

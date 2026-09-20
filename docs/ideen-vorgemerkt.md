@@ -221,3 +221,44 @@ zugleich der Schnitt, an dem sich die Suche auf mehrere Kerne verteilen
 ließe. Über eine Ebene, die „Brett" heißt, während daneben ein Spielplan
 liegt, lässt sich das nicht aufschreiben.
 
+## Offen aus Phase 6 — am Tisch aufgeworfen
+
+**Zählt ein Gebäude ohne drei Farben ringsum 0 oder −2?** ❓ **Ungeklärt,
+aufgeworfen am 2026-09-21.** Der Regeltext dieses Projekts sagt in
+`regeln-basisspiel.md`: „5 Punkte je Gebäude, das von mindestens 3
+verschiedenfarbigen Spielsteinen umgeben ist […] Andernfalls 0 Punkte."
+`Scoring.swift` setzt genau das um (`colors.count >= 3 ? 5 : 0`), und der
+Prüffall *Ein Gebäude am Rand hat zu wenige Farben* sichert die 0 zu.
+
+Beim Spielen kam der Einwand, die Broschüre nenne **−2** statt 0. Das ist
+nicht von hier aus zu entscheiden: `regeln-basisspiel.md` ist eine Abschrift,
+und wenn sie hier falsch ist, ist der Code es mit ihr — er folgt ihr treu.
+**Zu tun: in der Broschüre nachsehen.**
+
+Trifft −2 zu, ist der Umbau klein, die Wirkung aber nicht:
+
+- eine Zeile in `BoardScoring.buildings`, dazu `scoringCells`, das heute „was
+  Punkte bringt" mit „was positiv zählt" gleichsetzt, und die Prüffälle;
+- die Endwertung zeigt heute 0 statt eines Abzugs — zwei erfolglose Gebäude
+  sind 4 Punkte Unterschied;
+- **Harmony baut zu sorglos.** Ein Gebäude ohne Aussicht auf drei Farben
+  kostet sie heute nichts. Da die Bewertung „Punkte jetzt" direkt aus
+  `breakdown()` zieht, schlüge die Änderung sofort auf ihr Spiel durch.
+
+Im ganzen Regelmodul steht **kein einziger negativer Punktwert**. Wenn die
+Broschüre einen kennt, gehören die anderen Nullstellen mitgeprüft: der Berg
+ohne Bergnachbarn und der einzelne gelbe Stein.
+
+**Die Bewertung sieht die Auslage nicht.** ❓ Bekannte Modellgrenze, am
+2026-09-21 an einem Beispiel vermessen. Ein Zug, der ein Feld zubaut, das ein
+Anwärter einer **gehaltenen** Karte gebraucht hätte, wird richtig bewertet —
+gemessen: Der Anwärter verschwindet (25 → 22 Anwärter, 2 fertige → 0), und wo
+er der einzige war, fällt der Wert der Stellung. Für Karten, die Harmony
+**nicht hält**, zählt dagegen nichts: Liegt die Karte nur offen aus, ist der
+zerstörte Anwärter für die Bewertung unsichtbar.
+
+Dazu kommt, dass je Karte nur der **beste** Anwärter zählt — Reserve schlägt
+sich nur über „Offene Möglichkeiten" mit 0,05 je Anwärter nieder. Beides ist
+Absicht, beides wäre zu ändern, wenn sich die Spielstärke daran als zu
+schwach erweist. Das gehört gemessen, sobald Selbstspiel läuft, und hängt
+damit an derselben offenen Frage wie die Gewichte.
