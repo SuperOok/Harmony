@@ -118,14 +118,35 @@ public struct Board: Sendable {
     /// How many spaces each column holds, from the left.
     public let columns: [Int]
 
-    public init(columns: [Int]) { self.columns = columns }
-
     /// Every space, empty ones included — the island scoring on side B
     /// counts them.
-    public var cells: [Int] {
-        columns.enumerated().flatMap { index, count in
+    public let cells: [Int]
+
+    /// Who touches whom, worked out once.
+    ///
+    /// It used to be worked out per question: six directions added, each
+    /// converted back to a name, the ones off the board dropped — three
+    /// arrays laid out and thrown away, for one of the most-asked questions
+    /// in the engine. Cube coordinates are the right way to **derive** the
+    /// neighbourhood; they are the wrong way to ask it a million times.
+    private let touching: [Int: [Int]]
+
+    public init(columns: [Int]) {
+        self.columns = columns
+        let cells = columns.enumerated().flatMap { index, count in
             (1...count).map { (index + 1) * 10 + $0 }
         }
+        self.cells = cells
+        func onBoard(_ cell: Int) -> Bool {
+            let column = cell / 10 - 1, row = cell % 10 - 1
+            return column >= 0 && column < columns.count && row >= 0 && row < columns[column]
+        }
+        var touching: [Int: [Int]] = [:]
+        touching.reserveCapacity(cells.count)
+        for cell in cells {
+            touching[cell] = Hex(cell: cell).neighbours.map(\.cell).filter(onBoard)
+        }
+        self.touching = touching
     }
 
     public func contains(_ cell: Int) -> Bool {
@@ -133,14 +154,21 @@ public struct Board: Sendable {
         return column >= 0 && column < columns.count && row >= 0 && row < columns[column]
     }
 
-    /// The touching spaces that are on this board.
-    public func neighbours(_ cell: Int) -> [Int] {
-        Hex(cell: cell).neighbours
-            .map(\.cell)
-            .filter { contains($0) }
-    }
+    /// The touching spaces that are on this board. A space that is not on
+    /// it has no neighbours, which is the same answer as before.
+    public func neighbours(_ cell: Int) -> [Int] { touching[cell] ?? [] }
 }
 
 extension BoardSide {
-    public var board: Board { Board(columns: columns) }
+    /// The board of this side, built once.
+    ///
+    /// It used to be built per question, and `contains` and `neighbours`
+    /// were asked in the innermost loops of the search. Two boards exist in
+    /// this game; holding both costs a few hundred bytes.
+    public var board: Board { self == .a ? Board.sideA : Board.sideB }
+}
+
+extension Board {
+    static let sideA = Board(columns: BoardSide.a.columns)
+    static let sideB = Board(columns: BoardSide.b.columns)
 }

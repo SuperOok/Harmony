@@ -14,16 +14,22 @@ public struct BoardScoring {
     public let columns: [Int]
     public let stacks: [Int: [Stone]]
 
+    /// The geometry, asked rather than answered here. It moved to
+    /// `Hex.swift` when the engine needed the same questions for pattern
+    /// search; scoring and search must not each carry their own board.
+    ///
+    /// Held rather than rebuilt per question: a scoring is created once per
+    /// laying and then asked for neighbours a few thousand times.
+    private let geometry: Board
+
     public init(side: BoardSide, columns: [Int], stacks: [Int: [Stone]]) {
         self.side = side
         self.columns = columns
         self.stacks = stacks
+        // The board of the side, unless a caller passes different columns —
+        // which only the geometry tests do.
+        self.geometry = columns == side.columns ? side.board : Board(columns: columns)
     }
-
-    /// The geometry, asked rather than answered here. It moved to
-    /// `Hex.swift` when the engine needed the same questions for pattern
-    /// search; scoring and search must not each carry their own board.
-    private var geometry: Board { Board(columns: columns) }
 
     /// Every space on the board, empty ones included — the island scoring
     /// on side B counts them.
@@ -36,21 +42,32 @@ public struct BoardScoring {
         (stacks[cell] ?? []).landscape
     }
 
-    /// Connected regions within a set of cells.
+    /// Connected regions within a set of cells, in a fixed order: the
+    /// regions by their smallest space, and within a region the spaces
+    /// ascending.
+    ///
+    /// **The order is not cosmetic.** `longestPath` keeps the first of
+    /// several equally long paths, so which one it keeps — and with it how
+    /// many blue stones the river outlook says are missing — follows from
+    /// the order the spaces are visited in. That order used to come from
+    /// `Set.first`, which is hash order: it varies between two sets of the
+    /// same spaces and, because Swift seeds its hashing per process, between
+    /// two launches. The same position could be worth a tenth of a point
+    /// more today than yesterday. Sorting costs a few dozen comparisons per
+    /// scoring and buys an answer that is the same every time.
     private func regions(in set: Set<Int>) -> [[Int]] {
         var remaining = set
         var all: [[Int]] = []
-        while let start = remaining.first {
-            var region: [Int] = []
+        for start in set.sorted() {
+            guard remaining.remove(start) != nil else { continue }
+            var region: [Int] = [start]
             var frontier = [start]
-            remaining.remove(start)
             while let cell = frontier.popLast() {
-                region.append(cell)
                 for n in neighbours(cell) where remaining.contains(n) {
-                    remaining.remove(n); frontier.append(n)
+                    remaining.remove(n); frontier.append(n); region.append(n)
                 }
             }
-            all.append(region)
+            all.append(region.sorted())
         }
         return all
     }

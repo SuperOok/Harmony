@@ -171,4 +171,33 @@ struct ScoringTests {
         #expect(mountains?.lines.isEmpty == false)
         #expect(mountains?.points == 0)
     }
+    // MARK: - Dieselbe Stellung, dieselbe Antwort
+
+    @Test("Der Flussausblick hängt nicht daran, wie die Menge gebaut wurde")
+    func theriverOutlookDoesNotDependOnHowTheSetWasBuilt() {
+        // Gleich lange Wege gibt es viele; behalten wird der erste. Welcher
+        // das ist, folgte früher aus der Streuwertreihenfolge einer `Set` —
+        // also aus etwas, das zwischen zwei gleich befüllten Mengen und
+        // zwischen zwei Programmstarts verschieden ausfällt. Zwei Mengen mit
+        // demselben Inhalt, in umgekehrter Reihenfolge gefüllt, müssen
+        // dieselbe Auskunft geben.
+        var stacks: [Int: [Stone]] = [:]
+        for cell in BoardSide.a.board.cells { stacks[cell] = [.stone] }
+        for cell in [11, 12] { stacks[cell] = [.water] }
+        for cell in [21, 22, 31] { stacks[cell] = nil }
+        let scoring = BoardScoring(side: .a, columns: BoardSide.a.columns, stacks: stacks)
+
+        let cells = BoardSide.a.board.cells
+        let water = Set(cells.filter { (stacks[$0] ?? []).landscape == .water })
+        let free = Set(cells.filter { stacks[$0] == nil })
+        let waterBack = Set(cells.reversed().filter { (stacks[$0] ?? []).landscape == .water })
+        let freeBack = Set(cells.reversed().filter { stacks[$0] == nil })
+
+        let one = scoring.longestReachableRiver(water: water, free: free)
+        let other = scoring.longestReachableRiver(water: waterBack, free: freeBack)
+        #expect(one.length == other.length)
+        #expect(one.missing == other.missing, "die Zahl fehlender blauer Steine muss feststehen")
+        #expect(one.length > one.missing, "die Stellung muss überhaupt einen Fluss haben")
+    }
+
 }
