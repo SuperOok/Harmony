@@ -348,15 +348,19 @@ Erzeugen.
 2. **Den Dummy-Zustand ablösen.** Eine **Brücke** steht seit dem 2026-09-20
    (`MyApp/Dummy/EngineBridge.swift`): Sie übersetzt den Zustand des
    Klickdummys in einen `EngineState` und den Vorschlag zurück in einen
-   `HarmonyMove`. Damit läuft die Engine auf dem Gerät, was die Messung oben
-   erst möglich gemacht hat. Die Ablösung selbst — `EngineState` als der
-   eine Zustand, der doppelte `AnimalCard` weg — steht weiter aus.
+   `HarmonyMove`. Damit läuft die Engine auf dem Gerät. Die Ablösung selbst
+   — `EngineState` als der **eine** Zustand statt zweier, die eine Brücke
+   auseinanderhält — steht weiter aus.
 
-   Zwei Dinge sind dabei entstanden, die bleiben sollten: Die Suche ist ein
-   **Anytime-Verfahren** geworden, sie gibt bei Abbruch den besten Zug
-   zurück, den sie gefunden hatte, und sagt über `complete`, dass es nicht
-   der beste ist. Und der Schirm zeigt **nichts**, solange gerechnet wird —
-   ein Beispielzug an der Stelle des Vorschlags würde am Tisch gespielt.
+   Was dabei schon erledigt ist: Eine Partie beginnt leer und füllt sich,
+   Harmony nimmt Karten, ihr Zug leert und füllt ein Auslagenfeld, der
+   doppelte `AnimalCard` ist weg, und der Verlauf überdauert das Weglegen
+   (`MyApp/Dummy/GameStore.swift`). Dazu zwei Dinge, die bleiben sollten:
+   Die Suche ist ein **Anytime-Verfahren** geworden — bei Abbruch gibt sie
+   den besten bis dahin gefundenen Zug und sagt über `complete`, dass es
+   nicht der beste ist. Und der Schirm zeigt **nichts**, solange gerechnet
+   wird; ein Beispielzug an der Stelle des Vorschlags würde am Tisch
+   gespielt.
 3. **Stockwerk 2**, sobald eine Partie durchläuft.
 
 ## Offene Punkte

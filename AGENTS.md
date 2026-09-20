@@ -14,14 +14,24 @@ Steinbilanz —, entstanden, weil der Dummy diese Regeln zum Anzeigen
 braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
 siehe `docs/`.
 
-**Wo es steht:** Der Durchstich aus Phase 6 ist am 2026-09-20 fertig
-geworden: Die Kette von den Kartendaten bis zum Zugvorschlag trägt, mit
-129 Prüffällen unter einer Sekunde. Sie ist allerdings **zu langsam für
-den Tisch** — ein Vorschlag dauert je nach Stellung 24 Sekunden bis 13
-Minuten. Die nächsten beiden Schritte stehen am Ende von
-`docs/06-durchstich.md`: die Bewertung schneller machen, dann den
-Klickdummy an die Engine hängen. Was in Phase 5 offen blieb, führt
-`docs/05-ui.md` am Ende auf.
+**Wo es steht:** Stand 2026-09-20 abends. Der Durchstich aus Phase 6
+trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
+Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
+Weglegen. Geprüft wird mit 129 Regelfällen (`tools/tests.sh`, unter einer
+Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
+
+**Das eine große Problem ist die Rechenzeit.** Auf einem iPhone 15 Pro Max
+gemessen: 110 Sekunden für eine halbvolle Stellung, hochgerechnet bis zu
+17 Minuten in der frühen Partie. Szenario 2 gibt etwa eine halbe Minute.
+Gebraucht wird also Faktor 2 bis 35, je nach Stellung.
+
+**Der nächste Schritt ist deshalb die Geschwindigkeit**, nicht der
+Feinschliff: `docs/06-durchstich.md` nennt unter *Drei Abhilfen* die
+Hebel, nach Wirkung geordnet — inkrementell bewerten, die brettabhängigen
+Terme aus der Schleife über die Kartenwahl ziehen, Brett und Zug nicht als
+Wörterbücher führen. Was danach ansteht, steht dort unter *Was als
+Nächstes kommt*. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am Ende
+auf.
 
 ## Aufbau
 
