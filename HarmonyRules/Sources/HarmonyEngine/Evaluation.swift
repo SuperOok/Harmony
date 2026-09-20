@@ -54,12 +54,49 @@ public struct Weights: Sendable {
     public var landscape = 1.0
     public var variety = 0.05
 
+    /// Points in prospect are worth less than points in hand, **even when
+    /// the prospect is certain**.
+    ///
+    /// Without this the engine never lays a cube. A finished but uncubed
+    /// habitat is a candidate needing nothing, so its chance is one and it
+    /// promises exactly what laying the cube would score — the two positions
+    /// weigh the same, and the one that keeps the space free even weighs a
+    /// little more. But realising a prospect still costs a future action and
+    /// can be overtaken by the game ending, which the turn counter alone does
+    /// not capture.
+    public var outlook = 0.85
+
     public init() {}
+}
+
+/// What the display is expected to hold, colour by colour.
+///
+/// Not a count but an expectation: after a space is emptied it is refilled
+/// from the bag, and rather than enumerating all fifty-six refills the
+/// engine carries their average. `docs/06-durchstich.md` measures why —
+/// enumerating them puts an empty board at thirteen million leaves.
+public struct Availability: Sendable {
+    public let perColour: [Stone: Double]
+
+    public init(perColour: [Stone: Double]) { self.perColour = perColour }
+
+    /// What lies there now, counted.
+    public init(counting display: [[Stone]]) {
+        var counts: [Stone: Double] = [:]
+        for space in display {
+            for stone in space { counts[stone, default: 0] += 1 }
+        }
+        perColour = counts
+    }
+
+    public var total: Double { perColour.values.reduce(0, +) }
 }
 
 public enum Evaluator {
     public static func evaluate(_ state: EngineState,
-                                weights: Weights = Weights()) -> Evaluation {
+                                weights: Weights = Weights(),
+                                availability: Availability? = nil) -> Evaluation {
+        let available = availability ?? Availability(counting: state.display)
         let scoring = BoardScoring(side: state.side, columns: state.side.columns,
                                    stacks: state.stacks)
         var terms: [Term] = []
@@ -71,10 +108,12 @@ public enum Evaluator {
         terms.append(Term(name: "Tierkarten", points: Double(cardsNow) * weights.pointsNow))
 
         // (2) Aussicht aus Anwärtern
-        terms.append(contentsOf: candidateTerms(state, weights: weights))
+        terms.append(contentsOf: candidateTerms(state, weights: weights,
+                                                available: available))
 
         // (3) Aussicht aus Landschaften
-        terms.append(contentsOf: landscapeTerms(state, scoring: scoring, weights: weights))
+        terms.append(contentsOf: landscapeTerms(state, scoring: scoring, weights: weights,
+                                                available: available))
 
         // (4) Optionenvielfalt
         if weights.variety != 0 {
@@ -95,11 +134,12 @@ public enum Evaluator {
     /// not several. Over those at most four, every subset is tried — sixteen
     /// of them — and the best one that can all come about wins. Adding up
     /// candidates that exclude each other would promise points twice.
-    static func candidateTerms(_ state: EngineState, weights: Weights) -> [Term] {
+    static func candidateTerms(_ state: EngineState, weights: Weights,
+                               available: Availability) -> [Term] {
         let best = state.hand.filter { !$0.isFinished }.compactMap { held -> Prospect? in
             Habitat.all(of: held.card, on: state.stacks, cubes: state.cubeCells,
                         board: state.board)
-                .compactMap { prospect(held, $0, state) }
+                .compactMap { prospect(held, $0, state, available) }
                 .max { $0.worth < $1.worth }
         }
         guard !best.isEmpty else { return [] }
@@ -122,7 +162,7 @@ public enum Evaluator {
 
         return chosen.map { prospect in
             Term(name: "Aussicht \(prospect.card)",
-                 points: prospect.worth * factor * weights.candidates,
+                 points: prospect.worth * factor * weights.candidates * weights.outlook,
                  detail: prospect.detail)
         }
     }
@@ -141,9 +181,11 @@ public enum Evaluator {
     }
 
     static func prospect(_ held: HeldCard, _ habitat: Habitat,
-                         _ state: EngineState) -> Prospect? {
+                         _ state: EngineState,
+                         _ available: Availability) -> Prospect? {
         guard let gain = held.nextCubeGain else { return nil }
-        let chance = chance(ofBuilding: missingStones(habitat), state: state)
+        let chance = chance(ofBuilding: missingStones(habitat), state: state,
+                            available: available)
         guard chance > 0 else { return nil }
         return Prospect(card: held.card.name, habitat: habitat, gain: gain, chance: chance)
     }
@@ -183,7 +225,9 @@ public enum Evaluator {
     /// else. What it does get right is the direction: scarcer colour, less
     /// time or more stones missing all lower it, and that is what the
     /// ranking rests on. The shape belongs measured once self-play runs.
-    static func chance(ofBuilding needed: [Stone: Int], state: EngineState) -> Double {
+    static func chance(ofBuilding needed: [Stone: Int], state: EngineState,
+                       available: Availability? = nil) -> Double {
+        let available = available ?? Availability(counting: state.display)
         let total = needed.values.reduce(0, +)
         guard total > 0 else { return 1 }
         let turns = state.ownTurnsLeft
@@ -192,10 +236,9 @@ public enum Evaluator {
         let bag = state.bag
         var chance = 1.0
         for (stone, count) in needed {
-            let inDisplay = state.display.reduce(0) { $0 + $1.count { $0 == stone } }
-            let share = bag.count > 0
-                ? Double(bag.remaining(stone) + inDisplay) / Double(bag.count + 15)
-                : 0
+            let inDisplay = available.perColour[stone] ?? 0
+            let pool = Double(bag.count) + available.total
+            let share = pool > 0 ? (Double(bag.remaining(stone)) + inDisplay) / pool : 0
             guard share > 0 else { return 0 }
             let once = 1 - pow(1 - share, Double(3 * turns))
             chance *= pow(once, Double(count))
@@ -215,7 +258,7 @@ public enum Evaluator {
     /// What is needed is the **outlook** of that scoring, not its value
     /// today — today it is zero everywhere on an empty board.
     static func landscapeTerms(_ state: EngineState, scoring: BoardScoring,
-                               weights: Weights) -> [Term] {
+                               weights: Weights, available: Availability) -> [Term] {
         var terms: [Term] = []
         let free = Set(state.board.cells.filter { state.stacks[$0] == nil })
         let water = Set(state.board.cells.filter {
@@ -232,9 +275,11 @@ public enum Evaluator {
             let now = scoring.longestRiver(water: water)
             let gain = BoardScoring.riverPoints(reachable.length) - BoardScoring.riverPoints(now)
             if gain > 0 {
-                let chance = chance(ofBuilding: [.water: reachable.missing], state: state)
+                let chance = chance(ofBuilding: [.water: reachable.missing], state: state,
+                                    available: available)
                 terms.append(Term(name: "Fluss",
-                                  points: Double(gain) * chance * weights.landscape,
+                                  points: Double(gain) * chance * weights.landscape
+                                      * weights.outlook,
                                   detail: "Länge \(now) → \(reachable.length), "
                                       + "\(reachable.missing) blaue Steine"))
             }
@@ -245,9 +290,10 @@ public enum Evaluator {
             // in the middle six — so the outlook tells the places apart from
             // the first turn on, which the river does on side A.
             if let cut = scoring.cheapestIslandCut(water: water) {
-                let chance = chance(ofBuilding: [.water: cut.cost], state: state)
+                let chance = chance(ofBuilding: [.water: cut.cost], state: state,
+                                    available: available)
                 terms.append(Term(name: "Inseln",
-                                  points: 5 * chance * weights.landscape,
+                                  points: 5 * chance * weights.landscape * weights.outlook,
                                   detail: "\(cut.cost) blaue Steine um "
                                       + "\(cellName(cut.cell)) ergäben eine Insel"))
             }

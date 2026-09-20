@@ -81,3 +81,54 @@ Die Spalte »× Zufall« zählt die Nachfüllung des geleerten Feldes, nicht das
 Nachrücken einer Karte. Sie ist die Zahl, die die Zusammenfassung der
 Zufallsschicht vermeidet — siehe `docs/06-durchstich.md`.
 """)
+
+// MARK: - Und was die Suche daraus macht
+
+// A full search over an empty board runs for many minutes, which is itself
+// the finding. Rather than sitting through it, the cost of one evaluation is
+// timed and multiplied out: generating and weighing run together, so the
+// whole is the one plus the other.
+
+print("Was eine Bewertung kostet, und was die Suche daraus folgt\n")
+print(pad("belegt", 8) + pad("je Bewertung", 15) + pad("Züge", 12)
+      + pad("Erzeugen", 12) + "Suche gesamt")
+
+for down in [6, 12, 18] {
+    let state = position(side: .a, stonesDown: down)
+
+    let generated = Date()
+    let moves = Moves.all(from: state)
+    let generating = Date().timeIntervalSince(generated)
+    guard let sample = moves.first else { continue }
+
+    // Ein paar hundert Bewertungen, damit die Zahl nicht am Rauschen hängt.
+    let rounds = 200
+    let available = Search.availability(after: sample.space, of: state)
+    let started = Date()
+    for move in moves.prefix(rounds) {
+        _ = Evaluator.evaluate(state.applying(move), availability: available)
+    }
+    let each = Date().timeIntervalSince(started) / Double(min(rounds, moves.count))
+
+    print(pad("\(down)", 8)
+          + pad(String(format: "%.0f µs", each * 1e6), 15)
+          + pad(grouped(moves.count), 12)
+          + pad(String(format: "%.1f s", generating), 12)
+          + String(format: "%.0f s", generating + each * Double(moves.count)))
+}
+
+// Eine kleine Stellung ganz durchgerechnet, damit die Hochrechnung oben
+// einen Beleg hat.
+var small = position(side: .a, stonesDown: 18)
+small.display = [small.display[0]]
+let started = Date()
+let suggestion = Search.best(from: small)
+let seconds = Date().timeIntervalSince(started)
+print(String(format: "\nEin Auslagenfeld, 18 Felder belegt: %.1f s für einen Vorschlag", seconds))
+if let suggestion {
+    let where_ = suggestion.move.placements.keys.sorted().map { cellName($0) }
+    print("Vorschlag: \(where_.joined(separator: " "))"
+          + (suggestion.move.cardTaken.map { " +\($0)" } ?? "")
+          + String(format: ", Wert %.1f, Abstand %.1f",
+                   suggestion.value, suggestion.margin ?? 0))
+}
