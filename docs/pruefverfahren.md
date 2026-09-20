@@ -445,6 +445,33 @@ Etiketten, aber sie sind eindeutig — `tools/pruefe-tierkarten.py` erzwingt
 das —, und am Tisch vorlesbar. Eine Nummer wäre ein zweiter erfundener
 Identifikator ohne diesen Vorteil.
 
+### Was kein Zug ist, beginnt mit einem Ausrufezeichen
+
+Im Verlauf stehen zwei Zeilen, die keine Züge sind. Beide tragen kein
+Spielernamen vorn — genau daran sind sie zu erkennen —, sondern ein Wort
+mit Ausrufezeichen:
+
+| Zeile | Bedeutung |
+| --- | --- |
+| `!voll` | angehängt an einen fremden Zug: dieses Tableau hat höchstens 2 freie Felder |
+| `!korr <Zelle>=<Steine>` | Harmonys Tableau berichtigt, Störfall B |
+
+`!korr` schreibt sich in der **Brettnotation** und nicht in der
+Zugnotation, und das ist keine Nachlässigkeit: Eine Berichtigung sagt
+einen **Zustand** an und keine Aktionsfolge. Wie der Stein dorthin kam,
+weiß niemand mehr — deshalb wird ja berichtigt.
+
+Sie nennt **mehrere Felder**, aufsteigend sortiert:
+`!korr 43=H 44=H` versetzt einen Holzstein von 4.3 nach 4.4.
+Ein einzelnes Feld genügte nicht, denn die **Steinerhaltung** oben gilt
+auch hier: Eine Berichtigung darf Steine umlegen, nicht aber welche
+erfinden oder verlieren. `!korr 32=HL T32/Fledermaus` setzt Inhalt und
+Tierwürfel eines Feldes.
+
+Eine Berichtigung zählt für nichts: nicht in den Beutel, nicht in die
+Sitzreihenfolge, nicht in die Runde, die noch zu Ende gespielt wird. Wer
+Züge zählt, zählt sie nicht mit; wer den Zustand nachspielt, wendet sie an.
+
 ## Vorschlag zum Zeitpunkt
 
 Kein Beschluss, nur eine Reihenfolge, die aus dem Obigen folgt:

@@ -118,6 +118,9 @@ struct BoardView: View {
     let columns: [Int]
     /// Cells under their name `<column><row>`.
     var cells: [Int: Cell] = [:]
+    /// Set where a space itself is the input — the correction path. Empty
+    /// spaces answer too, because a stone may have to be moved onto one.
+    var onSelect: ((Int) -> Void)? = nil
 
     private var maxRows: Int { columns.max() ?? 0 }
 
@@ -148,6 +151,12 @@ struct BoardView: View {
                                  highlighted: cells[name]?.highlighted ?? false,
                                  scores: scoring.contains(name))
                             .frame(width: 2 * r, height: cellHeight)
+                            // The frames overlap — columns are 1.5·R apart
+                            // while each is 2·R wide. Without the hexagon as
+                            // the hit area, a column would swallow the
+                            // corners of the one before it.
+                            .contentShape(Hexagon())
+                            .onTapGesture { onSelect?(name) }
                             .offset(x: 1.5 * r * CGFloat(index),
                                     y: cellHeight * CGFloat(row - 1) + offset)
                     }

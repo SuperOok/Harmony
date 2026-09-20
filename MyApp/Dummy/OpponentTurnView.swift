@@ -31,6 +31,9 @@ struct OpponentTurnView: View {
     /// to be told, at most once per game.
     @State private var boardNearlyFull = false
     @State private var showSetupExample = false
+    /// Störfall B. Reached from the transcript and nowhere else — the way
+    /// is meant to be inconvenient, see `CorrectionView`.
+    @State private var correctionOpen = false
     /// The reason currently on screen. Offered, not forced: the move stands
     /// on its own and the why is one tap away.
     @State private var shownRationale: MoveRationale?
@@ -39,7 +42,7 @@ struct OpponentTurnView: View {
     private var end: EndStatus { events.endStatus(from: startState) }
     /// No refill is entered once the bag cannot serve three stones.
     private var bagEmpty: Bool {
-        [GameEvent].stonesLeftInBag(afterTurns: events.count) < 3
+        [GameEvent].stonesLeftInBag(afterTurns: events.turnCount) < 3
     }
     private var history: [LogEntry] { events.entries(from: startState) }
 
@@ -84,7 +87,7 @@ struct OpponentTurnView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { historyOpen = true } label: {
-                        Text(isHarmony ? "\(history.count) Züge" : "\(taps) ×")
+                        Text(isHarmony ? "\(events.turnCount) Züge" : "\(taps) ×")
                             .font(.footnote.monospacedDigit().weight(.semibold))
                             .padding(.horizontal, 10).padding(.vertical, 4)
                             .background(Capsule().fill(.quaternary))
@@ -95,6 +98,9 @@ struct OpponentTurnView: View {
             }
             .sheet(isPresented: $cardPickerOpen) { cardPicker }
             .sheet(isPresented: $historyOpen) { historyList }
+            .sheet(isPresented: $correctionOpen) {
+                CorrectionView(state: state) { events.append(.correction($0)) }
+            }
             .sheet(item: $shownRationale) { rationaleSheet($0) }
         }
     }
@@ -551,9 +557,17 @@ struct OpponentTurnView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .foregroundStyle(.tint)
-                            } else {
-                                Text("\(entry.taps) ×")
+                            } else if let taps = entry.taps {
+                                Text("\(taps) ×")
                                     .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                // A correction stays visible as one. That is
+                                // not decoration: it is the deterrent that
+                                // keeps the way from being used to improve
+                                // Harmony's move.
+                                Image(systemName: "wrench.adjustable")
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -571,6 +585,28 @@ struct OpponentTurnView: View {
                     .disabled(events.isEmpty)
                     .accessibilityIdentifier("undo")
                 }
+            }
+            // Störfall B lives next to Störfall A, because both repair the
+            // same thing from different sides: undo takes back what was
+            // entered wrongly, the correction takes in what was played
+            // wrongly. Neither belongs on the screen of the running turn.
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 6) {
+                    Button {
+                        historyOpen = false
+                        correctionOpen = true
+                    } label: {
+                        Label("Tableau berichtigen", systemImage: "wrench.adjustable")
+                            .font(.callout)
+                    }
+                    .accessibilityIdentifier("correct-board")
+
+                    Text("Nur wenn auf dem Tisch etwas anderes liegt als hier.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10).padding(.bottom, 8)
+                .background(.bar)
             }
         }
     }

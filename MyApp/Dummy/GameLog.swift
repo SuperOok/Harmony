@@ -20,12 +20,61 @@ struct OpponentTurn {
     var boardNearlyFull = false
 }
 
+/// Störfall B: a cell set to what actually lies on the table.
+///
+/// **Not a turn.** It takes no stones out of the bag, it is not anybody's
+/// move, and the seating does not advance — which is precisely what
+/// `02-szenarien.md` asks for: correcting the app without the correction
+/// becoming a regular move.
+struct BoardCorrection {
+    /// One space and what truly lies on it.
+    struct Change {
+        let cell: Int
+        /// Bottom first. Empty clears the space.
+        let stack: [Stone]
+        /// The card the cube was taken from, `nil` for no cube.
+        let cube: String?
+    }
+
+    /// **Several** spaces, not one.
+    ///
+    /// A single space cannot be corrected on its own without breaking the
+    /// stone count: the grey stone that leaves 5.4 was demonstrably taken
+    /// from the display and has to turn up somewhere. A correction is
+    /// therefore always a rearrangement — what it may not do is conjure a
+    /// stone or make one disappear. See `pruefverfahren.md`, Invarianten.
+    let changes: [Change]
+
+    /// Board notation, not move notation — a correction states a **state**
+    /// and not a sequence of actions. The missing player name at the front
+    /// is what marks it as something other than a turn. Spaces are written
+    /// in a fixed order so that the same correction always reads the same.
+    var notation: String {
+        let parts = changes.sorted { $0.cell < $1.cell }.flatMap { change -> [String] in
+            var written = ["\(change.cell)="
+                           + (change.stack.isEmpty ? "—"
+                              : change.stack.map(\.rawValue).joined())]
+            if let cube = change.cube { written.append("T\(change.cell)/\(cube)") }
+            return written
+        }
+        return (["!korr"] + parts).joined(separator: "  ")
+    }
+}
+
 enum GameEvent {
     case opponentTurn(OpponentTurn)
     /// Harmony's move is stored **as an event**, not as an instruction to
     /// compute it again. Replay therefore needs no engine and stays valid
     /// when the evaluation changes.
     case harmonyTurn(HarmonyMove)
+    case correction(BoardCorrection)
+
+    /// A correction sits in the sequence but is not a move. The bag, the
+    /// seating and the round being played out all count turns, not events.
+    var isTurn: Bool {
+        if case .correction = self { return false }
+        return true
+    }
 }
 
 struct GameState {
@@ -92,6 +141,13 @@ struct GameState {
         case let .harmonyTurn(move):
             harmonyBoard = move.applied(to: harmonyBoard)
             for cube in move.cubes { harmonyCubes[cube.cell] = cube.card }
+        case let .correction(correction):
+            for change in correction.changes {
+                harmonyBoard[change.cell] = change.stack.isEmpty ? nil : change.stack
+                harmonyCubes[change.cell] = change.cube
+            }
+            // No move was played, so it is still the same player's turn.
+            return
         }
         seatIndex = (seatIndex + 1) % seating.count
     }
@@ -111,6 +167,8 @@ struct GameState {
             return parts.joined(separator: "  ")
         case let .harmonyTurn(move):
             return "Harmony  \(move.notation)"
+        case let .correction(correction):
+            return correction.notation
         }
     }
 }
@@ -120,7 +178,10 @@ struct GameState {
 struct LogEntry: Identifiable {
     let id = UUID()
     let line: String
-    let taps: Int
+    /// `nil` for what is not a turn. A correction costs taps as well, but
+    /// they do not belong in the tap budget: that one measures the regular
+    /// input path, and a correction is by design outside it.
+    let taps: Int?
     let rationale: MoveRationale?
 }
 
@@ -136,11 +197,18 @@ extension Array where Element == GameEvent {
             case let .harmonyTurn(move):
                 result.append(LogEntry(line: state.line(for: event),
                                        taps: 1, rationale: move.rationale))
+            case .correction:
+                result.append(LogEntry(line: state.line(for: event),
+                                       taps: nil, rationale: nil))
             }
             state.apply(event)
         }
         return result
     }
+
+    /// Turns, not events. Corrections lie in between and count for
+    /// nothing — neither for the bag nor for the round being played out.
+    var turnCount: Int { lazy.filter(\.isTurn).count }
 
     func state(from start: GameState) -> GameState {
         var state = start
@@ -176,9 +244,10 @@ extension Array where Element == GameEvent {
         let seats = Swift.max(start.seating.count, 1)
         var status = EndStatus()
 
-        for (index, event) in enumerated() {
+        var turns = 0
+        for event in self {
             state.apply(event)
-            let turns = index + 1
+            if event.isTurn { turns += 1 }
             var reason: String?
 
             if Self.stonesLeftInBag(afterTurns: turns) < 3 {
@@ -201,8 +270,8 @@ extension Array where Element == GameEvent {
         }
 
         if let endsAfter = status.endsAfter {
-            status.isOver = count >= endsAfter
-            status.turnsLeft = Swift.max(endsAfter - count, 0)
+            status.isOver = turnCount >= endsAfter
+            status.turnsLeft = Swift.max(endsAfter - turnCount, 0)
         }
         return status
     }
