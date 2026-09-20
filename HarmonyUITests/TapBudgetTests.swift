@@ -91,13 +91,26 @@ final class TapBudgetTests: XCTestCase {
     /// That confirmation is arranging the position, not entering the turn,
     /// and is therefore not counted — the app does not count it either.
     private func startOnAnothersTurn() {
-        app.launchArguments = ["-harmonyTurn"]
+        // `-sampleMove` keeps the engine out of it. These tests measure the
+        // input path; a search that runs for a minute would make them slow
+        // without measuring anything they are about.
+        app.launchArguments = ["-harmonyTurn", "-sampleMove"]
         app.launch()
 
         let confirmHarmonysMove = app.buttons["harmony-done"]
         XCTAssertTrue(confirmHarmonysMove.waitForExistence(timeout: 30),
                       "-harmonyTurn should open on Harmony's screen.")
         confirmHarmonysMove.tap()
+
+        // Her turn empties a display space like anyone else's, so what was
+        // drawn for it has to be entered before the turn is recorded.
+        for stone in ["W", "S", "H"] {
+            let key = app.buttons["harmony-palette-\(stone)"]
+            XCTAssertTrue(key.waitForExistence(timeout: 10),
+                          "Harmony's turn asks for the refill.")
+            key.tap()
+        }
+        app.buttons["harmony-record"].tap()
 
         XCTAssertTrue(app.buttons["field-0"].waitForExistence(timeout: 10),
                       "After Harmony's move it is an opponent's turn.")

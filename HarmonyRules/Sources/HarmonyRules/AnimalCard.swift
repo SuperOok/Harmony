@@ -36,7 +36,7 @@ public enum PatternCell: String, Sendable, CaseIterable {
 }
 
 /// One of the thirty-two cards.
-public struct AnimalCard: Sendable, Hashable {
+public struct AnimalCard: Sendable, Hashable, Identifiable {
     /// Our label, not the card's — the cards carry no identifier at all, see
     /// `kartennotation.md`. It has to be unique, and a test says so.
     public let name: String
@@ -53,6 +53,23 @@ public struct AnimalCard: Sendable, Hashable {
         self.pattern = pattern
         self.cube = cube
         self.points = points
+    }
+
+    /// The name is the identity: the cards carry none of their own, and a
+    /// test holds the names unique.
+    public var id: String { name }
+
+    /// How many cubes the card carries. The same as the length of its
+    /// ladder — a separate field would only be able to disagree.
+    public var cubeSpaces: Int { points.count }
+
+    /// What the card is worth with this many cubes laid.
+    ///
+    /// `regeln-basisspiel.md` scores the **highest visible number**, which
+    /// is the one under the cube laid last. No cube means no points, and
+    /// cubes left on the card cost nothing.
+    public func score(cubes: Int) -> Int {
+        cubes < 1 ? 0 : points[Swift.min(cubes, points.count) - 1]
     }
 
     /// The pattern as a form, free of where it sits and which way it faces.

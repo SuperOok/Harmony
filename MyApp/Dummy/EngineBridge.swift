@@ -81,8 +81,8 @@ extension Suggestion {
         let cubes = move.cubes.keys.sorted().map {
             CubePlacement(card: move.cubes[$0]!, cell: $0)
         }
-        return HarmonyMove(placements: placements, cubes: cubes,
-                           rationale: asRationale)
+        return HarmonyMove(space: move.space, placements: placements, cubes: cubes,
+                           cardTaken: move.cardTaken, rationale: asRationale)
     }
 
     /// Why this move and not the next best one.

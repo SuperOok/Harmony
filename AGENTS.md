@@ -184,11 +184,18 @@ Tisch liegt kein Mac.
 - Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
   Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
   benutzen. Siehe `docs/pruefverfahren.md`.
-- Der Dummy kennt vier Startparameter: `-harmonyTurn` öffnet ihn direkt auf
-  Harmonys Bildschirm, `-longCards` legt die fünf längsten Kartennamen in
-  die Auslage, um Umbrüche im schlechtesten Fall zu prüfen, und
-  `-endScore` beziehungsweise `-endScoreB` öffnen die Endwertung über einem
-  Schlussbrett der jeweiligen Planseite.
+- Fünf Startparameter: `-harmonyTurn` öffnet direkt auf Harmonys
+  Bildschirm, mit einer Attrappenstellung mitten in der Partie;
+  `-sampleMove` hält zusätzlich die Engine heraus und zeigt den
+  Beispielzug, was die Oberflächentests brauchen; `-longCards` legt die
+  fünf längsten Kartennamen in die Auslage, um Umbrüche im schlechtesten
+  Fall zu prüfen; `-endScore` und `-endScoreB` öffnen die Endwertung über
+  einem Schlussbrett der jeweiligen Planseite.
+
+  **Ohne Startparameter beginnt eine Partie leer** — leerer Spielplan,
+  keine Karten in Harmonys Hand — und füllt sich über die Züge. Die
+  Attrappenstellung hängt seit dem 2026-09-20 nur noch an
+  `-harmonyTurn`.
 
 ## Hinweise zum Repository
 

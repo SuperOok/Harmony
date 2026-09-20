@@ -361,22 +361,15 @@ Erzeugen.
 
 ## Offene Punkte
 
-1. **`AnimalCard` gibt es zweimal.** Der Klickdummy führt in
-   `MyApp/Dummy/SampleData.swift` einen eigenen Typ dieses Namens, der nur
-   Name und Punktleiste kennt; seit dem 2026-09-20 gibt es den Typ auch in
-   `HarmonyRules`, mit Muster und Würfelzelle. Übersetzt wird beides, weil
-   der modul-eigene Typ den eingeführten verdeckt — auffallen wird es erst
-   bei der Anbindung. Dort fällt der Dummy-Typ ersatzlos weg; bis dahin ist
-   es eine Falle und steht deshalb hier.
-2. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird
+1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird
    als unabhängig behandelt. Es überschätzt, und wie sehr, weiß niemand.
    Richtig ist die Richtung, und darauf ruht die Reihenfolge der Züge — mehr
    wird auch nicht zugesichert.
-3. **Die Zufallsschicht ist zusammengefasst, nicht gerechnet.** Die Kopplung
+2. **Die Zufallsschicht ist zusammengefasst, nicht gerechnet.** Die Kopplung
    zwischen Brett und Auslage innerhalb eines Blattes geht dabei verloren: ob
    genau der Stein nachrückt, den genau dieser Anwärter braucht. Der
    Erwartungswert bleibt richtig, seine Streuung verschwindet.
-4. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
+3. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
    Punkte jetzt, Aussicht aus Anwärtern, Aussicht aus Landschaften,
    Optionenvielfalt — greifen zu verschiedenen Zeiten der Partie. Womit sie
    gegeneinander zu verrechnen sind, gehört gemessen, sobald Selbstspiel

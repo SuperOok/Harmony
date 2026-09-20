@@ -372,9 +372,13 @@ struct SetupBoardView: View {
                          openCards: cards,
                          seenCards: Set(cards),
                          seatIndex: 0,
-                         harmonyBoard: Sample.harmonyBoard,
+                         // Eine Partie beginnt mit leerem Spielplan und
+                         // ohne Karten. Die Attrappenstellung bleibt dem
+                         // Startparameter `-harmonyTurn` vorbehalten, der
+                         // mitten in eine Partie springt.
+                         harmonyBoard: [:],
                          harmonyCubes: [:],
-                         harmonyCards: Sample.harmonyCards,
+                         harmonyCards: [],
                          seating: seating,
                          sideB: sideB)
     }

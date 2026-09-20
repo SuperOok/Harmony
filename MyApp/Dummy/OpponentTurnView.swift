@@ -56,6 +56,11 @@ struct OpponentTurnView: View {
     /// needs a way out, and stopping it is not giving up: the engine hands
     /// back the best it had found by then.
     @State private var thinker: Task<Void, Never>?
+    /// Harmony's turn, waiting for what the table has to tell her: the
+    /// stones drawn for the space she emptied, and the card that moved up.
+    /// She cannot know either, so she asks.
+    @State private var harmonyReport: HarmonyMove?
+    @State private var reportCardPicker = false
 
     private var state: GameState { events.state(from: startState) }
     private var end: EndStatus { events.endStatus(from: startState) }
@@ -82,8 +87,16 @@ struct OpponentTurnView: View {
     /// brings it back, which is the replay doing its work.
     /// The sample moves are built for side A; on side B their cells do not
     /// all exist, so none is offered there.
+    /// Keeps the sample move and leaves the engine alone.
+    ///
+    /// For the interface tests: they measure the **input path**, and a
+    /// search that runs for a minute would only make them slow and flaky
+    /// without measuring anything they are about.
+    private let sampleOnly = ProcessInfo.processInfo.arguments.contains("-sampleMove")
+
     private var pendingMove: HarmonyMove? {
         guard isHarmony else { return nil }
+        if sampleOnly { return state.sideB ? nil : Sample.harmonyMove }
         // The sample move stays reachable through the picker, because it is
         // what the screens were built against. Side B has no sample: its
         // cells are not all there.
@@ -104,7 +117,7 @@ struct OpponentTurnView: View {
     /// the position changes, which the engine asks about while it works.
     private func think() {
         thinker?.cancel()
-        guard isHarmony, !showSetupExample else { return }
+        guard isHarmony, !showSetupExample, !sampleOnly else { return }
         guard let position = state.engineState(events: events) else {
             engineFailed = true
             return
@@ -163,6 +176,10 @@ struct OpponentTurnView: View {
                 }
             }
             .onChange(of: positionKey, initial: true) { think() }
+            .sheet(isPresented: Binding(get: { harmonyReport != nil },
+                                        set: { if !$0 { harmonyReport = nil } })) {
+                harmonyReportSheet
+            }
             .onDisappear { thinker?.cancel() }
             .sheet(isPresented: $cardPickerOpen) { cardPicker }
             .sheet(isPresented: $historyOpen) { historyList }
@@ -356,6 +373,10 @@ struct OpponentTurnView: View {
                                 Text("Würfel von **\(c.card)** auf \(cellInWords(c.cell))")
                                     .font(.callout)
                             }
+                            if let card = move.cardTaken {
+                                Text("Nimm die Karte **\(card)**.")
+                                    .font(.callout)
+                            }
                         }
                     }
 
@@ -454,6 +475,111 @@ struct OpponentTurnView: View {
         }
     }
 
+    /// What the table tells Harmony after her turn.
+    ///
+    /// She took three stones out of a space and, if the move said so, a
+    /// card. What came back out of the bag and which card moved up she
+    /// cannot know — and guessing it would be exactly the invented data
+    /// this app exists to avoid. So the same palette as for anyone else's
+    /// turn, and the same card picker.
+    private var harmonyReportSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    if !bagEmpty {
+                        TitledBlock("Was wurde nachgefüllt?") {
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack(spacing: 10) {
+                                    ForEach(0..<3, id: \.self) { i in
+                                        StoneDot(stone: i < (harmonyReport?.refill.count ?? 0)
+                                                 ? harmonyReport?.refill[i] : nil)
+                                    }
+                                    Spacer()
+                                    if !(harmonyReport?.refill.isEmpty ?? true) {
+                                        Button("Zurück") { harmonyReport?.refill.removeLast() }
+                                            .font(.footnote)
+                                            .accessibilityIdentifier("harmony-refill-undo")
+                                    }
+                                }
+                                HStack(spacing: 8) {
+                                    ForEach(Stone.allCases) { stone in
+                                        Button {
+                                            if (harmonyReport?.refill.count ?? 3) < 3 {
+                                                harmonyReport?.refill.append(stone)
+                                            }
+                                        } label: {
+                                            StoneDot(stone: stone, size: 44)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled((harmonyReport?.refill.count ?? 0) == 3)
+                                        .opacity((harmonyReport?.refill.count ?? 0) == 3 ? 0.35 : 1)
+                                        .accessibilityIdentifier("harmony-palette-\(stone.rawValue)")
+                                        .accessibilityLabel(stone.name)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        TitledBlock("Nachfüllen entfällt") {
+                            Text("Der Beutel ist leer; das Feld bleibt frei.")
+                                .font(.callout).foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if let taken = harmonyReport?.cardTaken {
+                        TitledBlock("Welche Karte rückte nach?") {
+                            Button {
+                                reportCardPicker = true
+                            } label: {
+                                HStack {
+                                    Text(harmonyReport?.cardDrawn ?? "Für \(taken) nachgerückt")
+                                        .foregroundStyle(harmonyReport?.cardDrawn == nil
+                                                         ? .secondary : .primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.footnote).foregroundStyle(.secondary)
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 11)
+                                .background(RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.secondarySystemBackground)))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("harmony-drawn")
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Harmonys Zug nachtragen")
+            .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
+                Button {
+                    if let move = harmonyReport {
+                        events.append(.harmonyTurn(move))
+                        harmonyReport = nil
+                    }
+                } label: {
+                    Text("Eintragen").frame(maxWidth: .infinity).padding(.vertical, 12)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!(harmonyReport?.isComplete(bagEmpty: bagEmpty) ?? false))
+                .padding(.horizontal).padding(.vertical, 8)
+                .background(.bar)
+                .accessibilityIdentifier("harmony-record")
+            }
+            .sheet(isPresented: $reportCardPicker) {
+                NamePickerView(
+                    title: "Nachgerückt",
+                    options: Sample.allCards,
+                    unavailable: state.seenCards,
+                    limit: 1,
+                    chosen: Binding(get: { harmonyReport?.cardDrawn.map { [$0] } ?? [] },
+                                    set: { harmonyReport?.cardDrawn = $0.first }),
+                    onComplete: { reportCardPicker = false })
+            }
+        }
+    }
+
     private var harmonyFooter: some View {
         VStack(spacing: 8) {
             Text(pendingMove.map { "Harmony  \($0.notation)" } ?? "Harmony  —")
@@ -465,7 +591,16 @@ struct OpponentTurnView: View {
                 .accessibilityIdentifier("notation")
 
             Button("Zug ausgeführt") {
-                if let move = pendingMove { events.append(.harmonyTurn(move)) }
+                guard var move = pendingMove else { return }
+                // Nichts nachzufüllen, wenn der Beutel leer ist und keine
+                // Karte genommen wurde — dann geht der Zug direkt ins
+                // Protokoll.
+                if bagEmpty && move.cardTaken == nil {
+                    events.append(.harmonyTurn(move))
+                } else {
+                    move.refill = []
+                    harmonyReport = move
+                }
             }
             .buttonStyle(.borderedProminent)
             // Solange nichts dasteht, gibt es nichts auszuführen. Ein Knopf,

@@ -122,11 +122,19 @@ enum Sample {
     /// there instead. The Biene is taken but has no cube on it — a card
     /// left unfinished scores nothing and costs nothing, and the screen
     /// should show that case.
+    /// A real card by name. The ladders used to be copied into the sample
+    /// data; since Phase 6 they come out of `animals.json`, which is the
+    /// only place they are maintained. An unknown name is a mistake in the
+    /// sample and should be loud.
+    static func card(_ name: String) -> AnimalCard {
+        guard let found = AnimalCards.all.first(where: { $0.name == name }) else {
+            fatalError("Die Attrappe nennt eine Karte, die es nicht gibt: \(name)")
+        }
+        return found
+    }
+
     static let harmonyCards = [
-        AnimalCard(name: "Fledermaus", points: [3, 6, 10, 16]),
-        AnimalCard(name: "Lachs", points: [3, 6, 10, 16]),
-        AnimalCard(name: "Koala", points: [3, 6, 10, 15]),
-        AnimalCard(name: "Biene", points: [8, 18]),
+        card("Fledermaus"), card("Lachs"), card("Koala"), card("Biene"),
     ]
 
     /// Harmony's board at the end of a game, on side A. Built so that every
@@ -205,10 +213,7 @@ enum Sample {
     ]
 
     static let harmonyCardsB = [
-        AnimalCard(name: "Lachs", points: [3, 6, 10, 16]),
-        AnimalCard(name: "Koala", points: [3, 6, 10, 15]),
-        AnimalCard(name: "Ente", points: [2, 4, 8, 13]),
-        AnimalCard(name: "Biene", points: [8, 18]),
+        card("Lachs"), card("Koala"), card("Ente"), card("Biene"),
     ]
 
     /// Harmony's board before her turn. Mid-game: a river, a pair of
@@ -349,19 +354,42 @@ struct CubePlacement {
 /// written last wherever that yields the same result, so the first three
 /// actions are the stones and the space they came from can be read off.
 struct HarmonyMove {
+    /// Which display space is emptied. The stones alone would say which
+    /// **kind** of space it was, but two spaces can hold the same three
+    /// stones, and the one that gets refilled has to be the one that was
+    /// taken.
+    var space: Int = 0
     let placements: [Placement]
     let cubes: [CubePlacement]
+    /// The card taken with the move, if one was. Harmony decides this; it
+    /// belongs to the suggestion.
+    var cardTaken: String? = nil
     let rationale: MoveRationale
 
-    /// The space taken is not stored: all three stones taken are placed,
-    /// so the placements already say which space it was.
+    // What the table tells her afterwards. Not part of the suggestion —
+    // she cannot know what comes out of the bag, and inventing it would be
+    // exactly the kind of made-up data this app exists to avoid.
+
+    /// The three stones drawn for the emptied space. Empty once the bag is.
+    var refill: [Stone] = []
+    /// The card that moved up, if one was taken.
+    var cardDrawn: String? = nil
+
     var takenField: String {
         DisplayField(stones: placements.map(\.stone)).notation
     }
 
+    /// Everything still to be entered before the turn can be recorded.
+    func isComplete(bagEmpty: Bool) -> Bool {
+        (bagEmpty || refill.count == 3) && (cardTaken == nil || cardDrawn != nil)
+    }
+
     var notation: String {
         (placements.map { "\($0.stone.rawValue)\($0.cell)" }
-         + cubes.map { "T\($0.cell)/\($0.card)" }).joined(separator: " ")
+         + cubes.map { "T\($0.cell)/\($0.card)" }
+         + (cardTaken.map { ["+\($0)"] } ?? [])
+         + (refill.isEmpty ? [] : [">" + refill.map(\.rawValue).joined()])
+         + (cardDrawn.map { [">\($0)"] } ?? [])).joined(separator: " ")
     }
 
     /// The board after the move, which is what the operator has to produce.
@@ -381,21 +409,3 @@ struct HarmonyMove {
 }
 
 
-/// A card as the final score needs it: the name we gave it and the ladder
-/// printed on it, read from the bottom up.
-///
-/// `regeln-basisspiel.md` scores the **highest visible number**, which is
-/// the value under the cube placed last. No cube means no points, and
-/// cubes left on the card cost nothing. The length of the ladder is at the
-/// same time the number of cubes the card carries.
-struct AnimalCard: Identifiable {
-    var id: String { name }
-    let name: String
-    let points: [Int]
-
-    var cubeSpaces: Int { points.count }
-
-    func score(cubes: Int) -> Int {
-        cubes < 1 ? 0 : points[Swift.min(cubes, points.count) - 1]
-    }
-}

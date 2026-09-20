@@ -142,6 +142,22 @@ struct GameState {
         case let .harmonyTurn(move):
             harmonyBoard = move.applied(to: harmonyBoard)
             for cube in move.cubes { harmonyCubes[cube.cell] = cube.card }
+            // Her turn empties a display space like anyone else's, and the
+            // card she takes leaves the row like anyone else's. Leaving
+            // either out would let her reckon with stones and cards that
+            // are no longer there.
+            if let taken = move.cardTaken {
+                harmonyCards.append(Sample.card(taken))
+                if let index = openCards.firstIndex(of: taken), let drawn = move.cardDrawn {
+                    openCards[index] = drawn
+                    seenCards.insert(drawn)
+                } else if let index = openCards.firstIndex(of: taken) {
+                    openCards.remove(at: index)
+                }
+            }
+            if !move.refill.isEmpty, move.space < display.count {
+                display[move.space] = DisplayField(stones: move.refill)
+            }
         case let .correction(correction):
             for change in correction.changes {
                 harmonyBoard[change.cell] = change.stack.isEmpty ? nil : change.stack
