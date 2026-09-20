@@ -158,7 +158,7 @@ struct OpponentTurnView: View {
         TitledBlock("Wurde eine Karte genommen?") {
             VStack(alignment: .leading, spacing: 12) {
                 FlowLayout(spacing: 8) {
-                    ForEach(state.openCards, id: \.self) { name in
+                    ForEach(Sample.sorted(state.openCards), id: \.self) { name in
                         Button {
                             taps += 1
                             if cardTaken == name {

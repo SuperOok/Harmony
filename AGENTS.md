@@ -125,8 +125,9 @@ anzulegen.
 - Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
   Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
   benutzen. Siehe `docs/pruefverfahren.md`.
-- Der Dummy kennt den Startparameter `-harmonyTurn`, der ihn direkt auf
-  Harmonys Bildschirm öffnet.
+- Der Dummy kennt zwei Startparameter: `-harmonyTurn` öffnet ihn direkt auf
+  Harmonys Bildschirm, `-longCards` legt die fünf längsten Kartennamen in
+  die Auslage, um Umbrüche im schlechtesten Fall zu prüfen.
 
 ## Hinweise zum Repository
 

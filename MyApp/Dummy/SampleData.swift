@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 // Dummy data for the Phase 5 click-through prototype.
 // No engine and no rule checking — only as much state as the input path needs.
@@ -100,7 +101,19 @@ enum Sample {
         DisplayField(stones: [.brick, .field, .leaves]),
     ]
 
-    static let openCards = ["Pinguin", "Biene", "Lachs", "Wolf", "Rabe"]
+    /// The launch argument seeds the five longest names, so the layout can
+    /// be looked at in its worst case — a hook like `-harmonyTurn`.
+    static var openCards: [String] {
+        ProcessInfo.processInfo.arguments.contains("-longCards")
+        ? ["Eichhörnchen", "Erdmännchen", "Fledermaus", "Marienkäfer", "Wüstenfuchs"]
+        : ["Pinguin", "Biene", "Lachs", "Wolf", "Rabe"]
+    }
+
+    /// Alphabetical, the way the open cards are always shown: the display
+    /// is an unordered set, so a fixed order keeps it readable.
+    static func sorted(_ cards: [String]) -> [String] {
+        cards.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
 
     static let allCards = [
         "Eisvogel",

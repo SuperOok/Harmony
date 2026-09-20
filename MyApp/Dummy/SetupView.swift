@@ -202,7 +202,7 @@ struct SetupView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     FlowLayout(spacing: 8) {
-                        ForEach(cards, id: \.self) { card in
+                        ForEach(Sample.sorted(cards), id: \.self) { card in
                             Text(card)
                                 .font(.callout)
                                 .padding(.horizontal, 12).padding(.vertical, 7)
