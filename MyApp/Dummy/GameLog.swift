@@ -168,7 +168,7 @@ extension Array where Element == GameEvent {
                 reason = "Harmonys Spielplan hat nur noch \(free) freie Felder."
             }
             if case let .opponentTurn(turn) = event, turn.boardNearlyFull {
-                reason = "Ein Mitspieler hat nur noch zwei freie Felder."
+                reason = "Eine Mitspielerin hat nur noch zwei freie Felder."
             }
 
             if let reason, status.reason == nil {

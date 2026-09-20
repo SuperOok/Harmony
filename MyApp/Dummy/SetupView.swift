@@ -7,6 +7,12 @@ import SwiftUI
 /// version two is to add up everyone's score and keep past games, which
 /// needs them recognised again — while the display is thrown away with the
 /// game. Two screens keep the two apart.
+///
+/// **The whole setup is held here**, not in the two steps. Switching steps
+/// replaces the view and takes its `@State` with it, so anything kept down
+/// there is lost on the way back — and the way back is expressly open,
+/// because the seating is often settled only once the display is on the
+/// table.
 struct SetupView: View {
     var onStart: (GameState) -> Void
 
@@ -18,6 +24,10 @@ struct SetupView: View {
     /// once it is clear who starts and who works the device.
     @State private var seating: [String] = ["Harmony"]
     @State private var taps = 0
+    @State private var sideB = false
+    /// Filled in reading order, so no space has to be picked first.
+    @State private var stones: [Stone] = []
+    @State private var cards: [String] = []
 
     var body: some View {
         if step == 1 {
@@ -28,6 +38,9 @@ struct SetupView: View {
         } else {
             SetupBoardView(seating: seating,
                            taps: $taps,
+                           sideB: $sideB,
+                           stones: $stones,
+                           cards: $cards,
                            onBack: { step = 1 },
                            onStart: onStart)
         }
@@ -41,89 +54,85 @@ struct SetupPlayersView: View {
     @Binding var taps: Int
     var onNext: () -> Void
 
-    @State private var humanCount = 2
     @State private var pickerOpen = false
     /// Held as view state, not read from the store on the fly: a change to
     /// a static store is invisible to SwiftUI, so the list would not
     /// refresh when a name is added or removed.
     @State private var knownPlayers = KnownPlayers.all
 
+    /// Harmonies has four seats and Harmony occupies one of them.
+    private let maxHumans = 3
+    /// The seating list is as tall as its rows, so it has to know them
+    /// exactly: a list inside a scroll view carries no height of its own,
+    /// and a guessed one clipped the fourth seat behind the note below it.
+    private let seatRow: CGFloat = 44
+
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 20) {
-                TitledBlock("Wie viele Menschen?") {
-                    Picker("Menschen", selection: $humanCount) {
-                        Text("1").tag(1)
-                        Text("2").tag(2)
-                        Text("3").tag(3)
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: humanCount) { _, count in
-                        if players.count > count { players.removeLast(players.count - count) }
-                        rebuildSeating()
-                    }
-                    .accessibilityIdentifier("human-count")
-                }
-
-                TitledBlock("Wer spielt mit?") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        if players.isEmpty {
-                            Text("Noch niemand gewählt.")
-                                .font(.callout).foregroundStyle(.secondary)
-                        } else {
-                            FlowLayout(spacing: 8) {
-                                ForEach(players, id: \.self) { name in
-                                    Text(name)
-                                        .font(.callout)
-                                        .padding(.horizontal, 12).padding(.vertical, 7)
-                                        .background(Capsule().fill(Color(.secondarySystemBackground)))
-                                }
-                            }
-                        }
-
-                        Button(players.isEmpty ? "Spieler wählen" : "Ändern") {
-                            taps += 1
-                            pickerOpen = true
-                        }
-                        .accessibilityIdentifier("choose-players")
-                    }
-                }
-
-                if players.count == humanCount {
-                    TitledBlock("Zugreihenfolge — zum Verschieben ziehen") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            List {
-                                ForEach(seating, id: \.self) { name in
-                                    HStack {
-                                        Text("\((seating.firstIndex(of: name) ?? 0) + 1).")
-                                            .font(.callout.monospacedDigit())
-                                            .foregroundStyle(.secondary)
-                                        Text(name).font(.callout)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    TitledBlock("Wer spielt mit?") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            if players.isEmpty {
+                                Text("Noch niemand gewählt.")
+                                    .font(.callout).foregroundStyle(.secondary)
+                            } else {
+                                FlowLayout(spacing: 8) {
+                                    ForEach(players, id: \.self) { name in
+                                        Text(name)
+                                            .font(.callout)
+                                            .padding(.horizontal, 12).padding(.vertical, 7)
+                                            .background(Capsule().fill(Color(.secondarySystemBackground)))
                                     }
                                 }
-                                .onMove { from, to in
-                                    seating.move(fromOffsets: from, toOffset: to)
-                                }
                             }
-                            .environment(\.editMode, .constant(.active))
-                            .listStyle(.plain)
-                            .scrollDisabled(true)
-                            .frame(height: CGFloat(seating.count) * 46)
-                            .accessibilityIdentifier("seating")
 
-                            Text("Auch Harmony lässt sich verschieben. Die "
-                                 + "Reihenfolge kann später noch geändert "
-                                 + "werden — der Weg zurück steht in der "
-                                 + "Auslage offen.")
-                                .font(.footnote).foregroundStyle(.secondary)
+                            Button(players.isEmpty ? "Spielerinnen wählen" : "Ändern") {
+                                taps += 1
+                                pickerOpen = true
+                            }
+                            .accessibilityIdentifier("choose-players")
+                        }
+                    }
+
+                    if !players.isEmpty {
+                        TitledBlock("Zugreihenfolge — zum Verschieben ziehen") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                List {
+                                    ForEach(seating, id: \.self) { name in
+                                        HStack {
+                                            Text("\((seating.firstIndex(of: name) ?? 0) + 1).")
+                                                .font(.callout.monospacedDigit())
+                                                .foregroundStyle(.secondary)
+                                            Text(name).font(.callout)
+                                        }
+                                        .frame(height: seatRow)
+                                        .listRowInsets(EdgeInsets(top: 0, leading: 8,
+                                                                  bottom: 0, trailing: 8))
+                                    }
+                                    .onMove { from, to in
+                                        seating.move(fromOffsets: from, toOffset: to)
+                                    }
+                                }
+                                .environment(\.editMode, .constant(.active))
+                                .environment(\.defaultMinListRowHeight, seatRow)
+                                .listStyle(.plain)
+                                .scrollDisabled(true)
+                                .frame(height: CGFloat(seating.count) * seatRow)
+                                .accessibilityIdentifier("seating")
+
+                                Text("Auch Harmony lässt sich verschieben. Die "
+                                     + "Reihenfolge kann später noch geändert "
+                                     + "werden — der Weg zurück steht in der "
+                                     + "Auslage offen.")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
-
-                Spacer(minLength: 0)
+                .padding()
             }
-            .padding()
-            .navigationTitle("Spieler")
+            .navigationTitle("Spielerinnen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -134,26 +143,15 @@ struct SetupPlayersView: View {
                         .accessibilityIdentifier("taps")
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                Button {
-                    onNext()
-                } label: {
-                    Text("Weiter zur Auslage").frame(maxWidth: .infinity).padding(.vertical, 12)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(players.count != humanCount)
-                .padding()
-                .background(.bar)
-                .accessibilityIdentifier("next")
-            }
+            .safeAreaInset(edge: .bottom) { footer }
             .sheet(isPresented: $pickerOpen) {
                 NamePickerView(
-                    title: players.count == humanCount
-                           ? "Vollzählig" : "Noch \(humanCount - players.count) wählen",
+                    title: players.isEmpty
+                           ? "Wer spielt mit?" : "\(players.count) gewählt",
                     options: knownPlayers,
-                    limit: humanCount,
+                    limit: maxHumans,
                     chosen: $players,
-                    addPrompt: "Neuer Spieler",
+                    addPrompt: "Neue Spielerin",
                     onAdd: { name in
                         KnownPlayers.add(name)
                         knownPlayers = KnownPlayers.all
@@ -164,10 +162,36 @@ struct SetupPlayersView: View {
                         players.removeAll { $0 == name }
                     },
                     onTap: { taps += 1 },
+                    // The number of humans is not fixed in advance, so the
+                    // view cannot always close by itself. Below three it
+                    // takes one tap — the one the count picker used to cost.
+                    doneLabel: "Fertig",
                     onComplete: { pickerOpen = false })
             }
             .onChange(of: players) { _, _ in rebuildSeating() }
         }
+    }
+
+    /// What is still missing, on both setup screens alike.
+    private var footer: some View {
+        VStack(spacing: 8) {
+            Text(players.isEmpty
+                 ? "Fehlt: mindestens eine Mitspielerin."
+                 : "\(players.count) von höchstens \(maxHumans) Menschen, dazu Harmony.")
+                .font(.footnote).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button {
+                onNext()
+            } label: {
+                Text("Weiter zur Auslage").frame(maxWidth: .infinity).padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(players.isEmpty)
+            .accessibilityIdentifier("next")
+        }
+        .padding(.horizontal).padding(.top, 10).padding(.bottom, 8)
+        .background(.bar)
     }
 
     /// Keeps the order already arranged and puts anyone new in front of
@@ -186,13 +210,12 @@ struct SetupPlayersView: View {
 struct SetupBoardView: View {
     let seating: [String]
     @Binding var taps: Int
+    @Binding var sideB: Bool
+    @Binding var stones: [Stone]
+    @Binding var cards: [String]
     var onBack: () -> Void
     var onStart: (GameState) -> Void
 
-    @State private var sideB = false
-    /// Filled in reading order, so no space has to be picked first.
-    @State private var stones: [Stone] = []
-    @State private var cards: [String] = []
     @State private var cardPickerOpen = false
 
     private var isComplete: Bool { stones.count == 15 && cards.count == 5 }
@@ -289,7 +312,7 @@ struct SetupBoardView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Spieler", systemImage: "chevron.left") { onBack() }
+                    Button("Spielerinnen", systemImage: "chevron.left") { onBack() }
                         .accessibilityIdentifier("back")
                 }
                 ToolbarItem(placement: .topBarTrailing) {

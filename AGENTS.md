@@ -122,6 +122,8 @@ anzulegen.
   Dokumentation und **sichtbare Texte in der Oberfläche** auf Deutsch. Die
   Trennung hält die deutschen Zeichenketten beisammen, falls die App später
   internationalisiert wird.
+- **Sichtbare Texte werden gegendert**, im generischen Femininum:
+  „Spielerinnen", „Mitspielerin". Festgelegt am 2026-09-20.
 - Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
   Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
   benutzen. Siehe `docs/pruefverfahren.md`.

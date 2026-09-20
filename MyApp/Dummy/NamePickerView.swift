@@ -12,7 +12,9 @@ import SwiftUI
 /// Chosen names stay visible and highlighted, in the order they were
 /// picked. Once `limit` of them are chosen the view closes by itself — a
 /// confirmation after the last tap would cost a tap and tell nobody
-/// anything.
+/// anything. Where the number is not fixed in advance, as with the
+/// players, `doneLabel` puts a button there for the cases below the
+/// limit.
 struct NamePickerView: View {
     let title: String
     let options: [String]
@@ -33,6 +35,9 @@ struct NamePickerView: View {
     var onDelete: ((String) -> Void)? = nil
     /// Counts a tap, so the input path stays measurable.
     var onTap: () -> Void = {}
+    /// Set when fewer than `limit` names may be the whole answer. The
+    /// button then ends the choice, and it counts as a tap like any other.
+    var doneLabel: String? = nil
     var onComplete: () -> Void
 
     @State private var newName = ""
@@ -91,6 +96,18 @@ struct NamePickerView: View {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let doneLabel {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(doneLabel) {
+                            onTap()
+                            onComplete()
+                        }
+                        .disabled(chosen.isEmpty)
+                        .accessibilityIdentifier("done")
+                    }
+                }
+            }
         }
     }
 
