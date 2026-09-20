@@ -15,7 +15,7 @@ mit einem Dokument und einem Commit.
 | 4 | Daten & Architektur | Welche Entitäten, welche Persistenz, welches Suchverfahren? | `04-architektur.md` ✅ |
 | 5 | Oberfläche | Welche Ansichten, welche Eingabewege? | `05-ui.md` ✅ |
 | 6 | Durchstich | Funktioniert die Kette von der Kartennotation bis zum Zugvorschlag? | Lauffähiger Code, wenige Karten |
-| 7 | Kartenerfassung | Alle Tierkarten systematisch erfassen | `tierkarten.md`, alle 32 ✅ |
+| 7 | Kartenerfassung | Alle Tierkarten systematisch erfassen | `animals.json`, alle 32 ✅ |
 
 Phase 7 ist **vorgezogen worden** und bereits abgeschlossen. Der Grund für
 ihre späte Einordnung war das Risiko, nach vollständiger Erfassung noch das

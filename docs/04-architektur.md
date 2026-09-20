@@ -13,7 +13,7 @@ gegen den Funktionsumfang aus Phase 3 und die Prüfbarkeit aus
 | Suchverfahren | Expectimax über die Beutelzüge | Der Beutelinhalt ist bekannt, also lassen sich Nachfüllungen mit ihren Wahrscheinlichkeiten aufzählen statt schätzen |
 | Zufall | **Keiner.** Die Engine ist deterministisch | Erledigt den offenen Punkt 1 aus Phase 1 |
 | Persistenz | Ereignisprotokoll, Zustand durch Wiedergabe | Die Rücknahme aus Störfall A braucht das Protokoll ohnehin |
-| Kartendaten | JSON-Ressource, erzeugt aus `tierkarten.md` | Eine Quelle der Wahrheit bleibt das Markdown |
+| Kartendaten | JSON-Ressource `animals.json`, von Hand gepflegt | Eine Quelle der Wahrheit, und die Engine-Tests kommen ohne App an sie heran |
 | Modulschnitt | Eigenes Swift-Paket `HarmonyRules` | Stockwerk 1 verlangt Tests ohne Bau der App |
 
 ## Entitäten
@@ -85,7 +85,7 @@ und das ist die Eingabe, die Phase 3 verworfen hat.
 ### Kartenstapelwissen
 
 Dasselbe gilt für die Karten, und es ist bisher übersehen worden. Alle 32
-sind in `tierkarten.md` katalogisiert, und jede Karte, die je offen lag,
+sind in `animals.json` katalogisiert, und jede Karte, die je offen lag,
 ist erfasst. Der **verbliebene Stapel ist damit exakt bekannt** — nicht
 seine Reihenfolge, aber seine Zusammensetzung.
 
@@ -262,18 +262,22 @@ Momentaufnahmen, nicht die Wiedergabe.
 
 ## Kartendaten
 
-`tierkarten.md` bleibt die **Quelle der Wahrheit**. Ein Werkzeug neben
-`tools/pruefe-tierkarten.py` erzeugt daraus eine JSON-Datei, die
-eingecheckt wird und als Ressource **im Paket** liegt — nicht im App-Bundle,
-sonst kämen die Engine-Tests nicht ohne die App an sie heran.
+`animals.json` ist die **Quelle der Wahrheit**. Sie liegt eingecheckt als
+Ressource **im Paket** — nicht im App-Bundle, sonst kämen die Engine-Tests
+nicht ohne die App an sie heran.
+
+Ursprünglich stand hier das Umgekehrte: `tierkarten.md` als Quelle und die
+JSON-Datei als Erzeugnis eines Werkzeugs. Am 2026-09-20 ist das gedreht
+worden, weil der Umweg nichts trug — Begründung in `06-durchstich.md`.
 
 Der bekannte Nachteil von JSON ist, dass Fehler erst zur Laufzeit auffallen.
 Dagegen steht ein Test in Stockwerk 1, der die Datei lädt und prüft: 32
 Karten, bekannte Landschaften, zusammenhängende Muster, Würfelzelle im
 Muster, streng steigende Punktleisten, eindeutige Namen. Dieselben
-Bedingungen prüft das Python-Werkzeug heute schon auf dem Markdown — die
-beiden Prüfungen sind bewusst getrennt implementiert und damit eine
-unabhängige Nachrechnung im Sinne des Prüfverfahrens.
+Bedingungen prüft `tools/pruefe-tierkarten.py` getrennt implementiert. Seit
+beide dieselbe Datei lesen, ist das schwächer als zuvor; die Gegenwehr ist
+die Formklassen-Zusicherung aus `06-durchstich.md`, deren Sollwert nicht aus
+den Kartendaten stammt.
 
 Was **nicht** in die Daten gehört, hält Phase 1 fest: keine
 Kartenillustrationen, keine wörtlichen Regeltexte. Muster, Punktleisten und

@@ -13,7 +13,9 @@ let package = Package(
     name: "HarmonyRules",
     products: [.library(name: "HarmonyRules", targets: ["HarmonyRules"])],
     targets: [
-        .target(name: "HarmonyRules"),
+        // The card data travels with the rules, not with the app: the
+        // storey-one tests must reach it without building a host bundle.
+        .target(name: "HarmonyRules", resources: [.process("Resources")]),
         .testTarget(name: "HarmonyRulesTests", dependencies: ["HarmonyRules"]),
     ]
 )

@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Prüft docs/tierkarten.md auf innere Widersprüche."""
-import io, re, sys
+"""Prüft die Kartendaten auf innere Widersprüche.
+
+Die Quelle der Wahrheit ist animals.json, von Hand gepflegt. Dieses Werkzeug
+prüft sie unabhängig von der Swift-Seite: Dieselben Bedingungen stehen noch
+einmal in `AnimalCardTests`, getrennt implementiert, wie es
+`docs/04-architektur.md` verlangt.
+"""
+import io, json, sys
 from collections import Counter, defaultdict
 
 STEINE = {"Wasser":1,"Feld":1,"Baum1":1,"Baum2":2,"Baum3":3,
           "Berg1":1,"Berg2":2,"Berg3":3,"Gebäude":2}
 
-txt = io.open("docs/tierkarten.md", encoding="utf-8").read()
-blocks = re.findall(r"Karte:\s+(.+?)\n\s*Muster:\s+(.+?)\n\s*Würfel:\s+auf (\d+)\n\s*Punkte:\s+(.+?)\n", txt)
-karten = []
-for name, muster, wuerfel, punkte in blocks:
-    zellen = {}
-    for z, s in re.findall(r"(\d+)=(\S+)", muster):
-        zellen[int(z)] = s
-    pts = [int(p) for p in punkte.replace("/", " ").split()]
-    karten.append((name.strip(), zellen, int(wuerfel), pts))
+QUELLE = "HarmonyRules/Sources/HarmonyRules/Resources/animals.json"
+daten = json.load(io.open(QUELLE, encoding="utf-8"))
+karten = [(c["name"],
+           {int(z): s for z, s in c["pattern"].items()},
+           int(c["cube"]),
+           c["points"])
+          for c in daten["cards"]]
 
 fehler = []
 def pruef(bed, msg):

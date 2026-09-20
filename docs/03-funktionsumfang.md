@@ -45,7 +45,7 @@ Suche und Oberfläche. Das ist eine Auflage an Phase 4.
 | 12 | Beutelverfolgung aus den erfassten Nachfüllungen | Szenario 2 |
 | 13 | Zugzähler und daraus die Obergrenze der Restlaufzeit | `ideen-vorgemerkt.md` |
 | 14 | Beide Planseiten: Geometrie und Wasserwertung | siehe unten |
-| 15 | Alle 32 Tierkarten des Basisspiels | `tierkarten.md` |
+| 15 | Alle 32 Tierkarten des Basisspiels | `animals.json` |
 
 ### Transparenz
 

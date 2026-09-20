@@ -86,7 +86,7 @@ variabler Länge**, keine feste Dreierstruktur. Die Untergrenze ist noch nicht
 belegt.
 
 Das obige Beispiel ist **erfunden** und dient nur der Veranschaulichung des
-Formats. Echte Karten stehen in `tierkarten.md`.
+Formats. Echte Karten stehen in `animals.json`, der Ablageform.
 
 ### Der Name ist unsere Erfindung
 
@@ -106,8 +106,10 @@ Daraus folgt:
 
 ### Kurzform zum Diktieren
 
-Die Langform oben ist die Ablageform in `tierkarten.md`. Zum Diktieren am
-Tisch gibt es eine Kurzform in einer Zeile:
+Die Langform oben ist die Diktierform. Abgelegt werden die Karten seit dem
+2026-09-20 in `animals.json`, siehe `06-durchstich.md`; die Umsetzung von
+der einen in die andere Form ist mechanisch. Zum Diktieren am Tisch gibt es
+zusätzlich eine Kurzform in einer Zeile:
 
 ```
 Panther: 11 B2 12 B2 13 F T 13 P 5 11
@@ -179,6 +181,8 @@ Kartendaten verdächtigt.
 ## Reihenfolge der Erfassung
 
 Zuerst die **unangenehmsten** Karten, nicht die einfachsten: Nur an ihnen
-zeigt sich, ob Vokabular und Schablone tragen. Die Fleißarbeit über alle 32
-Karten beginnt erst nach dem Durchstich aus Phase 6, wenn die Kette von der
-Notation bis zum Zugvorschlag nachweislich funktioniert.
+zeigt sich, ob Vokabular und Schablone tragen. Vorgesehen war, die
+Fleißarbeit über alle 32 Karten erst nach dem Durchstich zu beginnen; sie
+lief am 2026-09-19 durch, weil an Vokabular und Schablone über alle Karten
+hinweg nichts zu ändern war. Die Sorge, die diese Reihenfolge begründet
+hat, ist damit gegenstandslos.
