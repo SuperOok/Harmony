@@ -26,6 +26,8 @@ Phase 6, der Durchstich. Was in Phase 5 offen blieb, führt
 Harmony.xcodeproj      zwei Targets, „Harmony“ und „HarmonyUITests“,
                        dazu ein geteiltes Schema „Harmony“
 HarmonyRules/          Swift Package: die Regeln, samt ihren Tests
+                       Resources/animals.json — die 32 Tierkarten, Quelle
+                       Sources/HarmonyMeasure — zählt den Zugraum
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
 MyApp/                 der Rest des Quellcodes
   MyApp.swift          @main, WindowGroup
@@ -39,7 +41,8 @@ MyApp/                 der Rest des Quellcodes
 docs/                  Konzeptdokumente; nummeriert nach Phasen, dazu
                        phasenübergreifende wie `pruefverfahren.md`
 tools/                 Prüfwerkzeuge: Kartendaten (Python), Regeltests
-                       (tests.sh), Oberflächentests (uitests.sh)
+                       (tests.sh), Oberflächentests (uitests.sh),
+                       Verzweigung messen (messe-verzweigung.sh)
 ```
 
 `MyApp/` und `HarmonyUITests/` sind **synchronisierte Gruppen**

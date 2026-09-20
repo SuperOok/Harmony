@@ -17,5 +17,9 @@ let package = Package(
         // storey-one tests must reach it without building a host bundle.
         .target(name: "HarmonyRules", resources: [.process("Resources")]),
         .testTarget(name: "HarmonyRulesTests", dependencies: ["HarmonyRules"]),
+        // Counts the move space. Not a test — it answers "how big is this",
+        // not "is this right", and `docs/04-architektur.md` asks for the
+        // number rather than for a bound.
+        .executableTarget(name: "HarmonyMeasure", dependencies: ["HarmonyRules"]),
     ]
 )

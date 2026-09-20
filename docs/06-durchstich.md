@@ -77,9 +77,65 @@ beides will man wissen.
 
 ## Verzweigung
 
-*Wird eingetragen, sobald gemessen.* `04-architektur.md` schätzt 10⁴ bis 10⁵
-eigene Züge je Stellung und hält ausdrücklich fest, dass der Durchstich das
-nachzumessen hat.
+`04-architektur.md` schätzt 10⁴ bis 10⁵ eigene Züge je Stellung und hält
+fest, dass der Durchstich das nachzumessen hat. Die Messung ist am
+2026-09-20 **vorgezogen** worden, vor Bewertung und Suche: Fällt die Zahl
+anders aus als geschätzt, ändert das den Zuschnitt beider, und das ist vor
+dem Bauen billiger zu erfahren als danach. Gezählt wird mit
+`tools/messe-verzweigung.sh`.
+
+Gezählt werden **verschiedene Endstellungen, nicht Reihenfolgen**: Grau vor
+Braun auf zwei Felder ergibt denselben Tisch wie Braun vor Grau, und zwei
+Züge daraus zu machen wäre gelogen.
+
+Seite A, 23 Felder:
+
+| belegte Felder | Steinzüge | × Kartenwahl | × Zufallsschicht |
+| --- | --- | --- | --- |
+| 0 | 38.709 | 232.254 | 13.006.224 |
+| 6 | 18.329 | 109.974 | 6.158.544 |
+| 12 | 6.789 | 40.734 | 2.281.104 |
+| 18 | 1.551 | 9.306 | 521.136 |
+
+Seite B liegt durchweg etwa ein Drittel höher, sie hat zwei Felder mehr:
+50.100 Steinzüge auf dem leeren Brett, 16,8 Millionen mit Zufallsschicht.
+
+**Die Schätzung trägt, aber nur für den Steinteil.** 38.000 bis 50.000 eigene
+Steinzüge liegen im geschätzten Band. Die Kartenwahl multipliziert das mit
+sechs — fünf offene Karten oder keine —, und damit steht der Zugraum bei
+2 bis 3 · 10⁵, also am oberen Rand der Schätzung. Das Setzen der Tierwürfel
+und das Nachrücken einer Karte fehlen darin noch.
+
+**Die Zufallsschicht ist so nicht bezahlbar.** 56 mögliche Nachfüllungen je
+Zug bringen den leeren Spielplan auf 13 Millionen Blätter. Selbst bei
+10 Mikrosekunden je Bewertung wären das gut zwei Minuten — und eine
+Bewertung, die Anwärter samt ihrer Verträglichkeit prüft, ist teurer als
+das. Szenario 2 verlangt aber, dass Harmony rechnet, während die Vorderfrau
+überlegt, nicht über zwei Minuten hinweg.
+
+**Folge für den Bau.** Die Zusammenfassung der Zufallsschicht, die
+`04-architektur.md` als *nächste Stufe für den Fall der Fälle* nennt, ist
+keine Rückfallposition mehr, sondern der Entwurf. Der Grund ist strukturell:
+Die Nachfüllung hängt allein davon ab, **welches Feld genommen wurde**, nicht
+davon, wohin die Steine gelegt wurden. Es gibt also nur fünf verschiedene
+Zufallsschichten je Stellung, nicht eine je Zug. Aus ihnen wird je Feld eine
+erwartete Verfügbarkeit je Farbe gebildet — 5 × 56 = 280 Rechnungen — und
+jeder Zug dann **einmal** dagegen bewertet.
+
+Das senkt den Aufwand von 13 Millionen auf rund 39.000 Bewertungen, ein
+Faktor von etwa 330, ohne die Wahrscheinlichkeiten preiszugeben: Sie gehen
+in die Verfügbarkeit ein, statt aufgezählt zu werden.
+
+Was dabei verlorengeht, ist die Kopplung zwischen Brett und Auslage
+innerhalb eines Blattes — ob genau der Stein nachrückt, den genau dieser
+Anwärter braucht. Der Erwartungswert bleibt richtig, seine Streuung
+verschwindet. Für v1 ist das vertretbar, und es gehört als Annahme benannt,
+nicht als Tatsache.
+
+Nicht ausgenutzt wird die **Symmetrie des Spielplans**. Seite A ist waagerecht
+wie senkrecht spiegelbar, was die Eröffnungszüge um etwa den Faktor vier
+kürzen würde. Sobald ein Stein liegt, ist die Symmetrie gebrochen; der
+Gewinn beschränkt sich auf den ersten Zug und lohnt den Sonderfall nicht.
 
 ## Offene Punkte
 
