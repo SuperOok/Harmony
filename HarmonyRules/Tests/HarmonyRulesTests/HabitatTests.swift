@@ -258,4 +258,51 @@ struct HabitatTests {
         #expect(once == again)
         #expect(once.map(\.cubeCell) == again.map(\.cubeCell))
     }
+    // MARK: - Was vor dem Zug schon überbaut war
+
+    @Test("Was vor dem Zug schon überbaut war, zählt nicht mehr als Berg")
+    func whatWasBuiltOverBeforeTheTurnNoLongerCountsAsAMountain() throws {
+        // **Am Tisch aufgefallen, 2026-09-21.** Harmony legte Stein auf 3.1
+        // und 4.1, nahm den Wüstenfuchs und setzte gleich zwei seiner Würfel.
+        // Sein Muster will Feld, Berg1, Berg1 in einer Reihe. Die Reihe, die
+        // die Engine sah, ging über 3.2 — und dort lag ein **Gebäude**, Stein
+        // mit Ziegel darauf. Ein einzelner Stein war das Feld zuletzt viele
+        // Züge zuvor.
+        //
+        // Der Fehler saß darin, dass „hindurchgegangen" ohne Zeitpunkt
+        // gerechnet wurde: `[S]` ist ein Anfangsstück von `[S, Z]`, also galt
+        // das Feld als Berg. Hindurchgegangen sein muss es aber **in diesem
+        // Zug**.
+        let deck = try AnimalCards.load()
+        let fox = deck.first { $0.name == "Wüstenfuchs" }!
+        let board = BoardSide.a.board
+
+        let before: [Int: [Stone]] = [
+            21: [.brick], 22: [.field], 23: [.leaves],
+            32: [.stone, .brick], 33: [.field],
+            42: [.wood], 43: [.wood, .leaves],
+        ]
+        var after = before
+        after[31] = [.stone]
+        after[41] = [.stone]
+        after[42] = [.wood, .wood]
+
+        let offered = Habitat.passed(of: fox, through: after, from: before, board: board)
+        #expect(offered.isEmpty,
+                "kein Würfel, angeboten wurden aber welche auf \(offered.map { cellName($0.cubeCell) })")
+
+        // Die Gegenprobe, damit die Zusicherung nicht nur beweist, dass
+        // `passed` nichts findet: Derselbe Zug auf ein Brett, auf dem 3.2
+        // **leer** war, vollendet das Muster tatsächlich — dort geht das Feld
+        // in diesem Zug durch den Berg hindurch.
+        var open = before
+        open[32] = nil
+        var grown = open
+        grown[31] = [.stone]
+        grown[32] = [.stone]
+        let now = Habitat.passed(of: fox, through: grown, from: open, board: board)
+        #expect(now.contains { $0.cubeCell == 31 },
+                "über 3.3 – 3.2 – 3.1 steht das Muster, wenn 3.2 in diesem Zug Berg wird")
+    }
+
 }

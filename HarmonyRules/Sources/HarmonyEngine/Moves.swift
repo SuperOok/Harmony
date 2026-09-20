@@ -60,12 +60,14 @@ public enum Moves {
         var cells: Set<Int> = []
         for held in state.hand where !held.isFinished {
             for habitat in Habitat.passed(of: held.card, through: state.stacks,
+                                          from: state.stacks,
                                           cubes: state.cubeCells, board: state.board) {
                 cells.formUnion(habitat.requirement.keys)
             }
         }
         for card in state.openCards {
             for habitat in Habitat.passed(of: card, through: state.stacks,
+                                          from: state.stacks,
                                           cubes: state.cubeCells, board: state.board) {
                 cells.formUnion(habitat.requirement.keys)
             }
@@ -204,7 +206,8 @@ public enum Moves {
     static func cubePlaces(for held: HeldCard, laying: Laying,
                            state: EngineState, anchors: [Int]) -> [CubePlace] {
         let touched = Array(Set(laying.added.keys).union(anchors)).sorted()
-        return Habitat.passed(of: held.card, through: laying.stacks, cubes: state.cubeCells,
+        return Habitat.passed(of: held.card, through: laying.stacks, from: state.stacks,
+                              cubes: state.cubeCells,
                               board: state.board, covering: touched)
             .map { CubePlace(card: held.card.name, cell: $0.cubeCell, habitat: $0) }
     }

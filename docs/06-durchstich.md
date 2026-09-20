@@ -702,6 +702,50 @@ kosten.
 **Was es nicht ist:** eine Abhilfe gegen die Rechenzeit. Die drei Hebel oben
 bleiben, was sie sind. Sichtbar ist jetzt nur, was dauert.
 
+### Ein Würfel auf einem Muster, das nie stand
+
+**Am Tisch aufgefallen, 2026-09-21** — der erste Regelfehler, den eine
+gespielte Partie zutage förderte und kein Prüffall.
+
+Die Stellung: `Z21 F22 L23 SZ32 F33 H42 HL43`. Harmony legte `S31 S41 H42`,
+nahm den Wüstenfuchs und setzte **zwei** seiner Würfel, auf 3.1 und 4.1. Sein
+Muster will Feld, Berg1, Berg1 in einer Reihe. Beide Reihen, die die Engine
+dafür sah, gingen über 3.2:
+
+| Würfel auf | Reihe |
+| --- | --- |
+| 3.1 | 3.3 Feld — 3.2 Berg1 — 3.1 Berg1 |
+| 4.1 | 2.2 Feld — 3.2 Berg1 — 4.1 Berg1 |
+
+Auf 3.2 liegt `SZ`, ein **Gebäude**. Ein einzelner Stein war das Feld zuletzt
+viele Züge zuvor.
+
+Der Fehler saß in `Habitat.passed`, der Funktion, mit der die Zugerzeugung
+Würfel setzt. Sie fragt, ob jedes Feld des Musters auf dem Weg zu dem, was
+heute dort liegt, durch die geforderte Landschaft **hindurchgegangen** ist —
+formal: ob das Geforderte ein Anfangsstück des Dastehenden ist. Und `[S]` ist
+ein Anfangsstück von `[S, Z]`.
+
+Die Überlegung dahinter ist richtig, aber sie gilt nur **innerhalb eines
+Zuges**: Dort wächst jedes Feld in einer erzwungenen Reihenfolge, die
+Legereihenfolge der drei Steine ist frei wählbar, und deshalb stand das
+Muster genau dann irgendwann vollständig, wenn jedes seiner Felder durch
+seine Landschaft ging. Ohne Zeitpunkt gerechnet wird daraus „irgendwann in
+der ganzen Partie" — und ein Würfel wird in dem Zug gelegt, der das Muster
+vollendet, oder gar nicht.
+
+`passed` bekommt deshalb jetzt das Brett **vor** dem Zug mit und verlangt
+zweierlei: Das Geforderte ist ein Anfangsstück des Dastehenden **und** reicht
+mindestens so weit wie das, was vor dem Zug schon dalag. Für ein Feld, das
+der Zug nicht anfasst, fallen beide Seiten zusammen und die Bedingung wird zu
+einer Gleichheit — was ein Feld, das sich in diesem Zug nicht ändern kann,
+auch erfüllen muss.
+
+Der Prüffall dazu trägt die Stellung vom Tisch, samt Gegenprobe: Dasselbe
+Legen auf ein Brett, auf dem 3.2 **leer** war, vollendet das Muster
+tatsächlich. Ohne diese zweite Hälfte hielte die Zusicherung nur fest, dass
+`passed` nichts findet.
+
 ## Offene Punkte
 
 1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird

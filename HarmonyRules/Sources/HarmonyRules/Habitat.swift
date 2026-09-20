@@ -243,19 +243,38 @@ extension Habitat {
     }
 
     /// Placements whose every space **passed through** what the pattern
-    /// wants on its way to what lies there now.
+    /// wants during this turn, on its way to what lies there now.
     ///
     /// The question a turn asks. Within a turn a space grows in one forced
-    /// order, and a stone on one space never undoes another, so a pattern
-    /// was complete at some moment exactly when every space of it went
-    /// through its landscape. What the pattern wants is then a beginning of
-    /// what ends up there.
+    /// order, and the order the three stones go down in is the player's to
+    /// choose, so a pattern was complete at some moment of the turn exactly
+    /// when every space of it went through its landscape **during** it.
     ///
-    /// The cube's own space is the exception and has to match **exactly**: a
-    /// cube blocks anything going on top, so a space that grew past what the
-    /// pattern wants could never have carried the cube.
+    /// **During it, not ever.** What the pattern wants must be a beginning
+    /// of what ends up there *and* must not already have been passed before
+    /// the turn began — hence `from`, which is the board as the turn found
+    /// it. A space that stood as a lone stone three turns ago and carries a
+    /// brick on top today has long stopped being a mountain of height one,
+    /// and no cube goes on a pattern that was complete back then: the cube is
+    /// laid in the turn that completes the pattern, or not at all. Leaving
+    /// that out let Harmony lay two cubes on a pattern that never stood —
+    /// see `HabitatTests`, „Was vor dem Zug schon überbaut war".
+    ///
+    /// For a space the turn does not touch, `from` and the end are the same
+    /// and the condition falls back to an exact match, which is what a space
+    /// that cannot change this turn has to fulfil.
+    ///
+    /// The cube's own space is a further exception and has to match
+    /// **exactly** even when the turn does touch it: a cube blocks anything
+    /// going on top, so a space that grew past what the pattern wants could
+    /// never have carried the cube.
+    ///
+    /// - Parameter from: the stacks before the turn. Passing the same
+    ///   dictionary as `through` asks which patterns stand complete right
+    ///   now, with nothing laid.
     public static func passed(of card: AnimalCard,
                               through stacks: [Int: [Stone]],
+                              from before: [Int: [Stone]],
                               cubes: Set<Int> = [],
                               board: Board,
                               covering: [Int]? = nil) -> [Habitat] {
@@ -279,8 +298,14 @@ extension Habitat {
                     let cell = (place + shift).cell
                     guard board.contains(cell) else { possible = false; break }
                     let ends = stacks[cell] ?? []
-                    guard let reached = wanted.stacks.first(where: { ends.starts(with: $0) })
-                    else { possible = false; break }
+                    let started = (before[cell] ?? []).count
+                    // Erreicht **in diesem Zug**: Was das Muster will, ist
+                    // ein Anfangsstück dessen, was am Ende dasteht, und
+                    // reicht mindestens so weit wie das, was vor dem Zug
+                    // schon dalag.
+                    guard let reached = wanted.stacks.first(where: {
+                        ends.starts(with: $0) && $0.count >= started
+                    }) else { possible = false; break }
                     // Nothing goes on top of a cube, so a space that carries
                     // one cannot have grown past what it shows now.
                     if cubes.contains(cell) && reached != ends { possible = false; break }
