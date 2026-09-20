@@ -39,7 +39,7 @@ durch, egal was sie misst.
 | --- | --- | --- | --- | --- |
 | 1 | **Regelkern** | Wertung, Mustererkennung, Zuggenerierung | viele, je Millisekunden | mit der ersten Engine-Zeile |
 | 2 | **Ganze Partien** | dass eine Partie regelkonform durchläuft | wenige Dutzend, kopflos | vertagt |
-| 3 | **Oberfläche** | den Eingabeweg, nicht die Spiellogik | eine Handvoll | als Nächstes, der Dummy steht |
+| 3 | **Oberfläche** | den Eingabeweg, nicht die Spiellogik | eine Handvoll | läuft, seit 2026-09-20 |
 
 Die Form ist eine Pyramide: Je höher das Stockwerk, desto langsamer und
 launischer der Test, desto weniger davon.
@@ -133,6 +133,12 @@ dieselbe Schnittstelle, die auch VoiceOver benutzt.
 Diese Tests prüfen **den Eingabeweg, nie die Spiellogik**. Die gehört ins
 Fundament, wo sie tausendmal schneller läuft.
 
+Angelegt am 2026-09-20 als Target `HarmonyUITests`, ausgeführt mit
+`tools/uitests.sh`. Drei Fälle, ungefähr eine Minute auf dem Bezugsgerät —
+gegenüber unter einer Sekunde für die 28 Fälle in Stockwerk 1. Die Pyramide
+ist damit keine Behauptung mehr, sondern gemessen, und die beiden Läufe
+bleiben deshalb getrennt.
+
 ### Antippzahl statt Sekunden
 
 Phase 2 ließ offen, was „schnell genug" heißt, und nannte es eine
@@ -183,10 +189,16 @@ für Bedienungshilfen fällt dabei ab.
 Verweis auf eine Ziehfolge (`launchArguments`), dieselbe, die auch
 Stockwerk 2 benutzt.
 
-Für den ersten Test greift das noch nicht: Der Klickdummy hat keinen
+Für die ersten Tests greift das noch nicht: Der Klickdummy hat keinen
 Zufall, seine Attrappendaten stehen fest, und eine Ziehfolge gibt es
 deshalb nicht zu wählen. Die Regel wird fällig, sobald die Engine zieht —
 das Fehlen des Formats ist hier kein Versäumnis.
+
+Gebraucht wird der Startparameter trotzdem, nur für anderes: `-harmonyTurn`
+öffnet auf Harmonys Schirm, und ihr bestätigter Zug übergibt an die erste
+Mitspielerin. Erst dort beginnt ein fremder Zug. Dieses Bestätigen richtet
+die Stellung ein und zählt deshalb nicht mit — weder im Test noch im
+Zähler der App.
 
 **Kein Bildvergleich.** XCUITest heftet Bildschirmfotos ans Protokoll, aber
 es gibt keine eingebaute Zusicherung „sieht aus wie beim letzten Mal".
@@ -512,16 +524,20 @@ Kein Beschluss, nur eine Reihenfolge, die aus dem Obigen folgt:
    Phase 4 — Engine als eigenes Modul — ist damit eingelöst, und sie war
    keine Formalie: Erst dadurch laufen die Tests ohne Host-App und ohne
    Simulator.
-3. **Als Nächstes** ein UI-Test-Target mit den beiden Antippgrenzen als
-   ersten Fällen — 5 ohne Kartennahme, 8 mit. Die Zahlen stehen seit dem
-   2026-09-20 fest, die Bezeichner liegen bereits durchgängig in den Views.
-4. **Wenn eine Partie durchläuft**, Stockwerk 2.
+3. ✅ **Stockwerk 3 läuft**, seit 2026-09-20. Das Target
+   `HarmonyUITests` sichert die beiden Antippgrenzen zu — 5 ohne
+   Kartennahme, 8 mit — und prüft daneben, dass der Zähler auf dem Schirm
+   dasselbe zählt wie der Test. Die Bezeichner lagen bereits durchgängig
+   in den Views; gebraucht wurde keine einzige neue.
+4. **Als Nächstes** Phase 6, der Durchstich. Stockwerk 2 folgt, sobald
+   eine Partie durchläuft.
 
 Das Anlegen von Targets ändert `project.pbxproj` und ist keine
 Nebenbei-Änderung, siehe `CLAUDE.md`. Für Stockwerk 1 entfiel das: Ein
 Swift Package braucht kein Target, nur eine Referenz im App-Target. Für
-Stockwerk 3 steht es noch aus, und bis dahin gilt: keine
-`xcodebuild test`-Aufrufe erfinden.
+Stockwerk 3 war es fällig, und mit ihm ein **geteiltes Schema** — ohne
+eines wüsste `xcodebuild test` in einem frischen Klon nicht, welches
+Testtarget gemeint ist.
 
 ## Nicht gewählt, weil
 

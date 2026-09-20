@@ -1,6 +1,6 @@
 # Harmony
 
-SwiftUI-App (iOS, iPadOS, macOS), gebaut mit Xcode 27.
+SwiftUI-App (iOS, iPadOS), gebaut mit Xcode 27.
 
 Harmony stellt einen Computer-Mitspieler für das Brettspiel **Harmonies**.
 Die Partie läuft am echten Tisch mit echtem Material; die App verwaltet nur
@@ -15,16 +15,18 @@ braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
 siehe `docs/`.
 
 **Wo es steht:** Phase 5 ist abgeschlossen, alle Ansichten der
-Funktionsliste sind gebaut. Der nächste Schritt ist in
-`docs/pruefverfahren.md` unter *Vorschlag zum Zeitpunkt* festgehalten:
-ein UI-Test-Target mit der Antippzahl als erster Zusicherung. Was in
-Phase 5 offen blieb, führt `docs/05-ui.md` am Ende auf.
+Funktionsliste sind gebaut, und die Antippgrenzen sind seit dem
+2026-09-20 als UI-Tests zugesichert. Der nächste Schritt ist damit
+Phase 6, der Durchstich. Was in Phase 5 offen blieb, führt
+`docs/05-ui.md` am Ende auf.
 
 ## Aufbau
 
 ```
-Harmony.xcodeproj      ein Target und ein Schema, beide „Harmony“
+Harmony.xcodeproj      zwei Targets, „Harmony“ und „HarmonyUITests“,
+                       dazu ein geteiltes Schema „Harmony“
 HarmonyRules/          Swift Package: die Regeln, samt ihren Tests
+HarmonyUITests/        Oberflächentests: die Antippgrenzen
 MyApp/                 der Rest des Quellcodes
   MyApp.swift          @main, WindowGroup
   ContentView.swift    Wurzel-View
@@ -36,12 +38,14 @@ MyApp/                 der Rest des Quellcodes
   Assets.xcassets/
 docs/                  Konzeptdokumente; nummeriert nach Phasen, dazu
                        phasenübergreifende wie `pruefverfahren.md`
-tools/                 Prüfwerkzeuge: Kartendaten (Python), Tests (tests.sh)
+tools/                 Prüfwerkzeuge: Kartendaten (Python), Regeltests
+                       (tests.sh), Oberflächentests (uitests.sh)
 ```
 
-`MyApp/` ist eine **synchronisierte Gruppe** (`PBXFileSystemSynchronizedRootGroup`).
-Neue Dateien darin landen ohne Eingriff in `project.pbxproj` im Target —
-anders als die Warnung oben zum Umbenennen vermuten lässt.
+`MyApp/` und `HarmonyUITests/` sind **synchronisierte Gruppen**
+(`PBXFileSystemSynchronizedRootGroup`). Neue Dateien darin landen ohne
+Eingriff in `project.pbxproj` im jeweiligen Target — anders als die
+Warnung oben zum Umbenennen vermuten lässt.
 
 Das Quellverzeichnis heißt `MyApp/`, das Target dagegen `Harmony` — ein
 Überbleibsel der Vorlage. Ein Umbenennen erfordert Anpassungen an den
@@ -49,12 +53,8 @@ Dateireferenzen in `project.pbxproj` und ist deshalb keine Nebenbei-Änderung.
 
 ## Bauen
 
-```bash
-xcodebuild -project Harmony.xcodeproj -scheme Harmony -destination 'platform=macOS' build
-```
-
-Für iOS besser das generische Ziel verwenden, das nicht davon abhängt,
-welche Simulatoren gerade installiert sind:
+Am besten das generische Ziel, das nicht davon abhängt, welche Simulatoren
+gerade installiert sind:
 
 ```bash
 xcodebuild -project Harmony.xcodeproj -scheme Harmony -destination 'generic/platform=iOS Simulator' build
@@ -96,8 +96,21 @@ tools/tests.sh
 `swift test`, das Skript taugt also für eine Automatik. Direkt geht es
 genauso: `cd HarmonyRules && swift test`.
 
-Es gibt **kein UI-Test-Target**. Keine `xcodebuild test`-Aufrufe für die
-App erfinden, solange keines existiert.
+Die Oberfläche wird getrennt geprüft — Stockwerk 3, angelegt am
+2026-09-20. Diese Tests brauchen einen Simulator und ungefähr eine Minute,
+gehören also nicht in denselben Lauf wie die Regeltests:
+
+```bash
+tools/uitests.sh
+```
+
+Das Skript nimmt das Bezugsgerät aus `docs/05-ui.md`; ein anderes wird als
+UDID übergeben. Von Hand ist es derselbe Aufruf:
+
+```bash
+xcodebuild test -project Harmony.xcodeproj -scheme Harmony \
+  -destination 'platform=iOS Simulator,id=<UDID>'
+```
 
 ### Wenn xcodebuild Xcode nicht findet
 
@@ -124,19 +137,31 @@ Sie braucht ein Passwort und ist damit Sache des Nutzers, nicht eines Agents.
 | Einstellung | Wert |
 | --- | --- |
 | Bundle-Identifier | `de.superook.Harmony` |
-| Unterstützte Plattformen | `iphoneos iphonesimulator macosx` |
+| Unterstützte Plattformen | `iphoneos iphonesimulator` |
 | `SDKROOT` | `auto` |
-| Deployment-Target | 27.0 auf allen Plattformen |
+| Deployment-Target | iOS 27.0 |
 | Swift-Sprachmodus | 5.0 |
 
 `SDKROOT = auto` bedeutet, dass das SDK dem Ziel folgt — ein Schema deckt
-alle Plattformen ab. Das so lassen, statt plattformspezifische Targets
+Gerät und Simulator ab. Das so lassen, statt plattformspezifische Targets
 anzulegen.
+
+**macOS ist am 2026-09-20 herausgenommen worden.** Es war eine Zusage der
+Vorlage, nicht des Projekts: Gebaut hat die App dort nie, weil der
+Klickdummy durchgehend iOS-eigene APIs benutzt —
+`navigationBarTitleDisplayMode` und die `UIColor`-Konstanten gibt es unter
+AppKit nicht. Aufgefallen ist es erst, als das UI-Test-Target den Befehl
+aus diesem Abschnitt erstmals nachprüfte. Wiederherstellen ließe sich die
+Unterstützung, aber sie wäre Arbeit an einer Plattform, an der das Spiel
+nicht gespielt wird: `05-ui.md` misst durchgehend gegen ein iPhone, und am
+Tisch liegt kein Mac.
 
 ## Konventionen
 
 - Ausschließlich SwiftUI. Kein UIKit oder AppKit, sofern nicht eine
-  bestimmte API dazu zwingt.
+  bestimmte API dazu zwingt. Plattformeigene Aufrufe wie
+  `navigationBarTitleDisplayMode` sind seit dem Wegfall von macOS
+  unbedenklich.
 - `ContentView.swift` enthält einen `#Preview`- und einen
   `#Playground`-Block. Previews funktionsfähig halten; sie sind die
   schnellste Rückmeldung in diesem Projekt.
@@ -164,8 +189,10 @@ anzulegen.
   einchecken. Ebenso keine wörtlich übernommenen Regeltexte oder
   Kartenillustrationen des Brettspiels — Regeln als solche sind frei,
   ihre konkrete Ausformulierung und Gestaltung nicht.
-- `xcuserdata/` ist ignoriert. Xcode erzeugt das Schema beim ersten Öffnen
-  neu, ein frischer Klon braucht also keine Zusatzschritte.
+- `xcuserdata/` ist ignoriert. Das Schema „Harmony“ liegt dagegen als
+  **geteiltes** Schema unter `Harmony.xcodeproj/xcshareddata/` und ist
+  eingecheckt — sonst wüsste `xcodebuild test` in einem frischen Klon
+  nicht, welches Testtarget gemeint ist.
 - **Das Arbeitsverzeichnis lag bis zum 2026-09-20 in iCloud Drive** und
   liegt seither hier. Über denselben Dateien liefen zwei
   Synchronisationen, und eine davon war überflüssig, weil das
