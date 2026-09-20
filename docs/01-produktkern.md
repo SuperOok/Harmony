@@ -24,8 +24,11 @@ Der Ablauf pro Zug:
   Menschen gegeneinander in der App spielen.
 - **Kein Regellehrer.** Die App erklärt das Spiel nicht und prüft die Züge
   der Menschen nicht.
-- **Kein Punktezähler für alle.** Harmony kennt ihr eigenes Ergebnis, nicht
-  zwingend das der anderen.
+- **Kein Punktezähler für alle — in v1.** Harmony kennt dort ihr eigenes
+  Ergebnis, nicht zwingend das der anderen. Für v2 ist das Gegenteil
+  vorgesehen: Sie soll die Punkte aller Spieler zusammenrechnen, damit der
+  Block aus der Packung entfällt, und Ergebnisse vergangener Partien
+  behalten. Geändert am 2026-09-20; siehe `03-funktionsumfang.md`.
 - **Kein Online-Dienst.** Alles läuft lokal auf dem Gerät.
 
 ## Leitentscheidungen

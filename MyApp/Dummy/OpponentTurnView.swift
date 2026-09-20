@@ -346,8 +346,9 @@ struct OpponentTurnView: View {
     /// The same picker the setup uses, limited to the one card that came
     /// up. It closes by itself once chosen.
     private var cardPicker: some View {
-        CardPickerView(
+        NamePickerView(
             title: "Nachgerückt",
+            options: Sample.allCards,
             unavailable: state.seenCards,
             limit: 1,
             chosen: Binding(get: { cardDrawn.map { [$0] } ?? [] },

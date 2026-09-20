@@ -137,6 +137,20 @@ Nichts davon ist verworfen, nur vertagt.
   ohne sie zu schwach bleibt.
 - **Statistik über mehrere Partien.** Interessant für die Arbeit an der
   Bewertungsfunktion, nicht für den Tisch.
+- **Punkte aller Spieler zusammenrechnen.** Vorgesehen für v2: Harmony
+  ersetzt den Block aus der Packung. Das war in Phase 1 unter „Kommt nie"
+  geführt und ist am 2026-09-20 hierher verschoben worden — die Methodik
+  erlaubt Rückwärtsgehen, und der Nutzen am Tisch ist offensichtlich.
+- **Spielerverwaltung.** Voraussetzung für das Vorige: Spieler werden
+  wiedererkannt, damit sich Ergebnisse vergangener Partien ihnen zuordnen
+  lassen. Erster Schritt ist in v1 schon getan — die Spielerauswahl beim
+  Aufbau greift auf eine Liste bekannter Namen zu. Dauerhaft gespeichert
+  wird noch nichts.
+
+  Zwei Punkte gehören dazu bedacht, bevor gespeichert wird: Das Repository
+  ist **öffentlich**, Namen und Ergebnisse realer Personen gehören nicht
+  hinein (siehe die neutralen Namen in `pruefverfahren.md`). Und Phase 1
+  sagt „kein Online-Dienst" — die Daten bleiben auf dem Gerät.
 
 ## Kommt nie
 
@@ -146,7 +160,6 @@ Aus Phase 1 übernommen und hier verbindlich:
   gegeneinander spielen.
 - **Regellehrer.** Die App erklärt das Spiel nicht und prüft die Züge der
   Menschen nicht.
-- **Punktezähler für alle.** Harmony kennt ihr eigenes Ergebnis.
 - **Online-Dienst, Konten, Synchronisation.** Alles bleibt lokal.
 - **Gelernte Modelle.** Die Bewertung bleibt handgeschrieben und benennbar.
 - **Harmony am Tisch mit vier Menschen.** Das Spiel hat vier Plätze.
