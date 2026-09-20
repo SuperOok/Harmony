@@ -358,9 +358,11 @@ Erzeugen.
    (`MyApp/Dummy/GameStore.swift`). Dazu zwei Dinge, die bleiben sollten:
    Die Suche ist ein **Anytime-Verfahren** geworden — bei Abbruch gibt sie
    den besten bis dahin gefundenen Zug und sagt über `complete`, dass es
-   nicht der beste ist. Und der Schirm zeigt **nichts**, solange gerechnet
-   wird; ein Beispielzug an der Stelle des Vorschlags würde am Tisch
-   gespielt.
+   nicht der beste ist. Und an der Stelle des Vorschlags steht **nichts**,
+   solange gerechnet wird; ein Beispielzug dort würde am Tisch gespielt.
+   Was stattdessen dasteht, sagt der Abschnitt *Was die Suche über sich
+   sagt* weiter unten.
+
 3. **Stockwerk 2**, sobald eine Partie durchläuft.
 
 ## Offene Punkte
@@ -379,3 +381,36 @@ Erzeugen.
    gegeneinander zu verrechnen sind, gehört gemessen, sobald Selbstspiel
    läuft. Phase 3 nimmt v1 auf dem Durchlauf ab, nicht auf der Spielstärke;
    geraten wird deshalb vorerst.
+### Was die Suche über sich sagt
+
+**Angelegt am 2026-09-20**, nachdem sich beim Spielen auf dem Gerät zeigte,
+dass nach dem letzten gegnerischen Zug scheinbar nichts geschieht. Geschehen
+ist durchaus etwas — die Suche lief —, nur stand die Zeile, die das sagte,
+unter einem Spielplan, der höher ist als der Bildschirm. Bei 110 Sekunden
+Rechenzeit ist das derselbe Anblick wie ein hängendes Gerät.
+
+Drei Änderungen, zusammen eine:
+
+1. `Search.best` meldet unterwegs (`SearchProgress`): geprüfte Züge, wie
+   viele Auslagefelder fertig sind und von wie vielen, und der beste Zug
+   bisher samt Bewertung. Einmal gemeldet wird vor dem ersten gewogenen Zug,
+   damit in der ersten Sekunde etwas dasteht. **Weiter geht die Auskunft
+   nicht:** Innerhalb eines Auslagefelds gibt es keinen Nenner, ohne alle
+   Züge vorher aufzuzählen — genau das, was die Suche vermeidet. Ein Balken
+   über Felder ist deshalb das Ehrlichste, was zu haben ist.
+2. `ThinkingView` zeigt das, öffnet sich von selbst, wenn eine Suche
+   beginnt, schließt sich, wenn sie fertig ist, und trägt den Knopf
+   **Abkürzen**. Was er verspricht — den besten bisher gefundenen Zug —,
+   steht auf demselben Schirm darüber, und ein Prüffall hält beides
+   aneinander (`SearchTests`, „Eine abgebrochene Suche meldet den Zug, den
+   sie herausgibt").
+3. Die Statuszeile ist **über** den Spielplan gewandert.
+
+Der Melder zwischen Suche und Schirm (`SearchMonitor` in `EngineBridge.swift`)
+hält je einen Stand unter einem Schloss; der Schirm fragt viermal in der
+Sekunde. Die Suche wartet damit nie auf die Oberfläche — Zusehen darf nichts
+kosten.
+
+**Was es nicht ist:** eine Abhilfe gegen die Rechenzeit. Die drei Hebel oben
+bleiben, was sie sind. Sichtbar ist jetzt nur, was dauert.
+

@@ -62,6 +62,12 @@ struct OpponentTurnView: View {
     /// needs a way out, and stopping it is not giving up: the engine hands
     /// back the best it had found by then.
     @State private var thinker: Task<Void, Never>?
+    /// Where the running search leaves its reports, and whether the screen
+    /// that shows them is up. It opens by itself when a search starts: the
+    /// alternative was a line under a board taller than the display, which
+    /// on the device looks exactly like nothing happening.
+    @State private var monitor = SearchMonitor()
+    @State private var thinkingOpen = false
     /// Harmony's turn, waiting for what the table has to tell her: the
     /// stones drawn for the space she emptied, and the card that moved up.
     /// She cannot know either, so she asks.
@@ -131,12 +137,20 @@ struct OpponentTurnView: View {
         engineFailed = false
         computed = nil
         thinkingTook = nil
-        thinkingSince = Date()
+        let started = Date()
+        thinkingSince = started
+        // Ein frischer Melder je Suche: der alte trüge noch den Stand der
+        // vorigen Stellung, und der wäre auf dem Bildschirm nicht als solcher
+        // zu erkennen.
+        let monitor = SearchMonitor()
+        self.monitor = monitor
+        thinkingOpen = true
 
         thinker = Task {
-            let started = Date()
             let work = Task.detached(priority: .userInitiated) {
-                HarmonyEngine.Search.best(from: position, cancelled: { Task.isCancelled })
+                HarmonyEngine.Search.best(from: position,
+                                          cancelled: { Task.isCancelled },
+                                          progress: { monitor.report($0) })
             }
             // Stopping means "that is enough", not "forget it": the search
             // returns the best turn it had reached.
@@ -145,7 +159,13 @@ struct OpponentTurnView: View {
             } onCancel: {
                 work.cancel()
             }
+            // Nur, wenn diese Suche noch die laufende ist. Eine abgelöste
+            // merkt ihren Abbruch erst beim nächsten Prüfpunkt und käme
+            // sonst hier an, wenn längst die nächste rechnet — sie würde
+            // deren Bildschirm schließen und ihren Zug überschreiben.
+            guard self.monitor === monitor else { return }
             thinkingSince = nil
+            thinkingOpen = false
             thinkingTook = Date().timeIntervalSince(started)
             thinkingWeighed = suggestion?.weighed ?? 0
             thinkingComplete = suggestion?.complete ?? true
@@ -189,6 +209,13 @@ struct OpponentTurnView: View {
                 harmonyReportSheet
             }
             .onDisappear { thinker?.cancel() }
+            .sheet(isPresented: $thinkingOpen) {
+                ThinkingView(monitor: monitor,
+                             started: thinkingSince ?? Date(),
+                             turnsPlayed: events.turnCount,
+                             onStop: { thinker?.cancel() },
+                             onHide: { thinkingOpen = false })
+            }
             .sheet(isPresented: $cardPickerOpen) { cardPicker }
             .sheet(isPresented: $historyOpen) { historyList }
             .sheet(isPresented: $correctionOpen) {
@@ -353,12 +380,15 @@ struct OpponentTurnView: View {
                 }
                 .pickerStyle(.segmented)
 
+                // Über dem Brett, nicht darunter: das Brett ist höher als
+                // der Bildschirm, und was unter ihm steht, sieht am Tisch
+                // niemand.
+                engineStatus
+
                 BoardView(side: state.sideB ? .b : .a,
                           columns: state.sideB ? BoardView.sideB : BoardView.sideA,
                           cells: harmonyCells)
                     .padding(.horizontal, 4)
-
-                engineStatus
 
                 if pendingMove == nil && thinkingSince != nil {
                     Text("Der Vorschlag erscheint, sobald die Rechnung steht. "
@@ -467,10 +497,20 @@ struct OpponentTurnView: View {
                          + String(format: "%.0f s", context.date.timeIntervalSince(since)))
                         .font(.footnote.monospacedDigit())
                     Spacer()
+                    Button("Ansehen") { thinkingOpen = true }
+                        .font(.footnote)
+                        .accessibilityIdentifier("show-thinking")
                     Button("Das genügt") { thinker?.cancel() }
                         .font(.footnote)
+                        // Erst wenn ein Zug gefunden ist. Vorher abbrechen
+                        // hieße: kein Vorschlag und kein Weg zu einem, denn
+                        // gerechnet wird nur, wenn sich die Stellung ändert.
+                        .disabled(monitor.current?.best == nil)
                         .accessibilityIdentifier("stop-thinking")
                 }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.accentColor.opacity(0.14)))
                 .accessibilityIdentifier("thinking")
             }
         } else if let took = thinkingTook {

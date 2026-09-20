@@ -37,6 +37,29 @@ public struct Suggestion: Sendable {
     }
 }
 
+/// What a running search can say about itself while it runs.
+///
+/// A search that takes minutes has to be watchable, or the screen in front
+/// of it is indistinguishable from a hung one. Reported is only what is
+/// cheap to keep: a counter, which display space is being worked through,
+/// and the best turn so far.
+public struct SearchProgress: Sendable {
+    /// How many turns have been weighed so far. There is no total to
+    /// compare it against — that would mean generating them all first,
+    /// which is the very thing the search avoids.
+    public let weighed: Int
+    /// How many display spaces are finished, and how many there are. The
+    /// only honest measure of how far along a search is: within one space
+    /// nothing is countable in advance, between them everything is.
+    public let spacesDone: Int
+    public let spacesTotal: Int
+    /// The best turn found so far and what it is worth. This is what a
+    /// stopped search hands back, so showing it beforehand says what
+    /// stopping now would cost.
+    public let best: Move?
+    public let bestValue: Double?
+}
+
 public enum Search {
     /// The best turn from this position, or none if there is no legal turn.
     ///
@@ -46,13 +69,14 @@ public enum Search {
     /// - Parameters:
     ///   - cancelled: asked every so often. A search that runs for minutes
     ///     has to be stoppable, or the interface in front of it looks hung.
-    ///   - progress: how many turns have been weighed so far. There is no
-    ///     total to compare it against — that would mean generating them all
-    ///     first, which is the very thing this avoids.
+    ///   - progress: called as the search advances, and once before it
+    ///     begins so that a screen has something to show at zero seconds.
+    ///     See `SearchProgress` for what is reported and why it is so
+    ///     little.
     public static func best(from state: EngineState,
                             weights: Weights = Weights(),
                             cancelled: () -> Bool = { false },
-                            progress: (Int) -> Void = { _ in }) -> Suggestion? {
+                            progress: (SearchProgress) -> Void = { _ in }) -> Suggestion? {
         var bestMove: Move? = nil
         var bestValue = -Double.infinity
         var bestTerms: [Term] = []
@@ -64,6 +88,21 @@ public enum Search {
         var stopped = false
         var offeredSpaces: Set<String> = []
         let anchors = Moves.standingHabitatCells(of: state)
+
+        // Spaces holding the same three stones are one choice, so the number
+        // that will actually be worked through is smaller than the display.
+        // Counted once here, because a fraction whose denominator grows
+        // while one watches is worse than no fraction.
+        let spacesTotal = Set(state.display.map { $0.map(\.rawValue).sorted().joined() }).count
+        var spacesDone = 0
+
+        func report() {
+            progress(SearchProgress(weighed: weighed,
+                                    spacesDone: spacesDone, spacesTotal: spacesTotal,
+                                    best: bestMove,
+                                    bestValue: bestMove == nil ? nil : bestValue))
+        }
+        report()
 
         for (index, space) in state.display.enumerated() {
             if stopped { break }
@@ -81,7 +120,7 @@ public enum Search {
                 for move in Moves.turns(space: index, board: board,
                                         from: state, anchors: anchors) {
                     weighed += 1
-                    if weighed % 2000 == 0 { progress(weighed) }
+                    if weighed % 2000 == 0 { report() }
                     let after = state.applying(move)
                     let evaluation = Evaluator.evaluate(after, weights: weights,
                                                         availability: available)
@@ -96,9 +135,11 @@ public enum Search {
                     }
                 }
             }
+            if !stopped { spacesDone += 1 }
+            report()
         }
 
-        progress(weighed)
+        report()
         guard let bestMove else { return nil }
         return Suggestion(move: bestMove, value: bestValue, pointsNow: bestPoints,
                           terms: bestTerms, runnerUp: secondMove,

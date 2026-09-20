@@ -123,11 +123,50 @@ extension Suggestion {
         return value / 100
     }
 
-    private func notation(_ move: Move) -> String {
-        let stones = move.placements.keys.sorted().flatMap { cell in
-            move.placements[cell]!.map { "\($0.rawValue)\(cell)" }
-        }
-        return (stones + move.cubes.keys.sorted().map { "T\($0)" })
-            .joined(separator: " ")
+    private func notation(_ move: Move) -> String { engineNotation(move) }
+}
+
+/// A move in the short written form, the one `docs/kartennotation.md` fixes.
+///
+/// Out here rather than inside a `Suggestion`, because a search that is
+/// still running has a best move and no suggestion yet — and that move is
+/// what the progress screen shows.
+func engineNotation(_ move: Move) -> String {
+    let stones = move.placements.keys.sorted().flatMap { cell in
+        move.placements[cell]!.map { "\($0.rawValue)\(cell)" }
+    }
+    return (stones + move.cubes.keys.sorted().map { "T\($0)" })
+        .joined(separator: " ")
+}
+
+/// A running search, seen from the screen in front of it.
+///
+/// The search runs on its own thread and reports a few hundred times a
+/// minute; the screen asks four times a second. A lock and a single stored
+/// report rather than a stream: nothing is gained by delivering every
+/// report, and the search must never wait on the interface — that would
+/// make watching it cost time the position does not have.
+///
+/// `@unchecked Sendable` is the claim that the lock does what the compiler
+/// would otherwise check: every access to `latest` is inside it. And
+/// `nonisolated`, weil dieser Typ seinen Sinn gerade darin hat, von zwei
+/// Seiten benutzt zu werden — vom Suchlauf und vom Hauptstrang. Ohne das
+/// Schlüsselwort läge er auf dem Hauptstrang, und die Suche würde ihn von
+/// außen anfassen.
+nonisolated final class SearchMonitor: @unchecked Sendable {
+    private let lock = NSLock()
+    private var latest: SearchProgress?
+
+    func report(_ progress: SearchProgress) {
+        lock.lock()
+        latest = progress
+        lock.unlock()
+    }
+
+    /// The most recent report, or nothing if the search has yet to send one.
+    var current: SearchProgress? {
+        lock.lock()
+        defer { lock.unlock() }
+        return latest
     }
 }

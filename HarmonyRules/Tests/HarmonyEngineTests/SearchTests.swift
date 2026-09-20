@@ -60,6 +60,75 @@ struct SearchTests {
         #expect(Search.best(from: state)?.move == Search.best(from: state)?.move)
     }
 
+    // MARK: - Was die Suche über sich sagt
+
+    @Test("Die Suche meldet sich, bevor sie den ersten Zug gewogen hat")
+    func thesearchReportsBeforeItHasWeighedAnything() {
+        // Ohne diese erste Meldung steht der Bildschirm in der ersten
+        // Sekunde leer da — und genau in dieser Sekunde schaut jemand hin.
+        let state = position(empty: [11, 12, 13],
+                             display: [[.stone, .stone, .stone],
+                                       [.water, .water, .water]])
+        var reports: [SearchProgress] = []
+        _ = Search.best(from: state, progress: { reports.append($0) })
+
+        let first = reports.first
+        #expect(first?.weighed == 0)
+        #expect(first?.best == nil)
+        #expect(first?.spacesDone == 0)
+        #expect(first?.spacesTotal == 2)
+    }
+
+    @Test("Der Fortschritt wächst und bleibt innerhalb seiner Grenzen")
+    func theprogressGrowsAndStaysWithinItsBounds() {
+        let state = position(empty: [11, 12, 13],
+                             display: [[.stone, .stone, .stone],
+                                       [.water, .water, .water]])
+        var reports: [SearchProgress] = []
+        let suggestion = Search.best(from: state, progress: { reports.append($0) })
+
+        #expect(zip(reports, reports.dropFirst()).allSatisfy { $0.weighed <= $1.weighed },
+                "ein Zähler, der zurückspringt, wäre keine Auskunft")
+        #expect(zip(reports, reports.dropFirst()).allSatisfy { $0.spacesDone <= $1.spacesDone })
+        #expect(reports.allSatisfy { $0.spacesDone <= $0.spacesTotal })
+        #expect(reports.last?.weighed == suggestion?.weighed,
+                "die letzte Meldung nennt dieselbe Zahl wie das Ergebnis")
+        #expect(reports.last?.spacesDone == reports.last?.spacesTotal,
+                "eine durchgelaufene Suche ist auch gemeldet fertig")
+        #expect(reports.last?.best == suggestion?.move,
+                "und denselben Zug")
+    }
+
+    @Test("Gleiche Auslagefelder zählen als eines")
+    func equalDisplaySpacesCountAsOne() {
+        // Die Suche überspringt das zweite von zwei gleichen Feldern. Der
+        // Nenner muss das schon vorher wissen, sonst zeigt der Bildschirm
+        // einen Bruch, der unterwegs kleiner wird.
+        let state = position(empty: [11, 12, 13],
+                             display: [[.stone, .stone, .stone],
+                                       [.stone, .stone, .stone]])
+        var reports: [SearchProgress] = []
+        _ = Search.best(from: state, progress: { reports.append($0) })
+        #expect(reports.first?.spacesTotal == 1)
+        #expect(reports.last?.spacesDone == 1)
+    }
+
+    @Test("Eine abgebrochene Suche meldet den Zug, den sie herausgibt")
+    func astoppedSearchReportsTheTurnItHandsBack() {
+        // Der Knopf „Abkürzen" verspricht den besten bisher gefundenen Zug.
+        // Gezeigt wird er vorher, also muss er derselbe sein.
+        let state = position(empty: [11, 12, 13, 14],
+                             display: [[.stone, .stone, .stone]])
+        var reports: [SearchProgress] = []
+        var seen = 0
+        let suggestion = Search.best(from: state,
+                                     cancelled: { seen += 1; return seen > 2 },
+                                     progress: { reports.append($0) })
+        #expect(suggestion?.complete == false)
+        #expect(reports.last?.best == suggestion?.move)
+        #expect(reports.last?.spacesDone == 0, "ein Feld, das abbrach, ist nicht fertig")
+    }
+
     // MARK: - Der vorbereitende Zug
 
     @Test("Ist nichts zu vollenden, wird trotzdem auf einen Anwärter hin gelegt")
