@@ -20,29 +20,17 @@ public struct BoardScoring {
         self.stacks = stacks
     }
 
+    /// The geometry, asked rather than answered here. It moved to
+    /// `Hex.swift` when the engine needed the same questions for pattern
+    /// search; scoring and search must not each carry their own board.
+    private var geometry: Board { Board(columns: columns) }
+
     /// Every space on the board, empty ones included — the island scoring
     /// on side B counts them.
-    public var allCells: [Int] {
-        columns.enumerated().flatMap { index, count in
-            (1...count).map { (index + 1) * 10 + $0 }
-        }
-    }
+    public var allCells: [Int] { geometry.cells }
 
-    /// Neighbours of a cell `<column><row>`. Even columns, counted from one,
-    /// sit half a cell lower; see `regeln-basisspiel.md`.
-    public func neighbours(_ cell: Int) -> [Int] {
-        let c = cell / 10 - 1, r = cell % 10 - 1        // zero based
-        let offset = c % 2 == 0 ? -1 : 1
-        var candidates = [(c, r - 1), (c, r + 1)]
-        for dc in [-1, 1] {
-            candidates.append((c + dc, r))
-            candidates.append((c + dc, r + offset))
-        }
-        return candidates.compactMap { cc, rr in
-            guard cc >= 0, cc < columns.count, rr >= 0, rr < columns[cc] else { return nil }
-            return (cc + 1) * 10 + (rr + 1)
-        }
-    }
+    /// Neighbours of a cell `<column><row>`.
+    public func neighbours(_ cell: Int) -> [Int] { geometry.neighbours(cell) }
 
     private func landscape(_ cell: Int) -> Landscape? {
         (stacks[cell] ?? []).landscape

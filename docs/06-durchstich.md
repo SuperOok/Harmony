@@ -63,10 +63,32 @@ kann ein einzelner Spielstein gleichzeitig über mehrere Karten entscheiden —
 die sechs Karten der Form `12,21,32` etwa unterscheiden sich nur in der
 Füllung derselben drei Zellen.
 
-**Die Lage des Zielsteins folgt aus der Form.** Bei den verzweigten Formen
-`11,12,21`, `12,21,32` und `12,21,22,32` liegt der Tierwürfel ausnahmslos auf
-der Zelle, die alle anderen berührt. Bei der Dreierkette `11,12,13` liegt er
-ausnahmslos an einem **Ende**, nie in der Mitte. Keine Karte weicht davon ab.
+**Die Lage des Zielsteins folgt der Form, aber sie folgt nicht aus ihr.**
+Beim Umzug der Kartendaten ist der Satz nachgerechnet worden, und in seiner
+ursprünglichen Fassung — „der Würfel liegt auf der Zelle, die alle anderen
+berührt" — trägt er nicht:
+
+| Form | Zellen, die alle anderen berühren | Würfel liegt auf |
+| --- | --- | --- |
+| `11,12` | beide | der zweiten |
+| `11,12,13` | die Mitte | einem **Ende** |
+| `11,12,21` | alle drei | einer davon |
+| `12,21,32` | genau eine | ebendieser |
+| `12,21,22,32` | zwei | einer der beiden |
+
+Nur bei `12,21,32` bestimmt die Form die Zelle. Bei `11,12` und beim Dreieck
+`11,12,21` sind die in Frage kommenden Zellen durch Drehung ineinander
+überführbar, die Wahl ist also gegenstandslos. Bei der Dreierkette liegt der
+Würfel ausnahmslos an einem **Ende**, nie in der Mitte — das Gegenteil der
+ursprünglichen Fassung. Und bei `12,21,22,32` kommen zwei Zellen in Frage,
+die **nicht** durch Drehung auseinander hervorgehen, sondern durch
+Spiegelung; gespiegelte Lagen sind laut `kartennotation.md` nicht vorgesehen.
+Dass beide Karten dieser Form denselben Platz wählen, ist eine Eigenschaft
+der Daten und keine der Geometrie.
+
+Für die Engine heißt das: **Die Würfelzelle wird gelesen, nicht hergeleitet.**
+Zugesichert wird nur, was trägt — bei der Kette das Ende, sonst eine Zelle,
+die jede andere des Musters berührt.
 
 **Als Prüfung:** Ein Test gruppiert alle 32 Karten nach ihrer kanonischen
 Form — über die sechs Drehungen normalisiert — und sichert genau diese
