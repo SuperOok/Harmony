@@ -161,8 +161,8 @@ struct BoardView: View {
 }
 
 extension BoardView {
-    static let sideA = [5, 4, 5, 4, 5]
-    static let sideB = [4, 3, 4, 3, 4, 3, 4]
+    static let sideA = BoardSide.a.columns
+    static let sideB = BoardSide.b.columns
 
     /// Side A: every cell state once, and every scoring condition once met
     /// and once missed.

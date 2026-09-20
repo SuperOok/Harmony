@@ -35,6 +35,9 @@ struct GameState {
     var seatIndex: Int
     var harmonyBoard: [Int: [Stone]]
     var harmonyCubes: [Int: String]
+    /// The cards Harmony has taken. The dummy never takes one in play, so
+    /// they are seeded like the board is — see `05-ui.md`, open point 6.
+    var harmonyCards: [AnimalCard]
     /// Seating in turn order, Harmony among them. Comes from the setup.
     var seating: [String]
     var sideB: Bool
@@ -51,8 +54,26 @@ struct GameState {
                   seatIndex: seat,
                   harmonyBoard: Sample.harmonyBoard,
                   harmonyCubes: [:],
+                  harmonyCards: Sample.harmonyCards,
                   seating: Sample.turnOrder,
                   sideB: false)
+    }
+
+    /// A game played out, for looking at the final score without tapping
+    /// through five and thirty turns first. Either board is a real end
+    /// position: two free spaces, which is the second end trigger.
+    ///
+    /// The two sides need two boards, not one. Side B has 25 spaces in
+    /// seven columns and side A has 23 in five, so a position for one does
+    /// not even fit on the other — and water is scored by two different
+    /// rules, the river against the islands.
+    static func finished(sideB: Bool = false) -> GameState {
+        var state = initial()
+        state.sideB = sideB
+        state.harmonyBoard = sideB ? Sample.harmonyBoardFinalB : Sample.harmonyBoardFinal
+        state.harmonyCubes = sideB ? Sample.harmonyCubesFinalB : Sample.harmonyCubesFinal
+        state.harmonyCards = sideB ? Sample.harmonyCardsB : Sample.harmonyCards
+        return state
     }
 
     mutating func apply(_ event: GameEvent) {
@@ -184,5 +205,45 @@ extension Array where Element == GameEvent {
             status.turnsLeft = Swift.max(endsAfter - count, 0)
         }
         return status
+    }
+}
+
+
+// MARK: - Endwertung
+
+/// Harmony's result at the end, in the two halves Szenario 4 names:
+/// landscapes and animal cards. The humans count their own the way they
+/// always have — the app does not offer to.
+struct FinalScore {
+    let landscapes: [ScoreGroup]
+    let cards: ScoreGroup
+    /// Cubes placed. The rules break a tie on this number, so it belongs
+    /// on the screen even though Harmony cannot know the other scores.
+    let cubesPlaced: Int
+
+    var landscapeTotal: Int { landscapes.reduce(0) { $0 + $1.points } }
+    var total: Int { landscapeTotal + cards.points }
+}
+
+extension GameState {
+    var finalScore: FinalScore {
+        let side: BoardSide = sideB ? .b : .a
+        let scoring = BoardScoring(side: side, columns: side.columns,
+                                   stacks: harmonyBoard)
+        let lines = harmonyCards.map { card -> ScoreLine in
+            let cubes = harmonyCubes.values.filter { $0 == card.name }.count
+            return ScoreLine(
+                label: cubes == 0
+                    ? "\(card.name) — kein Würfel gelegt"
+                    : "\(card.name) — \(cubes) von \(card.cubeSpaces) Würfeln",
+                points: card.score(cubes: cubes))
+        }
+        return FinalScore(
+            landscapes: scoring.breakdown(),
+            cards: ScoreGroup(title: "Tierkarten", lines: lines,
+                              note: "Gewertet wird die höchste sichtbare Zahl, "
+                                  + "also der Wert unter dem zuletzt gelegten "
+                                  + "Würfel. Verbliebene Würfel kosten nichts."),
+            cubesPlaced: harmonyCubes.count)
     }
 }

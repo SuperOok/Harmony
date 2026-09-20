@@ -12,6 +12,10 @@ struct OpponentTurnView: View {
 
     /// The position the log starts from — what the setup produced.
     let startState: GameState
+    /// Opens straight on the final score, the way `-harmonyTurn` opens on
+    /// Harmony's screen. The position it shows is a real end position; only
+    /// the round being over is asserted rather than played.
+    var finished = false
 
     // Input of the turn in progress
     @State private var takenIndex: Int?
@@ -39,6 +43,16 @@ struct OpponentTurnView: View {
     }
     private var history: [LogEntry] { events.entries(from: startState) }
 
+    /// Why the game is over. Usually what the log worked out; on the direct
+    /// route it is read off the board, which gives the same answer.
+    private var endReason: String? {
+        if let reason = end.reason { return reason }
+        let free = state.boardSize - state.harmonyBoard.count
+        return free <= 2
+            ? "Harmonys Spielplan hat nur noch \(free) freie Felder."
+            : nil
+    }
+
     private var currentPlayer: String { state.currentPlayer }
     private var isHarmony: Bool { state.isHarmonysTurn }
 
@@ -59,10 +73,13 @@ struct OpponentTurnView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if end.isOver { gameOver }
+                if end.isOver || finished { gameOver }
                 else if isHarmony { harmonyTurn } else { entry }
             }
-            .navigationTitle(isHarmony ? "Harmony ist am Zug" : "\(currentPlayer) ist am Zug")
+            .navigationTitle(end.isOver || finished
+                             ? "Endwertung"
+                             : isHarmony ? "Harmony ist am Zug"
+                                         : "\(currentPlayer) ist am Zug")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -346,9 +363,7 @@ struct OpponentTurnView: View {
         move.placements.map(\.stone.name).joined(separator: ", ")
     }
 
-    private func cellInWords(_ cell: Int) -> String {
-        "\(cell / 10).\(cell % 10)"
-    }
+    private func cellInWords(_ cell: Int) -> String { cellName(cell) }
 
     private func landscapeInWords(_ cell: Int, _ move: HarmonyMove) -> String {
         let stack = move.applied(to: state.harmonyBoard)[cell] ?? []
@@ -405,26 +420,99 @@ struct OpponentTurnView: View {
         .accessibilityIdentifier("board-full")
     }
 
+    /// Szenario 4: Harmony's own result, broken down far enough to be
+    /// **recalculated** at the table. Not a verdict — the humans add up
+    /// theirs the way they always have, and the app does not offer to.
     private var gameOver: some View {
-        VStack(spacing: 18) {
-            Spacer()
-            Image(systemName: "flag.checkered").font(.system(size: 44))
-                .foregroundStyle(.tertiary)
-            Text("Partie beendet").font(.headline)
-            if let reason = end.reason {
-                Text(reason).font(.callout).foregroundStyle(.secondary)
+        let score = state.finalScore
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                totalBlock(score)
+
+                ForEach(score.landscapes) { group in
+                    scoreBlock(group)
+                }
+
+                scoreBlock(score.cards)
+
+                Text("\(score.cubesPlaced) Tierwürfel liegen. Bei Gleichstand "
+                     + "entscheidet ihre Zahl, danach ist der Sieg geteilt.")
+                    .font(.footnote).foregroundStyle(.secondary)
+
+                Text("Die Ergebnisse der Menschen werden wie immer von Hand "
+                     + "gezählt.")
+                    .font(.footnote).foregroundStyle(.tertiary)
             }
-            Text("Alle hatten gleich viele Züge: \(events.count) insgesamt.")
-                .font(.callout).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Text("Die Endwertung fehlt noch — Funktion 8 aus Phase 3.")
-                .font(.footnote).foregroundStyle(.tertiary)
-            Spacer()
+            .padding()
+        }
+        .safeAreaInset(edge: .bottom) {
             Button("Verlauf ansehen") { historyOpen = true }
                 .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(.bar)
                 .accessibilityIdentifier("show-history")
         }
-        .padding(28)
+    }
+
+    private func totalBlock(_ score: FinalScore) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Harmony").font(.callout).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(score.total)")
+                    .font(.system(size: 52, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                Text("Punkte").font(.title3).foregroundStyle(.secondary)
+            }
+            .accessibilityIdentifier("total")
+
+            Text("\(score.landscapeTotal) aus Landschaften, "
+                 + "\(score.cards.points) aus Tierkarten.")
+                .font(.callout).foregroundStyle(.secondary)
+
+            if let reason = endReason {
+                Text(reason + " Alle hatten gleich viele Züge.")
+                    .font(.footnote).foregroundStyle(.tertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// One group with its lines and its subtotal. Lines worth nothing stay
+    /// in and are set back — they are what someone checks first when a
+    /// number looks wrong.
+    private func scoreBlock(_ group: ScoreGroup) -> some View {
+        TitledBlock(group.title) {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(group.lines) { line in
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text(line.label)
+                            .font(.callout)
+                            .foregroundStyle(line.points == 0 ? .secondary : .primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text("\(line.points)")
+                            .font(.callout.monospacedDigit())
+                            .foregroundStyle(line.points == 0 ? .tertiary : .primary)
+                    }
+                    .padding(.vertical, 5)
+                }
+
+                Divider().padding(.vertical, 4)
+
+                HStack {
+                    Text(group.title).font(.callout.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("\(group.points)")
+                        .font(.callout.monospacedDigit().weight(.semibold))
+                }
+
+                if let note = group.note {
+                    Text(note)
+                        .font(.footnote).foregroundStyle(.tertiary)
+                        .padding(.top, 8)
+                }
+            }
+        }
     }
 
     // MARK: - Pickers

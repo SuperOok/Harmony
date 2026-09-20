@@ -147,3 +147,163 @@ struct BoardScoring {
         return result
     }
 }
+
+extension BoardSide {
+    /// Spaces per column. Side A is 5-4-5-4-5 with 23 spaces, side B is
+    /// 4-3-4-3-4-3-4 with 25 — the geometry from `regeln-basisspiel.md`.
+    var columns: [Int] {
+        switch self {
+        case .a: [5, 4, 5, 4, 5]
+        case .b: [4, 3, 4, 3, 4, 3, 4]
+        }
+    }
+}
+
+/// A cell as it is spoken and written: `43` is "4.3".
+func cellName(_ cell: Int) -> String { "\(cell / 10).\(cell % 10)" }
+
+
+// MARK: - Endwertung
+
+/// One line of the final score: what earned the points, and how many.
+///
+/// Szenario 4 asks for a result that can be **checked against the board**,
+/// which a total alone cannot be. Every line therefore names the spaces it
+/// is about, and lines worth nothing are kept — they are the ones someone
+/// goes looking for.
+struct ScoreLine: Identifiable {
+    let id = UUID()
+    let label: String
+    let points: Int
+}
+
+struct ScoreGroup: Identifiable {
+    let id = UUID()
+    let title: String
+    let lines: [ScoreLine]
+    /// Read under the group when the rule is easier to check than to recall.
+    var note: String? = nil
+
+    var points: Int { lines.reduce(0) { $0 + $1.points } }
+}
+
+extension BoardScoring {
+    /// Trees and mountains share one ladder: height 1/2/3 scores 1/3/7.
+    static func heightPoints(_ height: Int) -> Int {
+        switch height {
+        case 1: 1
+        case 2: 3
+        case 3: 7
+        default: 0
+        }
+    }
+
+    /// The river ladder: 0, 2, 5, 8, 11, 15, and four more per cell beyond
+    /// the sixth.
+    static func riverPoints(_ length: Int) -> Int {
+        switch length {
+        case 2: 2
+        case 3: 5
+        case 4: 8
+        case 5: 11
+        case 6: 15
+        default: length > 6 ? 15 + 4 * (length - 6) : 0
+        }
+    }
+
+    /// The landscape score, group by group. Empty groups are left out —
+    /// a board without a single building has nothing to check there.
+    func breakdown() -> [ScoreGroup] {
+        [trees, mountains, fieldGroups, waterGroup, buildings]
+            .filter { !$0.lines.isEmpty }
+    }
+
+    private var trees: ScoreGroup {
+        let cells = stacks.keys.filter { (stacks[$0] ?? []).landscape == .tree }.sorted()
+        return ScoreGroup(title: "Bäume", lines: cells.map { cell in
+            let height = stacks[cell]?.count ?? 0
+            return ScoreLine(label: "Höhe \(height) auf \(cellName(cell))",
+                             points: Self.heightPoints(height))
+        })
+    }
+
+    private var mountains: ScoreGroup {
+        let cells = stacks.keys.filter { (stacks[$0] ?? []).landscape == .mountain }.sorted()
+        return ScoreGroup(title: "Berge", lines: cells.map { cell in
+            let height = stacks[cell]?.count ?? 0
+            let touches = neighbours(cell).contains {
+                (stacks[$0] ?? []).landscape == .mountain
+            }
+            return ScoreLine(
+                label: "Höhe \(height) auf \(cellName(cell))"
+                    + (touches ? "" : " — ohne Bergnachbarn"),
+                points: touches ? Self.heightPoints(height) : 0)
+        }, note: "Ein Berg zählt nur neben einem anderen Berg. Ein grauer "
+            + "Stapel mit rotem Stein obenauf ist ein Gebäude und zählt hier "
+            + "gar nicht mit.")
+    }
+
+    private var fieldGroups: ScoreGroup {
+        let yellow = Set(stacks.keys.filter { (stacks[$0] ?? []).landscape == .field })
+        let groups = regions(in: yellow).sorted { ($0.min() ?? 0) < ($1.min() ?? 0) }
+        return ScoreGroup(title: "Felder", lines: groups.map { group in
+            let where_ = group.sorted().map(cellName).joined(separator: ", ")
+            return group.count >= 2
+                ? ScoreLine(label: "Gruppe aus \(group.count) Steinen: \(where_)",
+                            points: 5)
+                : ScoreLine(label: "Einzelner Stein auf \(where_) — keine Gruppe",
+                            points: 0)
+        }, note: "Jede Gruppe ab zwei Steinen zählt 5, unabhängig von ihrer Größe.")
+    }
+
+    private var waterGroup: ScoreGroup {
+        let water = Set(allCells.filter { (stacks[$0] ?? []).landscape == .water })
+
+        switch side {
+        case .a:
+            let rivers = regions(in: water)
+                .map { (size: $0.count, path: longestPath($0)) }
+                .sorted { $0.path.count > $1.path.count }
+            let lines = rivers.enumerated().map { index, river -> ScoreLine in
+                let length = river.path.count
+                guard index == 0 else {
+                    return ScoreLine(
+                        label: "Weiterer Fluss der Länge \(length) — nur der längste zählt",
+                        points: 0)
+                }
+                let aside = river.size - length
+                let where_ = river.path.map(cellName).joined(separator: " – ")
+                return ScoreLine(
+                    label: "Länge \(length): \(where_)"
+                        + (aside > 0
+                           ? " — \(aside) Stein\(aside == 1 ? "" : "e") daneben zählt nicht mit"
+                           : ""),
+                    points: Self.riverPoints(length))
+            }
+            return ScoreGroup(title: "Wasser — der Fluss", lines: lines,
+                              note: "Die Länge ist der längste unter allen "
+                                  + "kürzesten Wegen, beide Enden mitgezählt.")
+
+        case .b:
+            let islands = regions(in: Set(allCells).subtracting(water))
+                .sorted { ($0.min() ?? 0) < ($1.min() ?? 0) }
+            return ScoreGroup(title: "Wasser — die Inseln", lines: islands.map {
+                ScoreLine(label: "Insel aus \($0.count) Feldern, ab \(cellName($0.min() ?? 0))",
+                          points: 5)
+            }, note: "Leere Felder gehören zu einer Insel. Es gibt immer "
+                + "mindestens eine.")
+        }
+    }
+
+    private var buildings: ScoreGroup {
+        let cells = stacks.keys.filter { (stacks[$0] ?? []).landscape == .building }.sorted()
+        return ScoreGroup(title: "Gebäude", lines: cells.map { cell in
+            let colors = Set(neighbours(cell).compactMap { stacks[$0]?.last })
+            return ScoreLine(
+                label: "Auf \(cellName(cell)) — \(colors.count) Farbe"
+                    + (colors.count == 1 ? "" : "n") + " ringsum",
+                points: colors.count >= 3 ? 5 : 0)
+        }, note: "Gezählt wird der oberste Stein jedes belegten Nachbarfeldes. "
+            + "Leere Nachbarn zählen nicht mit.")
+    }
+}

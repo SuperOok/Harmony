@@ -373,6 +373,7 @@ struct SetupBoardView: View {
                          seatIndex: 0,
                          harmonyBoard: Sample.harmonyBoard,
                          harmonyCubes: [:],
+                         harmonyCards: Sample.harmonyCards,
                          seating: seating,
                          sideB: sideB)
     }

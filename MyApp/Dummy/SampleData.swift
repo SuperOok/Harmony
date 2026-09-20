@@ -153,6 +153,102 @@ enum Sample {
     /// Two humans and Harmony — the leading case from Phase 2.
     static let turnOrder = ["Anke", "Bernd", "Harmony"]
 
+    /// Harmony's cards at the end of the sample game. Four of them, which
+    /// is the limit the rules put on unfinished cards.
+    ///
+    /// The ladders are copied from `tierkarten.md`; Phase 6 reads them from
+    /// there instead. The Biene is taken but has no cube on it — a card
+    /// left unfinished scores nothing and costs nothing, and the screen
+    /// should show that case.
+    static let harmonyCards = [
+        AnimalCard(name: "Fledermaus", points: [3, 6, 10, 16]),
+        AnimalCard(name: "Lachs", points: [3, 6, 10, 16]),
+        AnimalCard(name: "Koala", points: [3, 6, 10, 15]),
+        AnimalCard(name: "Biene", points: [8, 18]),
+    ]
+
+    /// Harmony's board at the end of a game, on side A. Built so that every
+    /// scoring rule appears **once met and once missed** — the same idea as
+    /// `BoardView.sampleCellsA`, because a final score whose every line
+    /// scores proves only half of the screen.
+    ///
+    /// Two spaces stay free, 3.4 and 4.4, which is the second end trigger:
+    /// two or fewer free spaces at the end of a turn.
+    static let harmonyBoardFinal: [Int: [Stone]] = [
+        // A river of four down column one, with 2.2 branching off it
+        11: [.water], 12: [.water], 13: [.water], 14: [.water], 22: [.water],
+        // A second river of two, which does not count beside the longer one
+        41: [.water], 52: [.water],
+        // Trees of every height
+        15: [.wood, .wood, .leaves], 21: [.wood, .leaves], 31: [.leaves],
+        43: [.wood, .wood, .leaves],
+        // Two mountains side by side, two more, and one standing alone
+        32: [.stone, .stone], 33: [.stone],
+        53: [.stone], 54: [.stone],
+        51: [.stone, .stone, .stone],
+        // A pair of fields, and a single yellow stone that is no group
+        23: [.field], 24: [.field], 55: [.field],
+        // One building with three colours around it, one at the edge with one
+        42: [.brick, .brick], 35: [.brick, .brick],
+    ]
+
+    /// Where the cubes ended up, and which card each came from. Every one
+    /// sits on a space where its card's pattern really is on the board:
+    /// Fledermaus is a tree of three beside a mountain of one (4.3 and 5.3),
+    /// Lachs a mountain of three beside water (5.1 and 5.2), Koala a tree
+    /// of one beside a tree of two (3.1 and 2.1).
+    static let harmonyCubesFinal: [Int: String] = [
+        53: "Fledermaus",
+        52: "Lachs",
+        21: "Koala",
+    ]
+
+    /// The same thing on side B, where water is not a river but a divider:
+    /// islands are the connected regions of everything **not** blue, empty
+    /// spaces included, and each one counts five.
+    ///
+    /// Water fills columns two and four completely and so cuts the board
+    /// into three islands of 4, 4 and 10 spaces. The single water space at
+    /// 6.3 is a bay: it borders one island only and therefore separates
+    /// nothing — the case that has to be visible beside the one that works.
+    ///
+    /// Two spaces stay free, 6.1 and 7.2, and they belong to their island.
+    static let harmonyBoardFinalB: [Int: [Stone]] = [
+        // Island one, the whole of column 1
+        11: [.wood, .wood, .leaves], 12: [.wood, .leaves], 13: [.leaves],
+        14: [.field],
+        // The first cut
+        21: [.water], 22: [.water], 23: [.water],
+        // Island two, the whole of column 3
+        31: [.stone, .stone, .stone], 32: [.stone],
+        33: [.brick, .brick], 34: [.leaves],
+        // The second cut
+        41: [.water], 42: [.water], 43: [.water],
+        // Island three, columns 5 to 7
+        51: [.field], 52: [.field],
+        53: [.stone, .stone], 54: [.stone],
+        62: [.brick, .brick],
+        63: [.water],                      // the bay, separating nothing
+        71: [.wood, .wood, .leaves],
+        73: [.brick, .brick], 74: [.stone],
+    ]
+
+    /// Cubes on side B. The mountain of three at 3.1 borders water on both
+    /// sides, so the Lachs pattern is there twice; the building at 3.3
+    /// borders four water spaces, of which two carry an Ente cube.
+    static let harmonyCubesFinalB: [Int: String] = [
+        21: "Lachs", 41: "Lachs",
+        12: "Koala",
+        42: "Ente", 43: "Ente",
+    ]
+
+    static let harmonyCardsB = [
+        AnimalCard(name: "Lachs", points: [3, 6, 10, 16]),
+        AnimalCard(name: "Koala", points: [3, 6, 10, 15]),
+        AnimalCard(name: "Ente", points: [2, 4, 8, 13]),
+        AnimalCard(name: "Biene", points: [8, 18]),
+    ]
+
     /// Harmony's board before her turn. Mid-game: a river, a pair of
     /// fields, two adjacent mountains, and two wood tiles at 43 waiting
     /// for a green one.
@@ -319,5 +415,25 @@ struct HarmonyMove {
         var byCell: [Int: [Int]] = [:]
         for (index, p) in placements.enumerated() { byCell[p.cell, default: []].append(index + 1) }
         return byCell.mapValues { $0.map(String.init).joined(separator: "·") }
+    }
+}
+
+
+/// A card as the final score needs it: the name we gave it and the ladder
+/// printed on it, read from the bottom up.
+///
+/// `regeln-basisspiel.md` scores the **highest visible number**, which is
+/// the value under the cube placed last. No cube means no points, and
+/// cubes left on the card cost nothing. The length of the ladder is at the
+/// same time the number of cubes the card carries.
+struct AnimalCard: Identifiable {
+    var id: String { name }
+    let name: String
+    let points: [Int]
+
+    var cubeSpaces: Int { points.count }
+
+    func score(cubes: Int) -> Int {
+        cubes < 1 ? 0 : points[Swift.min(cubes, points.count) - 1]
     }
 }
