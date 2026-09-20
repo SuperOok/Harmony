@@ -286,19 +286,24 @@ unsere eigenen Namen sind unbedenklich.
 ## Modulschnitt
 
 ```
-HarmonyRules/             eigenes Swift-Paket
-  Package.swift
-  Sources/HarmonyRules/   Regeln, Wertung, Suche, Kartendaten
-  Tests/                  Stockwerk 1 und später 2
-Harmony.xcodeproj         die App, bindet das Paket ein
-MyApp/                    Ansichten
+HarmonyRules/                 ein Swift-Paket, zwei Bibliotheken
+  Sources/HarmonyRules/       Steine, Geometrie, Karten, Lebensräume
+    Resources/animals.json    die 32 Tierkarten
+  Sources/HarmonyEngine/      Zustand, Züge, Bewertung, Suche
+  Tests/                      je Bibliothek eine Testsammlung
+Harmony.xcodeproj             die App, bindet das Paket ein
+MyApp/                        Ansichten
 ```
 
-Angelegt am 2026-09-20 und **`HarmonyRules` genannt, nicht `HarmonyEngine`**:
-Darin liegen bisher Wertung, Landschaften, zulässige Stapel und die
-Steinbilanz — Regeln also, keine Suche. Suche und Kartendaten kommen mit
-Phase 6 hinzu; ob sie dasselbe Paket bewohnen oder ein zweites bekommen,
-entscheidet sich dort.
+**Ein Paket, zwei Ziele** — entschieden in Phase 6 am 2026-09-20, wo diese
+Frage offengelassen war. Die Engine hängt von den Regeln ab, nie umgekehrt,
+und das erzwingt der Übersetzer. Ein zweites Paket hätte dieselbe Trennung
+gegeben, aber zwei Testläufe und eine zweite Referenz im App-Target gekostet.
+
+Die Trennlinie verläuft zwischen **Regel** und **Verfahren**: Ob ein Muster
+irgendwo liegt oder noch liegen kann, entscheiden die Regeln; welcher Zug
+daraus folgt, das Verfahren. Deshalb liegen Geometrie und Mustersuche bei den
+Regeln und nicht bei der Suche.
 
 Das Paket kennt **kein SwiftUI**. Die Trennung wird damit vom Übersetzer
 erzwungen und nicht von der Disziplin: Engine-Code, der auf eine Ansicht

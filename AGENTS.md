@@ -14,10 +14,13 @@ Steinbilanz —, entstanden, weil der Dummy diese Regeln zum Anzeigen
 braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
 siehe `docs/`.
 
-**Wo es steht:** Phase 5 ist abgeschlossen, alle Ansichten der
-Funktionsliste sind gebaut, und die Antippgrenzen sind seit dem
-2026-09-20 als UI-Tests zugesichert. Der nächste Schritt ist damit
-Phase 6, der Durchstich. Was in Phase 5 offen blieb, führt
+**Wo es steht:** Der Durchstich aus Phase 6 ist am 2026-09-20 fertig
+geworden: Die Kette von den Kartendaten bis zum Zugvorschlag trägt, mit
+129 Prüffällen unter einer Sekunde. Sie ist allerdings **zu langsam für
+den Tisch** — ein Vorschlag dauert je nach Stellung 24 Sekunden bis 13
+Minuten. Die nächsten beiden Schritte stehen am Ende von
+`docs/06-durchstich.md`: die Bewertung schneller machen, dann den
+Klickdummy an die Engine hängen. Was in Phase 5 offen blieb, führt
 `docs/05-ui.md` am Ende auf.
 
 ## Aufbau

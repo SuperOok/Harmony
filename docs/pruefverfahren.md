@@ -135,7 +135,8 @@ Fundament, wo sie tausendmal schneller läuft.
 
 Angelegt am 2026-09-20 als Target `HarmonyUITests`, ausgeführt mit
 `tools/uitests.sh`. Drei Fälle, ungefähr eine Minute auf dem Bezugsgerät —
-gegenüber unter einer Sekunde für die 28 Fälle in Stockwerk 1. Die Pyramide
+gegenüber unter einer Sekunde für die inzwischen 129 Fälle in Stockwerk 1.
+Die Pyramide
 ist damit keine Behauptung mehr, sondern gemessen, und die beiden Läufe
 bleiben deshalb getrennt.
 
@@ -520,7 +521,8 @@ Kein Beschluss, nur eine Reihenfolge, die aus dem Obigen folgt:
    Steinbilanz. Damit gab es zu prüfen, bevor Phase 6 begann.
 2. ✅ **Stockwerk 1 läuft**, seit 2026-09-20. Der regelreine Code liegt im
    Swift Package `HarmonyRules/`, die Tests daneben; `tools/tests.sh`
-   führt sie aus. 28 Fälle, unter einer Sekunde. Die Auflage aus
+   führt sie aus. Anfangs 28 Fälle, mit der Engine aus Phase 6 sind es
+   129 — weiterhin unter einer Sekunde. Die Auflage aus
    Phase 4 — Engine als eigenes Modul — ist damit eingelöst, und sie war
    keine Formalie: Erst dadurch laufen die Tests ohne Host-App und ohne
    Simulator.

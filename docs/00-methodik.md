@@ -14,7 +14,7 @@ mit einem Dokument und einem Commit.
 | 3 | Funktionsumfang | Was gehört in v1, was später, was nie? | `03-funktionsumfang.md` ✅ |
 | 4 | Daten & Architektur | Welche Entitäten, welche Persistenz, welches Suchverfahren? | `04-architektur.md` ✅ |
 | 5 | Oberfläche | Welche Ansichten, welche Eingabewege? | `05-ui.md` ✅ |
-| 6 | Durchstich | Funktioniert die Kette von der Kartennotation bis zum Zugvorschlag? | Lauffähiger Code, wenige Karten |
+| 6 | Durchstich | Funktioniert die Kette von der Kartennotation bis zum Zugvorschlag? | `06-durchstich.md` ✅ — sie trägt, aber zu langsam |
 | 7 | Kartenerfassung | Alle Tierkarten systematisch erfassen | `animals.json`, alle 32 ✅ |
 
 Phase 7 ist **vorgezogen worden** und bereits abgeschlossen. Der Grund für

@@ -1,6 +1,6 @@
 # Phase 6 — Durchstich
 
-Status: begonnen am 2026-09-20.
+Status: abgeschlossen am 2026-09-20. Die Kette trägt — und ist zu langsam.
 
 Die Kernfrage dieser Phase steht in `00-methodik.md`: **Funktioniert die
 Kette von der Kartennotation bis zum Zugvorschlag?** Vor ihr lagen nur die
@@ -159,32 +159,32 @@ Anwärter braucht. Der Erwartungswert bleibt richtig, seine Streuung
 verschwindet. Für v1 ist das vertretbar, und es gehört als Annahme benannt,
 nicht als Tatsache.
 
-### Das Erzeugen ist teurer als das Bewerten
+### Das Erzeugen allein kostet schon 18,6 Sekunden
 
-Der unerwartete Teil der Messung. Die 235.290 Züge **aufzuzählen** kostet
-18,6 Sekunden, also rund 80 Mikrosekunden je Zug — mehr, als eine Bewertung
-kosten dürfte. Nicht die Suche ist der Engpass, sondern der Generator vor
-ihr.
+Die 235.290 Züge **aufzuzählen** kostet 18,6 Sekunden, rund 80 Mikrosekunden
+je Zug. Als das gemessen wurde, gab es noch keine Bewertung, und der Schluss
+lautete: Der Engpass sei der Generator.
 
-Zwei Ursachen sind benannt und noch nicht behoben:
+**Dieser Schluss war falsch**, und der Abschnitt bleibt als Warnung stehen.
+Er beruhte auf der Annahme, eine Bewertung koste zehn Mikrosekunden — eine
+Zahl, die nirgends herkam. Gemessen sind es 2.400 bis 6.900. Die Aufzählung
+ist damit der kleinere Posten, siehe *Die Suche, und was sie kostet*.
 
-- **Jeder Zug wird als eigener Wert gebaut**, mit zwei Wörterbüchern darin.
-  Eine viertel Million davon anzulegen, nur um sie zu bewerten und wegzuwerfen,
-  ist der größte Einzelposten.
+Was daran trägt, sind die beiden Ursachen und die Faktorisierung:
+
+- **Jeder Zug wird als eigener Wert gebaut**, mit zwei Wörterbüchern darin,
+  nur um bewertet und weggeworfen zu werden.
 - **Das Brett ist ein Wörterbuch.** Für 23 bis 25 feste Felder täte ein Feld
   fester Länge dasselbe, ohne Streuwerte zu rechnen.
+- **Die Kartenwahl vervielfacht den Raum mit sechs, berührt das Brett aber
+  fast nie** — auf leerem Brett in keinem einzigen Zug. Brett und Karte
+  lassen sich deshalb weitgehend getrennt bewerten, was aus 235.000 wieder
+  rund 39.000 macht.
 
 Zwei Verbesserungen wurden schon gemessen und sind drin: die Landschaftstabelle
 wird einmal gerechnet statt millionenfach (26 s → 18,6 s je Stellung bei
 gleichzeitig sechsfacher Zugzahl), und die Würfelsuche der Handkarten hängt
 nicht mehr in der Schleife über die Kartenwahl (42,9 s → 18,6 s).
-
-**Für Schritt 8 folgt daraus**, dass die Suche die Züge nicht erst vollständig
-erzeugen und dann bewerten darf, sondern beides verschränken muss. Dazu
-kommt eine Faktorisierung, die die Messung sichtbar macht: Die Kartenwahl
-vervielfacht den Raum mit sechs, berührt das Brett aber fast nie — auf leerem
-Brett in keinem einzigen Zug. Brett und Karte lassen sich deshalb weitgehend
-getrennt bewerten, was aus 235.000 wieder rund 39.000 macht.
 
 Nicht ausgenutzt wird die **Symmetrie des Spielplans**. Seite A ist waagerecht
 wie senkrecht spiegelbar, was die Eröffnungszüge um etwa den Faktor vier
@@ -261,6 +261,64 @@ ist daran die Richtung — knappere Farbe, weniger Zeit oder mehr fehlende
 Steine senken den Wert —, und darauf ruht die Reihenfolge. Die Form gehört
 gemessen, sobald Selbstspiel läuft.
 
+## Die Suche, und was sie kostet
+
+Expectimax wie in `04-architektur.md` entschieden: ein eigener Zug tief, die
+Zufallsschicht darunter zusammengefasst. Ergebnis ist ein Vorschlag mit den
+größten Beiträgen, den Punkten jetzt, dem Wert der Stellung und dem Abstand
+zum zweitbesten Zug — was Störfall C verlangt.
+
+**Die Kette trägt.** Aus den Kartendaten, der Geometrie, den Lebensräumen,
+dem Zustand, den Zügen und der Bewertung entsteht ein Zugvorschlag samt
+Begründung. Das ist die Kernfrage dieser Phase, und sie ist beantwortet.
+
+**Sie ist zu langsam.** Gemessen auf Seite A:
+
+| belegte Felder | je Bewertung | Züge | Erzeugen | Suche gesamt |
+| --- | --- | --- | --- | --- |
+| 6 | 6.892 µs | 111.762 | 9,0 s | **779 s** |
+| 12 | 4.312 µs | 41.676 | 3,4 s | 183 s |
+| 18 | 2.351 µs | 9.698 | 0,8 s | 24 s |
+
+Szenario 2 verlangt, dass Harmony rechnet, während die Vorderfrau überlegt —
+also in der Größenordnung einer halben Minute. Auf gefülltem Brett ist das
+erreicht, auf offenem fehlt der Faktor 30.
+
+**Der Befund aus Schritt 6 hat sich umgedreht.** Dort sah das Erzeugen der
+Züge wie der Engpass aus — aber nur, weil nichts sie bewertete. Eine
+Bewertung kostet 2,4 bis 6,9 Millisekunden statt der zehn Mikrosekunden, mit
+denen damals gerechnet wurde. Mit echter Bewertung überwiegt das Bewerten das
+Erzeugen um **zwei Größenordnungen**. Die Bremse ist nicht, dass es zu viele
+Züge gibt, sondern dass jeder einzelne zu teuer beurteilt wird.
+
+### Drei Abhilfen, nach Wirkung geordnet
+
+1. **Inkrementell bewerten.** Ein Zug ändert höchstens drei Felder. Die
+   Landschaftswertung, die Flussaussicht und die Anwärter ändern sich nur
+   dort. `04-architektur.md` sieht das Vorhalten der Musterinstanzen ohnehin
+   vor; hier ist der Beleg, dass es nötig ist. Größter Hebel.
+2. **Brettterme aus der Kartenschleife ziehen.** Punkte jetzt und
+   Landschaftsaussicht hängen allein am Brett, nicht daran, welche Karte
+   genommen wurde. Sie werden heute sechsmal je Brett gerechnet statt einmal.
+3. **Keine Wörterbücher für Brett und Zug.** 23 bis 25 feste Felder sind ein
+   Feld fester Länge, kein Streuwertspeicher. Ein Zug legt heute zwei
+   Wörterbücher an, nur um bewertet und weggeworfen zu werden.
+
+Erledigt und gemessen sind bereits zwei kleinere: die Landschaftstabelle wird
+einmal gerechnet statt millionenfach, und die Würfelsuche der Handkarten hängt
+nicht mehr in der Schleife über die Kartenwahl. Zusammen 43 s → 18,6 s für das
+Erzeugen.
+
+## Was als Nächstes kommt
+
+1. **Die Bewertung schneller machen**, nach der Liste oben. Erst danach lohnt
+   sich Feinschliff an den Gewichten: Eine Stellschraube, deren Wirkung man
+   erst nach Minuten sieht, wird nicht gedreht.
+2. **Den Klickdummy anschließen.** `Sample.harmonyMove` weicht dem gerechneten
+   Zug, der Dummy-Zustand dem `EngineState`. Dabei fällt der doppelte
+   `AnimalCard` weg, siehe die offenen Punkte.
+3. **Stockwerk 2**, sobald eine Partie durchläuft.
+
 ## Offene Punkte
 
 1. **`AnimalCard` gibt es zweimal.** Der Klickdummy führt in
@@ -270,7 +328,15 @@ gemessen, sobald Selbstspiel läuft.
    der modul-eigene Typ den eingeführten verdeckt — auffallen wird es erst
    bei der Anbindung. Dort fällt der Dummy-Typ ersatzlos weg; bis dahin ist
    es eine Falle und steht deshalb hier.
-2. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
+2. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird
+   als unabhängig behandelt. Es überschätzt, und wie sehr, weiß niemand.
+   Richtig ist die Richtung, und darauf ruht die Reihenfolge der Züge — mehr
+   wird auch nicht zugesichert.
+3. **Die Zufallsschicht ist zusammengefasst, nicht gerechnet.** Die Kopplung
+   zwischen Brett und Auslage innerhalb eines Blattes geht dabei verloren: ob
+   genau der Stein nachrückt, den genau dieser Anwärter braucht. Der
+   Erwartungswert bleibt richtig, seine Streuung verschwindet.
+4. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
    Punkte jetzt, Aussicht aus Anwärtern, Aussicht aus Landschaften,
    Optionenvielfalt — greifen zu verschiedenen Zeiten der Partie. Womit sie
    gegeneinander zu verrechnen sind, gehört gemessen, sobald Selbstspiel
