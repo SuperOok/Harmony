@@ -93,12 +93,8 @@ tools/tests.sh
 ```
 
 `tools/tests.sh -v` nennt jeden Fall einzeln. Der Rückgabewert ist der von
-`swift test`, das Skript taugt also für eine Automatik.
-
-Der Build läuft dabei **außerhalb** des Arbeitsverzeichnisses. In iCloud
-Drive setzen sich erweiterte Attribute an die Build-Produkte, woran die
-Signatur scheitert: „resource fork, Finder information, or similar
-detritus not allowed".
+`swift test`, das Skript taugt also für eine Automatik. Direkt geht es
+genauso: `cd HarmonyRules && swift test`.
 
 Es gibt **kein UI-Test-Target**. Keine `xcodebuild test`-Aufrufe für die
 App erfinden, solange keines existiert.
@@ -170,21 +166,11 @@ anzulegen.
   ihre konkrete Ausformulierung und Gestaltung nicht.
 - `xcuserdata/` ist ignoriert. Xcode erzeugt das Schema beim ersten Öffnen
   neu, ein frischer Klon braucht also keine Zusatzschritte.
-- **Das Arbeitsverzeichnis zieht aus iCloud Drive weg.** Beschlossen am
-  2026-09-20. Solange es noch dort liegt, gilt: Bei merkwürdigem
-  Git-Verhalten — fehlende Objekte, Konfliktkopien in `.git/` — zuerst
-  iCloud verdächtigen, nicht Git.
-
-  Der Grund ist nicht Bequemlichkeit: Über denselben Dateien laufen zwei
-  Synchronisationen, und eine davon ist überflüssig, weil das
+- **Das Arbeitsverzeichnis lag bis zum 2026-09-20 in iCloud Drive** und
+  liegt seither hier. Über denselben Dateien liefen zwei
+  Synchronisationen, und eine davon war überflüssig, weil das
   GitHub-Remote dasselbe leistet — mit Historie und ohne Konfliktkopien.
-  Gemessen wurde außerdem, dass `swift test` **nur außerhalb** von iCloud
-  ohne Sonderbehandlung durchläuft; darin scheitert es am Signieren, weil
-  erweiterte Attribute an den Build-Produkten hängen.
-
-  Nach dem Umzug (ein `git clone` an den neuen Ort, es ist alles gepusht)
-  sind drei Dinge nachzuziehen: dieser Absatz, die Begründung für
-  `--scratch-path` in `tools/tests.sh` samt dem Hinweis im
-  Abschnitt *Tests* — beides wird dann gegenstandslos — und das
-  Projektgedächtnis von Claude Code, das am Pfad hängt und im neuen
-  Verzeichnis leer beginnt.
+  Dazu scheiterte `swift test` darin am Signieren, weil erweiterte
+  Attribute an den Build-Produkten hingen; deshalb baute
+  `tools/tests.sh` eine Zeitlang außerhalb. Beides ist erledigt, der
+  Sonderweg im Skript ist entfernt.

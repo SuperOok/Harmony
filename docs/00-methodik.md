@@ -13,7 +13,7 @@ mit einem Dokument und einem Commit.
 | 2 | Szenarien | Wie sieht die Nutzung konkret aus? | `02-szenarien.md` ✅ |
 | 3 | Funktionsumfang | Was gehört in v1, was später, was nie? | `03-funktionsumfang.md` ✅ |
 | 4 | Daten & Architektur | Welche Entitäten, welche Persistenz, welches Suchverfahren? | `04-architektur.md` ✅ |
-| 5 | Oberfläche | Welche Ansichten, welche Eingabewege? | `05-ui.md` ✅ teilweise |
+| 5 | Oberfläche | Welche Ansichten, welche Eingabewege? | `05-ui.md` ✅ |
 | 6 | Durchstich | Funktioniert die Kette von der Kartennotation bis zum Zugvorschlag? | Lauffähiger Code, wenige Karten |
 | 7 | Kartenerfassung | Alle Tierkarten systematisch erfassen | `tierkarten.md`, alle 32 ✅ |
 
@@ -35,6 +35,15 @@ Eingabeeffizienz ist das erste Qualitätskriterium aus Phase 1 und lässt
 sich nicht aufschreiben, nur antippen. Ein Dummy ohne Regeln dahinter kann
 keine Architektur festzurren, aber er misst — in Antippern, siehe
 `pruefverfahren.md`. Präzisiert am 2026-09-19, als der erste Dummy entstand.
+
+**Ein Stück Regelcode ist trotzdem in Phase 5 entstanden**, und die
+Reihenfolge hat das ausgehalten. Der Dummy musste Wertungen, Landschaften,
+zulässige Stapel und die Steinbilanz *anzeigen*, und dafür mussten sie
+gerechnet werden. Dieser Code liegt seit dem 2026-09-20 im Swift Package
+`HarmonyRules/`, getrennt von den Ansichten und mit eigenen Tests —
+also dort, wo Phase 4 ihn ohnehin verlangt, und nicht zwischen den Views.
+Der Satz oben gilt weiter für das, wogegen er gerichtet war: Suche,
+Zugvorschlag und Kartendaten beginnen mit Phase 6.
 
 ## Warum die Kartenerfassung zuletzt kommt
 

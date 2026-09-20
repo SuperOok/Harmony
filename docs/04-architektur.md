@@ -14,7 +14,7 @@ gegen den Funktionsumfang aus Phase 3 und die Prüfbarkeit aus
 | Zufall | **Keiner.** Die Engine ist deterministisch | Erledigt den offenen Punkt 1 aus Phase 1 |
 | Persistenz | Ereignisprotokoll, Zustand durch Wiedergabe | Die Rücknahme aus Störfall A braucht das Protokoll ohnehin |
 | Kartendaten | JSON-Ressource, erzeugt aus `tierkarten.md` | Eine Quelle der Wahrheit bleibt das Markdown |
-| Modulschnitt | Eigenes Swift-Paket `HarmonyEngine` | Stockwerk 1 verlangt Tests ohne Bau der App |
+| Modulschnitt | Eigenes Swift-Paket `HarmonyRules` | Stockwerk 1 verlangt Tests ohne Bau der App |
 
 ## Entitäten
 
@@ -282,13 +282,19 @@ unsere eigenen Namen sind unbedenklich.
 ## Modulschnitt
 
 ```
-HarmonyEngine/            eigenes Swift-Paket
+HarmonyRules/             eigenes Swift-Paket
   Package.swift
-  Sources/HarmonyEngine/  Regeln, Wertung, Suche, Kartendaten
+  Sources/HarmonyRules/   Regeln, Wertung, Suche, Kartendaten
   Tests/                  Stockwerk 1 und später 2
 Harmony.xcodeproj         die App, bindet das Paket ein
 MyApp/                    Ansichten
 ```
+
+Angelegt am 2026-09-20 und **`HarmonyRules` genannt, nicht `HarmonyEngine`**:
+Darin liegen bisher Wertung, Landschaften, zulässige Stapel und die
+Steinbilanz — Regeln also, keine Suche. Suche und Kartendaten kommen mit
+Phase 6 hinzu; ob sie dasselbe Paket bewohnen oder ein zweites bekommen,
+entscheidet sich dort.
 
 Das Paket kennt **kein SwiftUI**. Die Trennung wird damit vom Übersetzer
 erzwungen und nicht von der Disziplin: Engine-Code, der auf eine Ansicht

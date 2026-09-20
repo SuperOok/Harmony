@@ -39,7 +39,7 @@ durch, egal was sie misst.
 | --- | --- | --- | --- | --- |
 | 1 | **Regelkern** | Wertung, Mustererkennung, Zuggenerierung | viele, je Millisekunden | mit der ersten Engine-Zeile |
 | 2 | **Ganze Partien** | dass eine Partie regelkonform durchläuft | wenige Dutzend, kopflos | vertagt |
-| 3 | **Oberfläche** | den Eingabeweg, nicht die Spiellogik | eine Handvoll | mit dem Klickdummy |
+| 3 | **Oberfläche** | den Eingabeweg, nicht die Spiellogik | eine Handvoll | als Nächstes, der Dummy steht |
 
 Die Form ist eine Pyramide: Je höher das Stockwerk, desto langsamer und
 launischer der Test, desto weniger davon.
@@ -145,10 +145,31 @@ die genau das Kriterium bewacht, das Phase 1 an die erste Stelle gesetzt
 hat. Wird die Oberfläche umständlicher, schlägt der Test an, bevor es am
 Tisch auffällt.
 
-Die Zahl *n* steht noch nicht fest; sie ergibt sich aus dem ersten
-Prototyp. Gegen den kann man sie sogar schon messen, bevor irgendeine
-Funktion dahintersteckt — der Eingabeweg ist genau das, was ein Klickdummy
-bereits vollständig enthält.
+**Zwei Obergrenzen, nicht eine.** Festgelegt am 2026-09-20 nach der Messung
+am Klickdummy, siehe `05-ui.md`:
+
+| | höchstens |
+| --- | --- |
+| Fremder Zug ohne Kartennahme | **5** Antipper |
+| Fremder Zug mit Kartennahme | **8** Antipper |
+
+Eine gemeinsame Grenze von 8 ließe den häufigeren Fall unbewacht — die
+Eingabe ohne Karte dürfte auf 8 anwachsen, ohne dass etwas anschlägt.
+
+**Kein Puffer auf die gemessene Zahl.** Die Grenze ist der Messwert selbst.
+Ein zugestandener Antipper mehr schluckt genau die Verschlechterung, die zu
+melden wäre; eine Grenze mit Luft bewacht nichts.
+
+**Der Test zählt seine eigenen Antipper**, nicht den Zähler der App. Der
+Dummy führt einen mit (Bezeichner `taps`), aber ein Sollwert, der aus dem
+Programm stammt, beschreibt nur, was das Programm gerade tut — siehe
+`00-methodik.md`. Den Zähler zusätzlich gegen die eigene Zählung zu prüfen
+ist zulässig und etwas anderes: Das prüft die Anzeige, nicht den Eingabeweg.
+
+**Gezählt werden diskrete Tippziele.** Ziehen zählt nicht, Text tippen auch
+nicht — beides hält `05-ui.md` bereits fest. Die Grenzen gelten für den Zug
+ohne Sonderlage: Die Meldung über ein volles fremdes Tableau kostet einen
+Antipper in dem einen Zug, in dem sie auftritt, und ist nicht eingerechnet.
 
 ### Drei Regeln
 
@@ -161,6 +182,11 @@ für Bedienungshilfen fällt dabei ab.
 **Determinismus über Startparameter.** Die App startet im Test mit einem
 Verweis auf eine Ziehfolge (`launchArguments`), dieselbe, die auch
 Stockwerk 2 benutzt.
+
+Für den ersten Test greift das noch nicht: Der Klickdummy hat keinen
+Zufall, seine Attrappendaten stehen fest, und eine Ziehfolge gibt es
+deshalb nicht zu wählen. Die Regel wird fällig, sobald die Engine zieht —
+das Fehlen des Formats ist hier kein Versäumnis.
 
 **Kein Bildvergleich.** XCUITest heftet Bildschirmfotos ans Protokoll, aber
 es gibt keine eingebaute Zusicherung „sieht aus wie beim letzten Mal".
@@ -486,9 +512,9 @@ Kein Beschluss, nur eine Reihenfolge, die aus dem Obigen folgt:
    Phase 4 — Engine als eigenes Modul — ist damit eingelöst, und sie war
    keine Formalie: Erst dadurch laufen die Tests ohne Host-App und ohne
    Simulator.
-3. **Als Nächstes** ein UI-Test-Target, zunächst mit einem einzigen Test:
-   der Antippzahl für einen fremden Zug. Die Bezeichner dafür stehen
-   bereits durchgängig in den Views.
+3. **Als Nächstes** ein UI-Test-Target mit den beiden Antippgrenzen als
+   ersten Fällen — 5 ohne Kartennahme, 8 mit. Die Zahlen stehen seit dem
+   2026-09-20 fest, die Bezeichner liegen bereits durchgängig in den Views.
 4. **Wenn eine Partie durchläuft**, Stockwerk 2.
 
 Das Anlegen von Targets ändert `project.pbxproj` und ist keine
