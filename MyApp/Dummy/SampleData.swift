@@ -256,42 +256,6 @@ enum Sample {
                 + "vollständig, und der Würfel bliebe auf der Karte liegen."
         )
     )
-
-    /// The second example scores **nothing** when it is played. Two wood
-    /// tiles form no landscape and a lone mountain has no neighbour, so the
-    /// move is worth zero points and is still the better one: it leaves a
-    /// tree of height three and the Fledermaus pattern one green tile away.
-    static let harmonyMoveSetup = HarmonyMove(
-        placements: [
-            Placement(stone: .wood, cell: 53),
-            Placement(stone: .wood, cell: 53),
-            Placement(stone: .stone, cell: 54),
-        ],
-        cubes: [],
-        rationale: MoveRationale(
-            immediate: 0,
-            value: 8,
-            terms: [
-                ScoreTerm(name: "Zwei Holz auf 5.3 — noch keine Landschaft",
-                          points: 0),
-                ScoreTerm(name: "Berg der Höhe 1 auf 5.4 — noch ohne Bergnachbarn",
-                          points: 0),
-                ScoreTerm(name: "Mit einem Laub auf 5.3: Baum der Höhe 3 (7) und "
-                          + "das Muster der Fledermaus (3)",
-                          points: 10, prospect: true, probability: 0.8),
-            ],
-            probabilityNote: "Laub ist bis zum nächsten eigenen Zug mit rund "
-                + "80 % erreichbar: Es liegt dreimal offen in der Auslage, und "
-                + "von den 19 grünen Steinen sind noch 14 im Beutel.",
-            runnerUp: "Beide Holz auf 3.3 und 4.1, Stein auf 5.4",
-            runnerUpImmediate: 1,
-            runnerUpValue: 4,
-            gapExplanation: "Die Alternative bringt sofort einen Punkt mehr und "
-                + "steht trotzdem schlechter: Sie lässt zwei Holzplättchen "
-                + "verstreut zurück, aus denen kein Baum mehr wird. Punkte "
-                + "jetzt und Wert der Stellung sind nicht dasselbe."
-        )
-    )
 }
 
 /// One named contribution to the score. Named, because the reason shows the

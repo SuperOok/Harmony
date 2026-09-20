@@ -38,7 +38,6 @@ struct OpponentTurnView: View {
     /// Harmony cannot see a foreign board — this is the one thing she has
     /// to be told, at most once per game.
     @State private var boardNearlyFull = false
-    @State private var showSetupExample = false
     /// Störfall B. Reached from the transcript and nowhere else — the way
     /// is meant to be inconvenient, see `CorrectionView`.
     @State private var correctionOpen = false
@@ -113,10 +112,6 @@ struct OpponentTurnView: View {
     private var pendingMove: HarmonyMove? {
         guard isHarmony else { return nil }
         if sampleOnly { return state.sideB ? nil : Sample.harmonyMove }
-        // The sample move stays reachable through the picker, because it is
-        // what the screens were built against. Side B has no sample: its
-        // cells are not all there.
-        if showSetupExample { return state.sideB ? nil : Sample.harmonyMoveSetup }
         // **Nothing while the engine thinks.** A made-up move standing where
         // the suggestion will go is worse than an empty space: at the table
         // somebody would play it.
@@ -126,14 +121,14 @@ struct OpponentTurnView: View {
     /// Changes exactly when the position does, which is when the engine has
     /// to think again.
     private var positionKey: String {
-        "\(events.count)/\(state.seatIndex)/\(showSetupExample)"
+        "\(events.count)/\(state.seatIndex)"
     }
 
     /// Runs the search off the main thread. Cancelled by SwiftUI as soon as
     /// the position changes, which the engine asks about while it works.
     private func think() {
         thinker?.cancel()
-        guard isHarmony, !showSetupExample, !sampleOnly else { return }
+        guard isHarmony, !sampleOnly else { return }
         guard let position = state.engineState(events: events) else {
             engineFailed = true
             return
@@ -391,12 +386,6 @@ struct OpponentTurnView: View {
     private var harmonyTurn: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Picker("Beispiel", selection: $showSetupExample) {
-                    Text("Punktet sofort").tag(false)
-                    Text("Bereitet vor").tag(true)
-                }
-                .pickerStyle(.segmented)
-
                 // Über dem Brett, nicht darunter: das Brett ist höher als
                 // der Bildschirm, und was unter ihm steht, sieht am Tisch
                 // niemand.
