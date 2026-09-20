@@ -81,6 +81,14 @@ public struct Habitat: Sendable, Hashable {
     /// getting there. Spaces that already match do not appear.
     public let missing: [Int: [[Stone]]]
 
+    public init(card: AnimalCard, requirement: [Int: PatternCell],
+                cubeCell: Int, missing: [Int: [[Stone]]]) {
+        self.card = card
+        self.requirement = requirement
+        self.cubeCell = cubeCell
+        self.missing = missing
+    }
+
     public var isComplete: Bool { missing.isEmpty }
 
     /// How many stones are still wanted. Unambiguous even where the colours

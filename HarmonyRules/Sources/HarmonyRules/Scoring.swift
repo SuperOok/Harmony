@@ -82,6 +82,65 @@ public struct BoardScoring {
         return best
     }
 
+    // MARK: - Was die Landschaft noch hergeben könnte
+    //
+    // The outlook of the scoring, for the engine. Today's value is zero
+    // everywhere on an empty board, so on the opening turns it tells nothing
+    // apart; what could still become of a board does.
+
+    /// The longest river there is now, counted in spaces.
+    public func longestRiver(water: Set<Int>) -> Int {
+        regions(in: water).map { longestPath($0).count }.max() ?? 0
+    }
+
+    /// How long a river could still become, and how many blue stones that
+    /// would take. An upper bound: it assumes every empty space along the
+    /// way can be filled with water, which nothing forbids but the bag.
+    public func longestReachableRiver(water: Set<Int>,
+                                      free: Set<Int>) -> (length: Int, missing: Int) {
+        var best: [Int] = []
+        for region in regions(in: water.union(free)) {
+            let path = longestPath(region)
+            if path.count > best.count { best = path }
+        }
+        return (best.count, best.count { !water.contains($0) })
+    }
+
+    /// The cheapest way to make one more island, in blue stones.
+    ///
+    /// An island is a region of everything that is not water, empty spaces
+    /// counted in, and each is worth five. The cheapest new one is always
+    /// the same shape: pick a space and ring it with water. Its cost is how
+    /// many of its neighbours are not water yet, which near a corner is two
+    /// or three and in the middle six.
+    ///
+    /// Searching for the truly cheapest cut would mean trying every set of
+    /// spaces, which is not affordable per evaluation. Ringing a single
+    /// space is an upper bound, cheap to compute, and it moves in the right
+    /// direction — which is what an outlook has to do.
+    public func cheapestIslandCut(water: Set<Int>) -> (cell: Int, cost: Int)? {
+        var best: (cell: Int, cost: Int)? = nil
+        for cell in allCells where !water.contains(cell) {
+            let cost = neighbours(cell).count { !water.contains($0) }
+            guard cost > 0 else { continue }        // schon eine Insel für sich
+            if best == nil || cost < best!.cost { best = (cell, cost) }
+        }
+        return best
+    }
+
+    /// Empty spaces where a blue stone would cut one island in two.
+    ///
+    /// The island scoring of side B counts regions of everything that is not
+    /// water, empty spaces included, five points each. So the outlook is not
+    /// "more water" but "water in the right place".
+    public func cuttingCells(water: Set<Int>, free: Set<Int>) -> [Int] {
+        let islandsNow = regions(in: Set(allCells).subtracting(water)).count
+        return free.sorted().filter { cell in
+            let cut = Set(allCells).subtracting(water).subtracting([cell])
+            return regions(in: cut).count > islandsNow
+        }
+    }
+
     /// Every cell that currently earns points.
     public func scoringCells() -> Set<Int> {
         var result: Set<Int> = []

@@ -220,6 +220,47 @@ Die Liste ist hergeleitet, nicht aufgeschrieben — sie fällt aus den vierzehn
 zulässigen Stapeln und der Präfixeigenschaft. Ein Test sichert genau diese
 vier Paare zu, damit eine spätere Änderung an der Stapelliste hier auffällt.
 
+## Die Bewertung zerfällt in vier Familien
+
+Gebaut am 2026-09-20. Jeder Term trägt einen Namen, weil die Begründung die
+größten Beiträge nennt und ein namenloser Summand darin nicht auftauchen
+könnte.
+
+| Familie | trägt | Quelle |
+| --- | --- | --- |
+| Punkte jetzt | die Endwertung | `BoardScoring.breakdown()` und die Kartenleitern |
+| Aussicht aus Anwärtern | die mittlere Partie | Anwärter × Wahrscheinlichkeit |
+| Aussicht aus Landschaften | die **frühe** Partie | Fluss auf Seite A, Inseln auf Seite B |
+| Optionenvielfalt | den ersten Zug | wie viele Anwärter den Zug überleben |
+
+**Anwärter werden ausgewählt, nicht addiert.** Je Karte der beste Anwärter,
+darüber die beste paarweise verträgliche Teilmenge — bei höchstens vier
+Karten eine Aufzählung über sechzehn Fälle. Die Ersparnis geteilter Felder
+geht anteilig an die Terme zurück, damit jeder weiterhin seine Karte nennt.
+
+**Die Inselaussicht musste umgebaut werden.** Der erste Entwurf zählte
+Felder, auf denen **ein** blauer Stein eine Insel abtrennt. Auf frühem Brett
+gibt es die nicht: Ein einzelner Stein zerschneidet nichts, und Seite B stand
+damit die ganze Eröffnung über ohne Landschaftsaussicht da — genau die Lücke,
+die diese Familie schließen soll.
+
+An ihre Stelle tritt die **billigste Insel**: ein Feld mit Wasser einkreisen.
+Ihre Kosten sind die Zahl seiner noch nicht blauen Nachbarn — an einer Ecke
+zwei oder drei, in der Mitte sechs. Das ist eine obere Schranke für den
+billigsten Schnitt, in einem Durchgang über die Felder zu rechnen, und es
+unterscheidet die Lagen von der ersten Runde an. Den wirklich billigsten
+Schnitt zu suchen hieße, alle Feldmengen durchzuprobieren; das ist je
+Bewertung nicht zu bezahlen.
+
+**Die Wahrscheinlichkeit ist ein erstes Modell, keine Messung.** Jeder
+fehlende Stein wird als unabhängig behandelt: Bei einem Anteil *p* seiner
+Farbe am Beutel und drei Steinen je eigenem Zug ist die Aussicht, ihn in *t*
+Zügen mindestens einmal zu sehen, `1 - (1 - p)^(3t)`. Das überschätzt, weil
+die Steine zusammen gebraucht werden und die Auslage allen gehört. Richtig
+ist daran die Richtung — knappere Farbe, weniger Zeit oder mehr fehlende
+Steine senken den Wert —, und darauf ruht die Reihenfolge. Die Form gehört
+gemessen, sobald Selbstspiel läuft.
+
 ## Offene Punkte
 
 1. **`AnimalCard` gibt es zweimal.** Der Klickdummy führt in
