@@ -121,7 +121,9 @@ Nichts davon ist verworfen, nur vertagt.
   sollte aber so gebaut sein, dass eine Erkennung sie später speisen kann,
   statt sie zu ersetzen.
 - **iPad-Layout.** Das iPad liegt am Tisch besser als ein iPhone. Der Code
-  baut ohnehin für alle Plattformen, erprobt wird v1 aber nur am iPhone.
+  baut ohnehin für alle Plattformen, erprobt wird v1 aber nur am iPhone —
+  und zwar am **iPhone 15 Pro Max** als Bezugsgerät, siehe `05-ui.md`.
+  Schmalere iPhones sind damit vertagt, nicht ausgeschlossen.
 - **Erweiterungen**, zuerst die Naturgeister. Das Kartenformat ist
   erweiterbar entworfen (Phase 1).
 - **Mehrere Harmonys in einer Partie.** Kein Szenario verlangt es; die
