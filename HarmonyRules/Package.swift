@@ -29,6 +29,6 @@ let package = Package(
         // Counts the move space. Not a test — it answers "how big is this",
         // not "is this right", and `docs/04-architektur.md` asks for the
         // number rather than for a bound.
-        .executableTarget(name: "HarmonyMeasure", dependencies: ["HarmonyRules"]),
+        .executableTarget(name: "HarmonyMeasure", dependencies: ["HarmonyEngine"]),
     ]
 )

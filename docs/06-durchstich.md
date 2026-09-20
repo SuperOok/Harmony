@@ -110,23 +110,32 @@ Gezählt werden **verschiedene Endstellungen, nicht Reihenfolgen**: Grau vor
 Braun auf zwei Felder ergibt denselben Tisch wie Braun vor Grau, und zwei
 Züge daraus zu machen wäre gelogen.
 
+Am 2026-09-20 zunächst nur für den Steinteil gezählt, dann mit dem fertigen
+Generator über **ganze Züge** — Steine, Kartennahme und Würfel zusammen:
+
 Seite A, 23 Felder:
 
-| belegte Felder | Steinzüge | × Kartenwahl | × Zufallsschicht |
-| --- | --- | --- | --- |
-| 0 | 38.709 | 232.254 | 13.006.224 |
-| 6 | 18.329 | 109.974 | 6.158.544 |
-| 12 | 6.789 | 40.734 | 2.281.104 |
-| 18 | 1.551 | 9.306 | 521.136 |
+| belegte Felder | Züge | davon mit Würfel | × Zufallsschicht | Sekunden |
+| --- | --- | --- | --- | --- |
+| 0 | 235.290 | 0 | 13.176.240 | 18,6 |
+| 6 | 111.762 | 54 | 6.258.672 | 9,0 |
+| 12 | 41.676 | 150 | 2.333.856 | 3,3 |
+| 18 | 9.698 | 182 | 543.088 | 0,8 |
 
-Seite B liegt durchweg etwa ein Drittel höher, sie hat zwei Felder mehr:
-50.100 Steinzüge auf dem leeren Brett, 16,8 Millionen mit Zufallsschicht.
+Seite B liegt durchweg etwa ein Drittel höher: 304.200 Züge auf dem leeren
+Brett.
 
-**Die Schätzung trägt, aber nur für den Steinteil.** 38.000 bis 50.000 eigene
-Steinzüge liegen im geschätzten Band. Die Kartenwahl multipliziert das mit
-sechs — fünf offene Karten oder keine —, und damit steht der Zugraum bei
-2 bis 3 · 10⁵, also am oberen Rand der Schätzung. Das Setzen der Tierwürfel
-und das Nachrücken einer Karte fehlen darin noch.
+**Die Schätzung trägt.** 2 bis 3 · 10⁵ Züge je Stellung liegen am oberen Rand
+des geschätzten Bandes von 10⁴ bis 10⁵. Der Steinteil allein macht 38.709
+davon aus, die Kartenwahl multipliziert ihn mit sechs — fünf offene Karten
+oder keine.
+
+**Die Würfel verzweigen kaum.** Auf leerem Brett kein einziger Zug mit
+Würfel, später einige hundert. Das war anders erwartet worden und hat einen
+einfachen Grund: Ein Muster will zwei bis vier bestimmte Landschaften
+nebeneinander, und das kommt selten in einem einzigen Zug zustande. Die
+Aufzählung aller Würfelmengen, die als teuer veranschlagt war, kostet
+praktisch nichts.
 
 **Die Zufallsschicht ist so nicht bezahlbar.** 56 mögliche Nachfüllungen je
 Zug bringen den leeren Spielplan auf 13 Millionen Blätter. Selbst bei
@@ -144,15 +153,38 @@ Zufallsschichten je Stellung, nicht eine je Zug. Aus ihnen wird je Feld eine
 erwartete Verfügbarkeit je Farbe gebildet — 5 × 56 = 280 Rechnungen — und
 jeder Zug dann **einmal** dagegen bewertet.
 
-Das senkt den Aufwand von 13 Millionen auf rund 39.000 Bewertungen, ein
-Faktor von etwa 330, ohne die Wahrscheinlichkeiten preiszugeben: Sie gehen
-in die Verfügbarkeit ein, statt aufgezählt zu werden.
-
 Was dabei verlorengeht, ist die Kopplung zwischen Brett und Auslage
 innerhalb eines Blattes — ob genau der Stein nachrückt, den genau dieser
 Anwärter braucht. Der Erwartungswert bleibt richtig, seine Streuung
 verschwindet. Für v1 ist das vertretbar, und es gehört als Annahme benannt,
 nicht als Tatsache.
+
+### Das Erzeugen ist teurer als das Bewerten
+
+Der unerwartete Teil der Messung. Die 235.290 Züge **aufzuzählen** kostet
+18,6 Sekunden, also rund 80 Mikrosekunden je Zug — mehr, als eine Bewertung
+kosten dürfte. Nicht die Suche ist der Engpass, sondern der Generator vor
+ihr.
+
+Zwei Ursachen sind benannt und noch nicht behoben:
+
+- **Jeder Zug wird als eigener Wert gebaut**, mit zwei Wörterbüchern darin.
+  Eine viertel Million davon anzulegen, nur um sie zu bewerten und wegzuwerfen,
+  ist der größte Einzelposten.
+- **Das Brett ist ein Wörterbuch.** Für 23 bis 25 feste Felder täte ein Feld
+  fester Länge dasselbe, ohne Streuwerte zu rechnen.
+
+Zwei Verbesserungen wurden schon gemessen und sind drin: die Landschaftstabelle
+wird einmal gerechnet statt millionenfach (26 s → 18,6 s je Stellung bei
+gleichzeitig sechsfacher Zugzahl), und die Würfelsuche der Handkarten hängt
+nicht mehr in der Schleife über die Kartenwahl (42,9 s → 18,6 s).
+
+**Für Schritt 8 folgt daraus**, dass die Suche die Züge nicht erst vollständig
+erzeugen und dann bewerten darf, sondern beides verschränken muss. Dazu
+kommt eine Faktorisierung, die die Messung sichtbar macht: Die Kartenwahl
+vervielfacht den Raum mit sechs, berührt das Brett aber fast nie — auf leerem
+Brett in keinem einzigen Zug. Brett und Karte lassen sich deshalb weitgehend
+getrennt bewerten, was aus 235.000 wieder rund 39.000 macht.
 
 Nicht ausgenutzt wird die **Symmetrie des Spielplans**. Seite A ist waagerecht
 wie senkrecht spiegelbar, was die Eröffnungszüge um etwa den Faktor vier

@@ -6,6 +6,21 @@ import Testing
 struct StackTests {
     // MARK: - Zulässige Stapel
 
+    @Test("Jeder zulässige Stapel steht in Farbreihenfolge")
+    func everyLegalStackStandsInColourOrder() {
+        // Darauf ruht die Zuggenerierung: Ein Stapel ist eine Folge, keine
+        // Menge, es gibt also genau eine Reihenfolge, in der er gebaut
+        // werden kann. Weil jeder zulässige Stapel zugleich in der
+        // Reihenfolge der Steinkürzel steht, baut ein Generator, der die
+        // drei Steine nach Farbe sortiert legt, jeden von ihnen — und jedes
+        // Ergebnis genau einmal. Fällt diese Eigenschaft weg, muss
+        // `Moves.boards` wieder Reihenfolgen aufzählen.
+        for stack in [Stone].legal {
+            #expect(stack == stack.sorted { $0.rawValue < $1.rawValue },
+                    "\(stack.map(\.rawValue).joined())")
+        }
+    }
+
     @Test("Die vollständige Liste hat vierzehn Stapel")
     func fourteenLegalStacks() {
         // `regeln-basisspiel.md`: 6 einzelne, 6 Zweier, 2 Dreier.
