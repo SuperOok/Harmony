@@ -22,12 +22,21 @@ struct OpponentTurnView: View {
     @State private var cardPickerOpen = false
     @State private var historyOpen = false
     @State private var showSideB = false
+    /// Reported with the turn being recorded: this player's board is full.
+    /// Harmony cannot see a foreign board — this is the one thing she has
+    /// to be told, at most once per game.
+    @State private var boardNearlyFull = false
     @State private var showSetupExample = false
     /// The reason currently on screen. Offered, not forced: the move stands
     /// on its own and the why is one tap away.
     @State private var shownRationale: MoveRationale?
 
     private var state: GameState { events.state(from: startState) }
+    private var end: EndStatus { events.endStatus(from: startState) }
+    /// No refill is entered once the bag cannot serve three stones.
+    private var bagEmpty: Bool {
+        [GameEvent].stonesLeftInBag(afterTurns: events.count) < 3
+    }
     private var history: [LogEntry] { events.entries(from: startState) }
 
     private var currentPlayer: String { state.currentPlayer }
@@ -43,14 +52,15 @@ struct OpponentTurnView: View {
     }
 
     private var isComplete: Bool {
-        takenIndex != nil && refill.count == 3
+        takenIndex != nil && (refill.count == 3 || bagEmpty)
             && (cardTaken == nil || cardDrawn != nil)
     }
 
     var body: some View {
         NavigationStack {
             Group {
-                if isHarmony { harmonyTurn } else { entry }
+                if end.isOver { gameOver }
+                else if isHarmony { harmonyTurn } else { entry }
             }
             .navigationTitle(isHarmony ? "Harmony ist am Zug" : "\(currentPlayer) ist am Zug")
             .navigationBarTitleDisplayMode(.inline)
@@ -77,9 +87,20 @@ struct OpponentTurnView: View {
     private var entry: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                if let reason = end.reason, !end.isOver { lastRoundBanner(reason) }
                 displaySection
-                if takenIndex != nil { refillSection }
+                if takenIndex != nil {
+                    if bagEmpty {
+                        TitledBlock("Nachfüllen entfällt") {
+                            Text("Der Beutel ist leer; das Feld bleibt frei.")
+                                .font(.callout).foregroundStyle(.secondary)
+                        }
+                    } else {
+                        refillSection
+                    }
+                }
                 cardSection
+                fullBoardToggle
             }
             .padding()
         }
@@ -341,6 +362,71 @@ struct OpponentTurnView: View {
         }
     }
 
+    /// The end is announced, not imposed: the round is played out so
+    /// everyone has had the same number of turns.
+    private func lastRoundBanner(_ reason: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "flag.checkered")
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Letzte Runde").font(.callout.weight(.semibold))
+                Text("\(reason) Noch \(end.turnsLeft) "
+                     + (end.turnsLeft == 1 ? "Zug." : "Züge."))
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.accentColor.opacity(0.16)))
+        .accessibilityIdentifier("last-round")
+    }
+
+    /// The only thing about a foreign board Harmony is told, and only when
+    /// it matters. Costs a tap in the one turn it is needed and nothing in
+    /// every other.
+    private var fullBoardToggle: some View {
+        Button {
+            taps += 1
+            boardNearlyFull.toggle()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: boardNearlyFull ? "checkmark.square.fill" : "square")
+                    .foregroundStyle(boardNearlyFull ? Color.accentColor : .secondary)
+                Text("\(currentPlayer) hat jetzt zwei oder weniger freie Felder")
+                    .font(.callout)
+                    .multilineTextAlignment(.leading)
+                Spacer()
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 12)
+                .fill(boardNearlyFull ? Color.accentColor.opacity(0.14)
+                                      : Color(.secondarySystemBackground)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("board-full")
+    }
+
+    private var gameOver: some View {
+        VStack(spacing: 18) {
+            Spacer()
+            Image(systemName: "flag.checkered").font(.system(size: 44))
+                .foregroundStyle(.tertiary)
+            Text("Partie beendet").font(.headline)
+            if let reason = end.reason {
+                Text(reason).font(.callout).foregroundStyle(.secondary)
+            }
+            Text("Alle hatten gleich viele Züge: \(events.count) insgesamt.")
+                .font(.callout).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Text("Die Endwertung fehlt noch — Funktion 8 aus Phase 3.")
+                .font(.footnote).foregroundStyle(.tertiary)
+            Spacer()
+            Button("Verlauf ansehen") { historyOpen = true }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("show-history")
+        }
+        .padding(28)
+    }
+
     // MARK: - Pickers
 
     /// The same picker the setup uses, limited to the one card that came
@@ -530,9 +616,10 @@ struct OpponentTurnView: View {
 
     private func record() {
         guard let index = takenIndex else { return }
-        events.append(.opponentTurn(taken: index, refill: refill,
-                                    cardTaken: cardTaken, cardDrawn: cardDrawn,
-                                    taps: taps + 1))
+        events.append(.opponentTurn(OpponentTurn(
+            taken: index, refill: refill,
+            cardTaken: cardTaken, cardDrawn: cardDrawn,
+            taps: taps + 1, boardNearlyFull: boardNearlyFull)))
         clearInput()
     }
 
@@ -550,6 +637,7 @@ struct OpponentTurnView: View {
         refill = []
         cardTaken = nil
         cardDrawn = nil
+        boardNearlyFull = false
         taps = 0
     }
 }

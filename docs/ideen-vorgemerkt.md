@@ -158,6 +158,9 @@ Punkte 16 bis 18 (Begründung mit Aussichten, Wahrscheinlichkeiten und
 zweitbestem Zug). Der Zustand liegt als Ereignisprotokoll vor und wird
 nachgespielt, wie Phase 4 es vorsieht.
 
+Dazu Punkt 7 (Spielende) mit beiden Auslösern und der
+ausgespielten letzten Runde.
+
 **Offen bleiben** Punkt 6 (Korrekturweg für
 Harmonys Tableau), Punkt 7 (Spielende) und Punkt 8 (Endwertung), dazu der
 Merker „jemand ist fast fertig". `05-ui.md` ist noch nicht geschrieben.
