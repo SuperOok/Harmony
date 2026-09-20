@@ -14,34 +14,39 @@ Steinbilanz —, entstanden, weil der Dummy diese Regeln zum Anzeigen
 braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
 siehe `docs/`.
 
-**Wo es steht:** Stand in der Nacht auf den 2026-09-21. Der Durchstich aus Phase 6
+**Wo es steht:** Stand 2026-09-21. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 139 Regelfällen (`tools/tests.sh`, unter einer
+Weglegen. Geprüft wird mit 140 Regelfällen (`tools/tests.sh`, unter einer
 Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
 
-**Die Rechenzeit war das große Problem und ist es kaum noch.** In der Nacht
-auf den 2026-09-21 sind vier Hebel gebaut und auf dem Gerät gemessen worden:
-im Release bauen (Faktor 5,8), Legungsabhängiges einmal je Legung rechnen
-statt sechsmal (2,5), die Nachbarschaft als Tabelle (1,15) und die Legungen
-auf mehrere Kerne verteilen (2,3 auf dem Gerät). Dazu das Sieben der
-Anwärter über einen Würfel hinweg, das den teuersten Fall halbiert.
+**Die Rechenzeit war das große Problem und ist es nicht mehr.** Am
+2026-09-20/21 sind fünf Hebel gebaut und jeweils auf dem Gerät gemessen
+worden: im Release bauen (Faktor 5,8), Legungsabhängiges einmal je Legung
+statt sechsmal (2,5), die Nachbarschaft als Tabelle (1,15), die Legungen auf
+mehrere Kerne verteilen (2,3) und inkrementell bewerten (2,1 bis 3,0). Dazu
+das Sieben der Anwärter über einen Würfel hinweg, das den teuersten Fall
+halbierte.
 
 Auf dem iPhone 15 Pro Max, Release-Bau:
 
 | Stellung | Züge | Zeit |
 | --- | --- | --- |
-| halbvolles Brett | 12.270 | 3 s |
-| Harmonys erster Zug | 235.290 | 14 s |
-| 6 Steine, 2 Karten | 112.085 | 8 s |
-| 3 Karten, fast leerer Plan | 401.856 | **54 s** |
+| halbvolles Brett | 12.270 | ~1 s |
+| Harmonys erster Zug | 235.290 | 9 s |
+| 6 Steine, 2 Karten | 112.085 | 3,5 s |
+| 3 Karten, fast leerer Plan | 401.856 | **24 s** |
 
 **Der teuerste Fall ist nicht der leerste Plan**, sondern drei Karten in der
-Hand auf offenem Plan: Dort legen sechs von zehn Zügen einen Würfel. Diese
-eine Zeile liegt weiter über der halben Minute aus Szenario 2, und deshalb
-bleibt der Abkürzen-Knopf. Was offen ist, steht in `docs/06-durchstich.md`
-unter *Fünf Abhilfen*: im Wesentlichen das inkrementelle Bewerten. Was in
-Phase 5 offen blieb, führt `docs/05-ui.md` am Ende auf.
+Hand auf offenem Plan: Dort legen sechs von zehn Zügen einen Würfel. Keine
+gemessene Stellung liegt noch über der halben Minute aus Szenario 2. Der
+Abkürzen-Knopf bleibt dennoch — 24 Sekunden sind kein Abstand, und eine
+Suche muss abbrechbar sein, sobald sich die Stellung ändert.
+
+Was offen ist, steht in `docs/06-durchstich.md` unter *Fünf Abhilfen*: die
+Landschaft wird weiter je Legung ganz gerechnet und ist damit der größte
+Posten des Vorrechnens. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am
+Ende auf.
 
 **Fürs Gerät `-configuration Release` bauen.** Das Schema baut beim
 Laufenlassen Debug, und Debug ist hier sechs- bis achtmal langsamer. Die

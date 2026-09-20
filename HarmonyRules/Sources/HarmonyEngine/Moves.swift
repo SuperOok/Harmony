@@ -87,6 +87,17 @@ public enum Moves {
     public struct Laying: Sendable {
         public var stacks: [Int: [Stone]]
         public var added: [Int: [Stone]]
+
+        /// The spaces this laying changed, each with the **whole** stack
+        /// that stands there now — what the candidates have to be grown
+        /// forward over. At most three spaces, however many stones went on
+        /// them.
+        public var grown: [Int: [Stone]] {
+            var out: [Int: [Stone]] = [:]
+            out.reserveCapacity(added.count)
+            for cell in added.keys { out[cell] = stacks[cell] }
+            return out
+        }
     }
 
     /// Every distinct laying the three stones can produce.

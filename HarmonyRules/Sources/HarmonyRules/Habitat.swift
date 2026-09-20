@@ -91,6 +91,45 @@ public struct Habitat: Sendable, Hashable {
 
     public var isComplete: Bool { missing.isEmpty }
 
+    /// The same placement, on a board where these spaces have grown — or
+    /// nothing, if it can no longer come about.
+    ///
+    /// A turn puts stones on at most three spaces, and a placement only ever
+    /// cares about the spaces of its own pattern. Asking the whole board
+    /// again, six turns of the pattern over every space, answers a question
+    /// that changed in three places at most. This answers it in three.
+    ///
+    /// It gives what `all(of:on:cubes:board:)` would give on the grown
+    /// board, and it can do so because **stones never come off**: a taller
+    /// stack can reach fewer landscapes, never more, so no placement that
+    /// was impossible becomes possible. The set only ever shrinks, and every
+    /// space outside the pattern is none of its business.
+    ///
+    /// - Parameters:
+    ///   - grown: space to the **whole** stack that stands there now.
+    ///   - cubes: unchanged by a laying, and only consulted where a space
+    ///     would still have to grow — as `all` consults it.
+    public func after(_ grown: [Int: [Stone]], cubes: Set<Int>) -> Habitat? {
+        var missing = self.missing
+        var touched = false
+
+        for (cell, stack) in grown {
+            guard let wanted = requirement[cell] else { continue }
+            touched = true
+            if wanted.stacks.contains(stack) {
+                missing[cell] = nil
+            } else {
+                let ways = cubes.contains(cell) ? [] : stack.waysTo(wanted)
+                guard !ways.isEmpty else { return nil }
+                missing[cell] = ways
+            }
+        }
+
+        guard touched else { return self }
+        return Habitat(card: card, requirement: requirement,
+                       cubeCell: cubeCell, missing: missing)
+    }
+
     /// How many stones are still wanted. Unambiguous even where the colours
     /// are not: what a space needs is the difference in height, and a
     /// building's lower stone may be any of three without changing that.

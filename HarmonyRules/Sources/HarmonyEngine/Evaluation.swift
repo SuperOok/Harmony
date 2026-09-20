@@ -111,26 +111,107 @@ public struct Prepared: Sendable {
     /// Held for the cards in hand **and** for the open ones, because the
     /// turn may take one of those and it is then in hand.
     let habitats: [String: [Habitat]]
+    /// The best candidate per card, already weighed.
+    ///
+    /// The six turns of a laying differ in the card they take and in nothing
+    /// else, so what a **held** card promises is the same in all six — and
+    /// the same for each open card, whichever turn takes it. Weighed once
+    /// here rather than up to four times per turn.
+    let prospects: [String: Evaluator.Prospect]
+    /// How many cubes each card carried when the prospects were weighed. A
+    /// turn that lays one changes what the next cube is worth, and then the
+    /// prospect is no longer that card's.
+    let cubesPlaced: [String: Int]
     /// Which spaces carried a cube when this was worked out. A turn that
     /// lays one more does not throw the stock away — see `Evaluator.habitats`.
     let cubes: Set<Int>
 }
 
+/// The candidates of the position a turn starts from.
+///
+/// Every laying of that turn grows at most three spaces out of this, so the
+/// search works the pattern out **once per position** and derives the rest.
+/// Before that it was worked out once per laying — thousands of times, and
+/// measured at 92 to 98 percent of everything a laying costs.
+public struct Stock: Sendable {
+    let habitats: [String: [Habitat]]
+    /// What lay when this was worked out. A laying does not lay cubes, so
+    /// this must match; if it ever does not, the stock is not for this
+    /// position and is not used.
+    let cubes: Set<Int>
+}
+
 public enum Evaluator {
+    /// The candidates of this position, for the cards in hand and for the
+    /// open ones — the turn may take one of those.
+    public static func stock(of state: EngineState) -> Stock {
+        var habitats: [String: [Habitat]] = [:]
+        for card in cardsInPlay(of: state) {
+            guard habitats[card.name] == nil else { continue }
+            habitats[card.name] = Habitat.all(of: card, on: state.stacks,
+                                              cubes: state.cubeCells, board: state.board)
+        }
+        return Stock(habitats: habitats, cubes: state.cubeCells)
+    }
+
+    static func cardsInPlay(of state: EngineState) -> [AnimalCard] {
+        state.hand.filter { !$0.isFinished }.map(\.card) + state.openCards
+    }
+
     /// What holds for every turn from this laying. `state` is the position
     /// after the three stones are down and before a card or a cube.
+    ///
+    /// - Parameters:
+    ///   - stock: the candidates of the position before the stones. Given
+    ///     one, the pattern is not searched for again but grown forward.
+    ///   - grown: the spaces this laying changed, each with the whole stack
+    ///     that stands there now.
     public static func prepare(_ state: EngineState,
                                weights: Weights = Weights(),
-                               availability: Availability? = nil) -> Prepared {
+                               availability: Availability? = nil,
+                               from stock: Stock? = nil,
+                               grown: [Int: [Stone]] = [:]) -> Prepared {
         let available = availability ?? Availability(counting: state.display)
         let scoring = BoardScoring(side: state.side, columns: state.side.columns,
                                    stacks: state.stacks)
 
         var habitats: [String: [Habitat]] = [:]
-        for card in state.hand.filter({ !$0.isFinished }).map(\.card) + state.openCards {
-            guard habitats[card.name] == nil else { continue }
-            habitats[card.name] = Habitat.all(of: card, on: state.stacks,
-                                              cubes: state.cubeCells, board: state.board)
+        if let stock, stock.cubes == state.cubeCells {
+            for card in cardsInPlay(of: state) {
+                guard habitats[card.name] == nil else { continue }
+                guard let before = stock.habitats[card.name] else {
+                    habitats[card.name] = Habitat.all(of: card, on: state.stacks,
+                                                      cubes: state.cubeCells,
+                                                      board: state.board)
+                    continue
+                }
+                habitats[card.name] = before.compactMap {
+                    $0.after(grown, cubes: state.cubeCells)
+                }
+            }
+        } else {
+            for card in cardsInPlay(of: state) {
+                guard habitats[card.name] == nil else { continue }
+                habitats[card.name] = Habitat.all(of: card, on: state.stacks,
+                                                  cubes: state.cubeCells, board: state.board)
+            }
+        }
+
+        // Die beste Aussicht je Karte, einmal für die ganze Legung. Für die
+        // Handkarten mit ihren gelegten Würfeln, für die offenen mit keinem —
+        // so kommt eine genommene Karte in die Hand.
+        var prospects: [String: Prospect] = [:]
+        var cubesPlaced: [String: Int] = [:]
+        let held = Dictionary(state.hand.map { ($0.card.name, $0) },
+                              uniquingKeysWith: { first, _ in first })
+        for card in cardsInPlay(of: state) {
+            guard cubesPlaced[card.name] == nil else { continue }
+            let card = held[card.name] ?? HeldCard(card: card)
+            cubesPlaced[card.card.name] = card.cubesPlaced
+            guard !card.isFinished else { continue }
+            prospects[card.card.name] = (habitats[card.card.name] ?? [])
+                .compactMap { prospect(card, $0, state, available) }
+                .max { $0.worth < $1.worth }
         }
 
         return Prepared(
@@ -138,6 +219,8 @@ public enum Evaluator {
             landscapeTerms: landscapeTerms(state, scoring: scoring, weights: weights,
                                            available: available),
             habitats: habitats,
+            prospects: prospects,
+            cubesPlaced: cubesPlaced,
             cubes: state.cubeCells)
     }
 
@@ -223,8 +306,19 @@ public enum Evaluator {
     static func candidateTerms(_ state: EngineState, weights: Weights,
                                available: Availability,
                                prepared: Prepared? = nil) -> [Term] {
+        let laid = prepared.map { state.cubeCells.subtracting($0.cubes) } ?? []
         let best = state.hand.filter { !$0.isFinished }.compactMap { held -> Prospect? in
-            habitats(of: held.card, on: state, prepared)
+            // Vorgewogen gilt, solange diese Karte seither keinen Würfel
+            // bekommen hat und der damals beste Anwärter noch steht. Ein
+            // Würfel auf einem seiner Felder nimmt ihn heraus, und dann
+            // könnte ein anderer der beste sein.
+            if let ready = prepared?.prospects[held.card.name],
+               prepared?.cubesPlaced[held.card.name] == held.cubesPlaced,
+               !laid.contains(where: { ready.habitat.missing[$0] != nil
+                                       || ready.habitat.cubeCell == $0 }) {
+                return ready
+            }
+            return habitats(of: held.card, on: state, prepared)
                 .compactMap { prospect(held, $0, state, available) }
                 .max { $0.worth < $1.worth }
         }
@@ -255,7 +349,7 @@ public enum Evaluator {
 
     /// What one candidate promises: the next cube's gain, weighted by the
     /// chance of getting there in the turns Harmony has left.
-    struct Prospect {
+    struct Prospect: Sendable {
         let card: String
         let habitat: Habitat
         let gain: Int

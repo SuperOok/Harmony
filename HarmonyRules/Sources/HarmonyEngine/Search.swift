@@ -180,6 +180,9 @@ public enum Search {
         var offeredSpaces: Set<String> = []
         let anchors = Moves.standingHabitatCells(of: state)
         let chatter = Chatter()
+        // Die Anwärter der Ausgangsstellung, einmal. Jede Legung wächst aus
+        // ihnen hervor, statt das Brett erneut abzusuchen.
+        let stock = Evaluator.stock(of: state)
 
         // Spaces holding the same three stones are one choice, so the number
         // that will actually be worked through is smaller than the display.
@@ -224,7 +227,7 @@ public enum Search {
             if stretches == 1 {
                 parts[0] = weigh(layings[...], space: index, of: state,
                                  weights: weights, available: available,
-                                 anchors: anchors, cancelled: cancelled,
+                                 anchors: anchors, stock: stock, cancelled: cancelled,
                                  chatter: chatter, spacesDone: done,
                                  spacesTotal: spacesTotal, progress: progress)
             } else {
@@ -234,7 +237,7 @@ public enum Search {
                     guard lower < upper else { return }
                     parts[part] = weigh(layings[lower..<upper], space: index, of: state,
                                         weights: weights, available: available,
-                                        anchors: anchors, cancelled: cancelled,
+                                        anchors: anchors, stock: stock, cancelled: cancelled,
                                         chatter: chatter, spacesDone: done,
                                         spacesTotal: spacesTotal, progress: progress)
                 }
@@ -270,6 +273,7 @@ public enum Search {
     private static func weigh(_ layings: ArraySlice<Moves.Laying>, space: Int,
                               of state: EngineState, weights: Weights,
                               available: Availability, anchors: [Int],
+                              stock: Stock,
                               cancelled: @Sendable () -> Bool,
                               chatter: Chatter, spacesDone: Int, spacesTotal: Int,
                               progress: @Sendable (SearchProgress) -> Void) -> Stretch {
@@ -284,7 +288,8 @@ public enum Search {
             // das Brett nicht an.
             let laid = state.laying(stacks: laying.stacks, space: space)
             let prepared = Evaluator.prepare(laid, weights: weights,
-                                             availability: available)
+                                             availability: available,
+                                             from: stock, grown: laying.grown)
 
             for move in Moves.turns(space: space, laying: laying,
                                     from: state, anchors: anchors) {

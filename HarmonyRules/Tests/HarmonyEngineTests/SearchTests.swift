@@ -194,6 +194,47 @@ struct SearchTests {
         #expect(cubeMoves > 20, "die Stellung muss Würfelzüge hergeben, sonst prüft sie nichts")
     }
 
+    @Test("Hervorgewachsene Anwärter sind die neu gesuchten")
+    func grownCandidatesAreTheOnesSearchedForAgain() throws {
+        // Der Kern des inkrementellen Bewertens: Eine Legung ändert höchstens
+        // drei Felder, also werden die Anwärter dort fortgeschrieben statt
+        // das Brett erneut abzusuchen. Das gilt nur, weil Steine nie wieder
+        // herunterkommen — ein höherer Stapel erreicht weniger Landschaften,
+        // nie mehr. Geprüft wird Anwärter für Anwärter, in der Reihenfolge.
+        let deck = try AnimalCards.load()
+        let state = position(empty: [11, 12, 13, 14, 21, 22, 31],
+                             filled: [23: [.water], 32: [.stone]],
+                             hand: [HeldCard(card: deck[0]), HeldCard(card: deck[1])],
+                             openCards: Array(deck[2..<5]),
+                             display: [[.stone, .water, .leaves]])
+
+        let stock = Evaluator.stock(of: state)
+        let available = Search.availability(after: 0, of: state)
+        var checked = 0, dropped = 0
+
+        for laying in Moves.layings(of: state.display[0], on: state).prefix(60) {
+            let laid = state.laying(stacks: laying.stacks, space: 0)
+            let fresh = Evaluator.prepare(laid, availability: available)
+            let grown = Evaluator.prepare(laid, availability: available,
+                                          from: stock, grown: laying.grown)
+
+            #expect(Set(fresh.habitats.keys) == Set(grown.habitats.keys))
+            for (name, expected) in fresh.habitats {
+                #expect(grown.habitats[name] == expected, "Karte \(name)")
+                dropped += (stock.habitats[name]?.count ?? 0) - expected.count
+                checked += expected.count
+            }
+            // Die übrigen Teile dürfen sich davon nicht unterscheiden.
+            #expect(fresh.landscapeTerms == grown.landscapeTerms)
+            #expect(fresh.landscapeNow == grown.landscapeNow)
+        }
+
+        #expect(checked > 500, "zu wenige Anwärter geprüft, um etwas zu heißen")
+        // Ohne diesen Nachweis liefe die Zusicherung auf Legungen, die gar
+        // nichts ausschließen — dann prüfte sie nur, dass nichts passiert.
+        #expect(dropped > 0, "die Legungen müssen auch Anwärter ausschließen")
+    }
+
     @Test("Ein Würfel verändert die Anwärter überhaupt")
     func acubeChangesTheCandidatesAtAll() {
         // Die Gegenprobe: Würde ein Würfel die Anwärter gar nicht berühren,

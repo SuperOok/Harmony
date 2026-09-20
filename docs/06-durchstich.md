@@ -455,9 +455,12 @@ anstelle der Schätzungen, auch dort, wo sie die Schätzung widerlegen.
    bei unverändertem Ergebnis.
 3. **Über die Legungen auf mehrere Kerne verteilen.** ✅ **Faktor 3,7** auf
    vier schnellen und vier sparsamen Kernen, **2,3** auf dem Gerät.
-4. **Inkrementell bewerten.** Offen, und damit der größte verbliebene Hebel.
-   Ein Zug ändert höchstens drei Felder; die Landschaftswertung, die
-   Flussaussicht und die Anwärter ändern sich nur dort.
+4. **Inkrementell bewerten.** ✅ **Faktor 2,1 bis 3,0**, je nach Stellung —
+   siehe *Inkrementell bewerten: was eine Legung ändert, sind drei Felder*.
+   Umgesetzt für die Anwärter und für die Aussicht je Karte. Offen bleibt
+   die Landschaft: Brettwertung und Flussausblick werden weiter je Legung
+   ganz gerechnet und sind seither der größte Posten des Vorrechnens (144 µs
+   von 563 auf leerem Plan).
 5. **Keine Wörterbücher für Spielplan und Zug.** Offen, aber kleiner als
    gedacht: Das Kopieren eines Zustands kostet 0,5 µs. Der Gewinn läge in
    den Streuwerten innerhalb der Bewertung, nicht im Kopieren.
@@ -514,6 +517,65 @@ Vorgerechnete weiter* vergleicht auf echten Würfelzügen Term für Term gegen
 die vollständige Neuberechnung und verlangt, dass die Stellung mindestens
 zwanzig Würfelzüge hergibt.
 
+### Inkrementell bewerten: was eine Legung ändert, sind drei Felder
+
+**Gebaut am 2026-09-21.** Punkt 4 der Liste, der größte verbliebene Hebel —
+und nach den vier davor war er auch der einzige nennenswerte. Gemessen wurde
+vorher, wo die Zeit nach dem Umbau überhaupt noch lag:
+
+| Stellung | je Legung | davon Mustersuche | je Zug | Anteil Legung |
+| --- | --- | --- | --- | --- |
+| leerer Plan, 0 Karten | 873 µs | 808 µs | 59 µs | 71 % |
+| 6 Steine, 2 Karten | 732 µs | 689 µs | 112 µs | 52 % |
+| 3 Steine, 3 Karten | 1030 µs | 1006 µs | 246 µs | 23 % |
+
+Die Mustersuche je Legung war also 92 bis 98 Prozent dessen, was eine Legung
+kostet. Sie fragte das ganze Brett ab — sechs Drehungen des Musters über
+jedes Feld —, um eine Frage zu beantworten, die sich an **höchstens drei
+Feldern** geändert hatte.
+
+**Anwärter wachsen jetzt hervor, statt neu gesucht zu werden.** Der Vorrat
+der Ausgangsstellung (`Evaluator.stock`) wird einmal je Stellung gerechnet;
+jede Legung schreibt ihn an ihren drei Feldern fort (`Habitat.after`). Das
+geht, weil **Steine nie wieder herunterkommen**: Ein höherer Stapel erreicht
+weniger Landschaften, nie mehr, also kann keine Lage hinzukommen, die vorher
+unmöglich war. Die Menge schrumpft nur, und Felder außerhalb des Musters
+gehen sie nichts an.
+
+**Dieselbe Überlegung noch einmal, eine Ebene höher.** Die sechs Züge einer
+Legung unterscheiden sich in der genommenen Karte und sonst in nichts. Was
+eine **gehaltene** Karte verspricht, ist darum in allen sechs dasselbe, und
+was eine offene verspricht, ist dasselbe, welcher Zug sie auch nimmt. Die
+beste Aussicht je Karte wird deshalb einmal je Legung gewogen statt bis zu
+viermal je Zug. Ein Würfel nimmt sie zurück, aber gezielt: nur für die Karte,
+die ihn bekam, und nur, wenn er den bis dahin besten Anwärter aus dem Weg
+räumt.
+
+Was dabei herauskommt, je Zug einschließlich des anteiligen Vorrechnens:
+
+| Stellung | vorher | nachher |
+| --- | --- | --- |
+| leerer Plan, 0 Karten | 204 µs | **97 µs** |
+| 6 Steine, 2 Karten | 234 µs | **77 µs** |
+| 3 Steine, 3 Karten | 320 µs | **110 µs** |
+
+Auf dem Gerät, dieselben drei Stellungen wie zuvor:
+
+| Stellung | vorher | nachher |
+| --- | --- | --- |
+| Harmonys erster Zug | 13,8 s | **9,0 s** |
+| 6 Steine, 2 Karten | 8,2 s | **3,5 s** |
+| 3 Karten, fast leerer Plan | 53,7 s | **23,9 s** |
+
+Jedesmal derselbe Zug wie vorher. **Damit liegt auch der teuerste gemessene
+Fall unter der halben Minute**, die Szenario 2 gibt.
+
+Gehalten wird das von einer Zusicherung, die Anwärter für Anwärter und in der
+Reihenfolge vergleicht: *Hervorgewachsene Anwärter sind die neu gesuchten*.
+Sie verlangt zweierlei von ihrer Stellung — mindestens 500 geprüfte Anwärter,
+und dass die Legungen auch welche **ausschließen**. Ohne das zweite prüfte
+sie, dass nichts passiert.
+
 ### Dieselbe Stellung war nicht immer dasselbe wert
 
 Beim Bau des Vorrechnens fiel eine Stelle auf, an der die Engine nicht
@@ -566,14 +628,18 @@ Kartenwahl. Zusammen 43 s → 18,6 s für das Erzeugen.
 
 Alles zusammen, am Tisch gemessen und nicht gerechnet:
 
-| Stellung | am Morgen des 2026-09-20 | am Abend |
+| Stellung | am Morgen des 2026-09-20 | am Tag darauf |
 | --- | --- | --- |
-| halbvolles Brett | 110 s | **3 s** |
-| 6 Steine, 2 Karten | 17 min (hochgerechnet) | **8 s** |
-| 3 Karten, fast leerer Plan | 124 s | **54 s** |
+| halbvolles Brett | 110 s | **~1 s** |
+| Harmonys erster Zug | — | **9 s** |
+| 6 Steine, 2 Karten | 17 min (hochgerechnet) | **3,5 s** |
+| 3 Karten, fast leerer Plan | 124 s | **24 s** |
 
-Die Zeile, die offen bleibt, ist die letzte. Sie ist auch die einzige, für
-die es den Abbruch noch braucht.
+**Keine gemessene Stellung liegt mehr über der halben Minute**, die
+Szenario 2 gibt. Der Abkürzen-Knopf bleibt trotzdem: 24 Sekunden sind keine
+30 mit Abstand, die Stellungen sind ausgedachte und keine gespielten, und
+eine Suche muss abbrechbar sein, sobald sich die Stellung ändert — sonst
+rechnen alle Kerne an einer Stellung weiter, in der niemand mehr steht.
 
 ## Was als Nächstes kommt
 
