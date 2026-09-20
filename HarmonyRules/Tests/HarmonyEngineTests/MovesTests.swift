@@ -32,7 +32,7 @@ struct MovesTests {
         // ein Feld passen höchstens drei, also: 3+0, 2+1, 1+2, 0+3.
         let state = EngineState(stacks: position(empty: [11, 12]),
                                 display: [[.stone, .stone, .stone]])
-        let boards = Moves.boards(placing: [.stone, .stone, .stone], on: state)
+        let boards = Moves.layings(of: [.stone, .stone, .stone], on: state)
         #expect(boards.count == 4)
         let shapes = boards.map { ($0.added[11]?.count ?? 0, $0.added[12]?.count ?? 0) }
         #expect(Set(shapes.map { "\($0.0)/\($0.1)" }) == ["3/0", "2/1", "1/2", "0/3"])
@@ -43,7 +43,7 @@ struct MovesTests {
         // Drei braune Steine übereinander gibt es nicht, also fehlt 3/0.
         let state = EngineState(stacks: position(empty: [11, 12]),
                                 display: [[.wood, .wood, .wood]])
-        let boards = Moves.boards(placing: [.wood, .wood, .wood], on: state)
+        let boards = Moves.layings(of: [.wood, .wood, .wood], on: state)
         #expect(!boards.contains { $0.added[11]?.count == 3 })
         #expect(!boards.contains { $0.added[12]?.count == 3 })
     }
@@ -55,7 +55,7 @@ struct MovesTests {
                                 hand: [HeldCard(card: card("Prüftier", [11: .field, 12: .mountain1],
                                                            cube: 12), cubesPlaced: 1)],
                                 display: [[.stone, .stone, .stone]])
-        let boards = Moves.boards(placing: [.stone, .stone, .stone], on: state)
+        let boards = Moves.layings(of: [.stone, .stone, .stone], on: state)
         #expect(boards.allSatisfy { $0.added[12] == nil })
     }
 

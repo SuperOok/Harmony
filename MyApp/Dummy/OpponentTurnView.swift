@@ -149,15 +149,17 @@ struct OpponentTurnView: View {
         thinker = Task {
             let work = Task.detached(priority: .userInitiated) {
                 HarmonyEngine.Search.best(from: position,
-                                          cancelled: { Task.isCancelled },
+                                          cancelled: { monitor.isStopped },
                                           progress: { monitor.report($0) })
             }
             // Stopping means "that is enough", not "forget it": the search
-            // returns the best turn it had reached.
+            // returns the best turn it had reached. The flag goes to the
+            // monitor, not to the task: the search works on several cores
+            // and its threads have no task of their own.
             let suggestion = await withTaskCancellationHandler {
                 await work.value
             } onCancel: {
-                work.cancel()
+                monitor.stop()
             }
             // Nur, wenn diese Suche noch die laufende ist. Eine abgelöste
             // merkt ihren Abbruch erst beim nächsten Prüfpunkt und käme

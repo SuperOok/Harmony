@@ -40,8 +40,8 @@ public enum Moves {
             let signature = space.map(\.rawValue).sorted().joined()
             guard offeredSpaces.insert(signature).inserted else { continue }
 
-            for board in boards(placing: space, on: state) {
-                moves.append(contentsOf: turns(space: index, board: board,
+            for laying in layings(of: space, on: state) {
+                moves.append(contentsOf: turns(space: index, laying: laying,
                                                from: state, anchors: anchors))
             }
         }
@@ -56,7 +56,7 @@ public enum Moves {
     /// is now has to contain a space the turn changed, so those spaces are
     /// enough to look at — except for the ones that were already standing,
     /// and those are found once here.
-    static func standingHabitatCells(of state: EngineState) -> [Int] {
+    public static func standingHabitatCells(of state: EngineState) -> [Int] {
         var cells: Set<Int> = []
         for held in state.hand where !held.isFinished {
             for habitat in Habitat.passed(of: held.card, through: state.stacks,
@@ -75,13 +75,21 @@ public enum Moves {
 
     // MARK: - Where the three stones go
 
-    /// A board after all three stones are down, with what was added where.
-    struct Placement {
-        var stacks: [Int: [Stone]]
-        var added: [Int: [Stone]]
+    /// One way of laying the three stones: the board once they are down,
+    /// together with what went where.
+    ///
+    /// **Legung**, not Brett: a Spielbrett exists exactly once, while of
+    /// these there are thousands per display space — and `Placement` is
+    /// taken, it means a single stone on a single space. The level matters
+    /// enough to have its own word: six turns share one laying, and
+    /// everything that hangs on the board alone is worked out once for all
+    /// six. See `docs/06-durchstich.md`.
+    public struct Laying: Sendable {
+        public var stacks: [Int: [Stone]]
+        public var added: [Int: [Stone]]
     }
 
-    /// Every distinct table the three stones can produce.
+    /// Every distinct laying the three stones can produce.
     ///
     /// The stones are laid in **colour order**, and that is not an arbitrary
     /// choice: every legal stack already stands in colour order, which
@@ -90,15 +98,15 @@ public enum Moves {
     /// colour order builds every one of them. So each distinct result comes
     /// out exactly once, without enumerating orderings and throwing the
     /// duplicates away.
-    static func boards(placing space: [Stone], on state: EngineState) -> [Placement] {
+    public static func layings(of space: [Stone], on state: EngineState) -> [Laying] {
         let stones = space.sorted { $0.rawValue < $1.rawValue }
         let cells = state.board.cells.filter { !state.cubeCells.contains($0) }
-        var results: [Placement] = []
+        var results: [Laying] = []
 
         // Two stones of the same colour are interchangeable, so the second
         // may only go to a space at or after the first's. Without that, the
         // same table comes out once per way of dealing out equal stones.
-        func step(_ current: Placement, _ left: ArraySlice<Stone>,
+        func step(_ current: Laying, _ left: ArraySlice<Stone>,
                   _ previous: (Stone, Int)?) {
             guard let stone = left.first else { results.append(current); return }
             for (index, cell) in cells.enumerated() {
@@ -111,16 +119,16 @@ public enum Moves {
                 step(next, left.dropFirst(), (stone, index))
             }
         }
-        step(Placement(stacks: state.stacks, added: [:]), stones[...], nil)
+        step(Laying(stacks: state.stacks, added: [:]), stones[...], nil)
         return results
     }
 
     // MARK: - Cards and cubes on top of that
 
-    /// The turns that end with this board: which card is taken, which cubes
+    /// The turns that end with this laying: which card is taken, which cubes
     /// are laid.
-    static func turns(space: Int, board: Placement, from state: EngineState,
-                      anchors: [Int]) -> [Move] {
+    public static func turns(space: Int, laying: Laying, from state: EngineState,
+                             anchors: [Int]) -> [Move] {
         var moves: [Move] = []
 
         // Taking no card, or one of the open ones. A card taken this turn can
@@ -131,13 +139,13 @@ public enum Moves {
         // What the cards already in hand allow does not depend on which card
         // is taken, so it is worked out once instead of once per option.
         let fromHand = state.hand.filter { !$0.isFinished }.flatMap { held in
-            cubePlaces(for: held, board: board, state: state, anchors: anchors)
+            cubePlaces(for: held, laying: laying, state: state, anchors: anchors)
         }
 
         for taken in options {
             var placeable = fromHand
             if let taken {
-                placeable += cubePlaces(for: HeldCard(card: taken), board: board,
+                placeable += cubePlaces(for: HeldCard(card: taken), laying: laying,
                                         state: state, anchors: anchors)
             }
 
@@ -157,7 +165,7 @@ public enum Moves {
                 }
                 var cubes: [Int: String] = [:]
                 for place in chosen { cubes[place.cell] = place.card }
-                moves.append(Move(space: space, placements: board.added,
+                moves.append(Move(space: space, placements: laying.added,
                                   cubes: cubes, cardTaken: taken?.name))
             }
         }
@@ -182,10 +190,10 @@ public enum Moves {
     /// The cube's own space is the exception — it may not grow past what the
     /// pattern wants, because a cube on a stone blocks anything going on top,
     /// and laying it earlier would make the space unbuildable.
-    static func cubePlaces(for held: HeldCard, board: Placement,
+    static func cubePlaces(for held: HeldCard, laying: Laying,
                            state: EngineState, anchors: [Int]) -> [CubePlace] {
-        let touched = Array(Set(board.added.keys).union(anchors)).sorted()
-        return Habitat.passed(of: held.card, through: board.stacks, cubes: state.cubeCells,
+        let touched = Array(Set(laying.added.keys).union(anchors)).sorted()
+        return Habitat.passed(of: held.card, through: laying.stacks, cubes: state.cubeCells,
                               board: state.board, covering: touched)
             .map { CubePlace(card: held.card.name, cell: $0.cubeCell, habitat: $0) }
     }

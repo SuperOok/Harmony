@@ -14,7 +14,7 @@ struct StackTests {
         // Reihenfolge der Steinkürzel steht, baut ein Generator, der die
         // drei Steine nach Farbe sortiert legt, jeden von ihnen — und jedes
         // Ergebnis genau einmal. Fällt diese Eigenschaft weg, muss
-        // `Moves.boards` wieder Reihenfolgen aufzählen.
+        // `Moves.layings` wieder Reihenfolgen aufzählen.
         for stack in [Stone].legal {
             #expect(stack == stack.sorted { $0.rawValue < $1.rawValue },
                     "\(stack.map(\.rawValue).joined())")

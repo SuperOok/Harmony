@@ -92,38 +92,124 @@ public struct Availability: Sendable {
     public var total: Double { perColour.values.reduce(0, +) }
 }
 
+/// What a whole laying's worth of turns has in common, worked out once.
+///
+/// Six turns share one laying: they differ in which card is taken, and the
+/// card does not touch the board — `docs/06-durchstich.md` counts exactly
+/// 6,0. Everything that hangs on the board alone was nevertheless computed
+/// six times: the landscape scoring, the river outlook, and the pattern
+/// search, which is the single most expensive thing the evaluation does and
+/// which ran **twice** per turn on top of that, once for the candidates and
+/// once for the variety.
+///
+/// Valid for exactly one board — and in two parts, because a cube spoils
+/// only one of them.
+public struct Prepared: Sendable {
+    let landscapeNow: Int
+    let landscapeTerms: [Term]
+    /// Card name to every way its pattern could still lie on this board.
+    /// Held for the cards in hand **and** for the open ones, because the
+    /// turn may take one of those and it is then in hand.
+    let habitats: [String: [Habitat]]
+    /// Which spaces carried a cube when this was worked out. A turn that
+    /// lays one more does not throw the stock away — see `Evaluator.habitats`.
+    let cubes: Set<Int>
+}
+
 public enum Evaluator {
-    public static func evaluate(_ state: EngineState,
-                                weights: Weights = Weights(),
-                                availability: Availability? = nil) -> Evaluation {
+    /// What holds for every turn from this laying. `state` is the position
+    /// after the three stones are down and before a card or a cube.
+    public static func prepare(_ state: EngineState,
+                               weights: Weights = Weights(),
+                               availability: Availability? = nil) -> Prepared {
         let available = availability ?? Availability(counting: state.display)
         let scoring = BoardScoring(side: state.side, columns: state.side.columns,
                                    stacks: state.stacks)
+
+        var habitats: [String: [Habitat]] = [:]
+        for card in state.hand.filter({ !$0.isFinished }).map(\.card) + state.openCards {
+            guard habitats[card.name] == nil else { continue }
+            habitats[card.name] = Habitat.all(of: card, on: state.stacks,
+                                              cubes: state.cubeCells, board: state.board)
+        }
+
+        return Prepared(
+            landscapeNow: scoring.breakdown().reduce(0) { $0 + $1.points },
+            landscapeTerms: landscapeTerms(state, scoring: scoring, weights: weights,
+                                           available: available),
+            habitats: habitats,
+            cubes: state.cubeCells)
+    }
+
+    /// - Parameter prepared: what was worked out once for this laying. Must
+    ///   belong to **this** board, or the evaluation answers about another
+    ///   position; the search hands it on only where that holds.
+    public static func evaluate(_ state: EngineState,
+                                weights: Weights = Weights(),
+                                availability: Availability? = nil,
+                                prepared: Prepared? = nil) -> Evaluation {
+        let available = availability ?? Availability(counting: state.display)
+        // Die Brettwertung wird nur noch gebraucht, wenn nichts vorliegt.
+        let scoring = prepared == nil
+            ? BoardScoring(side: state.side, columns: state.side.columns,
+                           stacks: state.stacks)
+            : nil
         var terms: [Term] = []
 
         // (1) Punkte jetzt
-        let landscapeNow = scoring.breakdown().reduce(0) { $0 + $1.points }
+        let landscapeNow = prepared?.landscapeNow
+            ?? scoring!.breakdown().reduce(0) { $0 + $1.points }
         let cardsNow = state.hand.reduce(0) { $0 + $1.score }
         terms.append(Term(name: "Landschaften", points: Double(landscapeNow) * weights.pointsNow))
         terms.append(Term(name: "Tierkarten", points: Double(cardsNow) * weights.pointsNow))
 
         // (2) Aussicht aus Anwärtern
         terms.append(contentsOf: candidateTerms(state, weights: weights,
-                                                available: available))
+                                                available: available, prepared: prepared))
 
         // (3) Aussicht aus Landschaften
-        terms.append(contentsOf: landscapeTerms(state, scoring: scoring, weights: weights,
-                                                available: available))
+        terms.append(contentsOf: prepared?.landscapeTerms
+            ?? landscapeTerms(state, scoring: scoring!, weights: weights,
+                              available: available))
 
         // (4) Optionenvielfalt
         if weights.variety != 0 {
-            let live = liveCandidateCount(state)
+            let live = liveCandidateCount(state, prepared: prepared)
             terms.append(Term(name: "Offene Möglichkeiten",
                               points: Double(live) * weights.variety,
                               detail: "\(live) Anwärter leben noch"))
         }
 
         return Evaluation(terms: terms, pointsNow: landscapeNow + cardsNow)
+    }
+
+    /// Every way this card could still lie — from the laying's stock if it
+    /// is there, freshly otherwise.
+    ///
+    /// **A cube laid this turn does not spoil the stock; it thins it.**
+    /// `Habitat.append` turns a candidate away over a cube on space *x* for
+    /// exactly two reasons: *x* belongs to the pattern and would still have
+    /// to grow there — which is what `missing[x]` records — or *x* is the
+    /// candidate's own cube space. Nothing else in that function looks at
+    /// the cubes. So the candidates for one more cube are exactly those of
+    /// the stock that neither applies to, in the same order, and filtering
+    /// answers what searching again would.
+    ///
+    /// The case that could undo this does not arise: two candidates with the
+    /// same key are the same placement — same spaces, same requirement, same
+    /// cube space — so a cube that turns the first away turns the second
+    /// away as well. Nothing that was dropped could be let back in.
+    static func habitats(of card: AnimalCard, on state: EngineState,
+                         _ prepared: Prepared?) -> [Habitat] {
+        guard let prepared, let stock = prepared.habitats[card.name] else {
+            return Habitat.all(of: card, on: state.stacks, cubes: state.cubeCells,
+                               board: state.board)
+        }
+        let laid = state.cubeCells.subtracting(prepared.cubes)
+        guard !laid.isEmpty else { return stock }
+        return stock.filter { habitat in
+            !laid.contains { habitat.missing[$0] != nil || habitat.cubeCell == $0 }
+        }
     }
 
     // MARK: - (2) Was die Anwärter versprechen
@@ -135,10 +221,10 @@ public enum Evaluator {
     /// of them — and the best one that can all come about wins. Adding up
     /// candidates that exclude each other would promise points twice.
     static func candidateTerms(_ state: EngineState, weights: Weights,
-                               available: Availability) -> [Term] {
+                               available: Availability,
+                               prepared: Prepared? = nil) -> [Term] {
         let best = state.hand.filter { !$0.isFinished }.compactMap { held -> Prospect? in
-            Habitat.all(of: held.card, on: state.stacks, cubes: state.cubeCells,
-                        board: state.board)
+            habitats(of: held.card, on: state, prepared)
                 .compactMap { prospect(held, $0, state, available) }
                 .max { $0.worth < $1.worth }
         }
@@ -310,10 +396,10 @@ public enum Evaluator {
     /// edge. That is the rule of thumb "start in the middle" — but read off
     /// as a number rather than set as a maxim, so it stays right on a filled
     /// board, where the middle has long since stopped being the best place.
-    static func liveCandidateCount(_ state: EngineState) -> Int {
+    static func liveCandidateCount(_ state: EngineState,
+                                   prepared: Prepared? = nil) -> Int {
         state.hand.filter { !$0.isFinished }.reduce(0) { total, held in
-            total + Habitat.all(of: held.card, on: state.stacks,
-                                cubes: state.cubeCells, board: state.board).count
+            total + habitats(of: held.card, on: state, prepared).count
         }
     }
 }

@@ -156,11 +156,27 @@ func engineNotation(_ move: Move) -> String {
 nonisolated final class SearchMonitor: @unchecked Sendable {
     private let lock = NSLock()
     private var latest: SearchProgress?
+    private var stopped = false
 
     func report(_ progress: SearchProgress) {
         lock.lock()
         latest = progress
         lock.unlock()
+    }
+
+    /// Asks the search to stop. A flag rather than `Task.isCancelled`,
+    /// because the search now works on several cores: its threads have no
+    /// task of their own to ask, and `Task.isCancelled` would answer "no"
+    /// on every one of them.
+    func stop() {
+        lock.lock()
+        stopped = true
+        lock.unlock()
+    }
+
+    var isStopped: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return stopped
     }
 
     /// The most recent report, or nothing if the search has yet to send one.
