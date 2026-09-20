@@ -272,7 +272,8 @@ zum zweitbesten Zug — was Störfall C verlangt.
 dem Zustand, den Zügen und der Bewertung entsteht ein Zugvorschlag samt
 Begründung. Das ist die Kernfrage dieser Phase, und sie ist beantwortet.
 
-**Sie ist zu langsam.** Gemessen auf Seite A:
+**Sie ist zu langsam.** Gemessen auf Seite A — **im Debug-Bau**, was lange
+niemandem auffiel und weiter unten eine eigene Überschrift bekommt:
 
 | belegte Felder | je Bewertung | Züge | Erzeugen | Suche gesamt |
 | --- | --- | --- | --- | --- |
@@ -316,24 +317,142 @@ freier Kartenhand wäre dieselbe Stellung rund 74.000 Züge groß und damit
 Damit steht der Abstand zum Ziel fest. Szenario 2 gibt etwa eine halbe
 Minute — solange die Vorderfrau überlegt. Gebraucht wird also:
 
-| Stellung | heute auf dem Gerät | nötiger Faktor |
+| Stellung | Gerät, Debug | nötiger Faktor | Gerät, Release | dann noch nötig |
+| --- | --- | --- | --- | --- |
+| Brett fast voll | 48 s | 2 | **8 s** | erreicht |
+| Brett zur Hälfte | 6 min | 12 | **1 min** | 2 |
+| frühe Partie | 17 min | 35 | **2,8 min** | 6 |
+
+Die beiden rechten Spalten sind am selben Tag dazugekommen und stehen hier,
+weil sie die ganze Tabelle verschieben — siehe *Die Hälfte lag am Bau*. Der
+verbleibende Faktor 6 für die frühe Partie ist der Rest, um den es in den
+Abhilfen noch geht; die Hochrechnung dort kommt auf 3 mal 2 bis 2,5 und damit
+darüber hinaus.
+
+### Die Hälfte lag am Bau
+
+**Gemessen am 2026-09-20.** Alle Zahlen oben stammen aus einem
+**Debug**-Bau: `tools/messe-verzweigung.sh` rief `swift run` ohne
+`-c release`, und die App auf dem Gerät war ein Debug-Bau desselben Schemas.
+Swift ohne Optimierung heißt keine Spezialisierung, kein Inlining, volle
+Retain/Release-Last. Bei einer Engine, die nichts tut als rechnen, ist das
+kein Detail:
+
+| belegte Felder | je Bewertung Debug | Release | Faktor | Suche gesamt |
+| --- | --- | --- | --- | --- |
+| 6 | 6.915 µs | **1.100 µs** | 6,3 | 782 s → **124 s** |
+| 12 | 4.353 µs | **674 µs** | 6,5 | 185 s → **28 s** |
+| 18 | 2.328 µs | **300 µs** | 7,8 | 23 s → **3 s** |
+
+In der App gegengeprüft, im Simulator, dieselbe Stellung und dieselben 12.270
+Züge: **55,4 s im Debug-Bau, 9,5 s im Release-Bau.** Beide schlagen denselben
+Zug vor (`H33 Z33 L43`, Bewertung 83), die Zahl der geprüften Züge ist
+identisch — der Bau ändert die Antwort nicht, nur die Wartezeit.
+
+`tools/messe-verzweigung.sh` misst seither im Release-Bau. Die Debug-Tabelle
+oben bleibt stehen, weil sonst nicht nachvollziehbar wäre, woher die Zahlen
+kamen, die in diesem Dokument ursprünglich standen.
+
+### Wohin die Zeit einer Bewertung geht
+
+Eine Bewertung im Release-Bau, sechs belegte Felder, Seite A, zwei
+Handkarten — 970 µs, aufgeschlüsselt:
+
+| Teil | µs | Anteil |
 | --- | --- | --- |
-| Brett fast voll | 48 s | 2 |
-| Brett zur Hälfte | 6 min | 12 |
-| frühe Partie | 17 min | 35 |
+| Anwärter (`candidateTerms`) | 392 | 40 % |
+| Vielfalt (`liveCandidateCount`) | 267 | 28 % |
+| Landschaften — davon Fluss 215 | 220 | 23 % |
+| Wertung (`BoardScoring.breakdown`) | 8 | 1 % |
 
-### Drei Abhilfen, nach Wirkung geordnet
+Drei Befunde:
 
-1. **Inkrementell bewerten.** Ein Zug ändert höchstens drei Felder. Die
+1. **`Habitat.all` wird zweimal je Bewertung gerechnet**, mit denselben
+   Argumenten: einmal in `candidateTerms`, einmal in `liveCandidateCount`.
+   272 µs für zwei Handkarten. Die Vielfalt ist damit fast vollständig
+   doppelte Arbeit.
+2. **Sechs Züge teilen sich eine Legung** — nachgezählt, exakt 6,0 bei jeder
+   Stellungsgröße (5.237 Legungen / 31.422 Züge bei belegt 6; 1.922 / 11.532
+   bei 12; 437 / 2.622 bei 18). Das sind die fünf offenen Karten plus „keine
+   Karte". Alles Legungsabhängige wird deshalb sechsmal gerechnet statt
+   einmal.
+3. **Der Fluss kostet 215 µs für ein Gebiet von 18 Feldern.** `longestPath`
+   startet eine Breitensuche **je Feld des Gebiets**, jede mit eigenem
+   Wörterbuch. Das Verfahren ist ohnehin eine Näherung — Doppel-BFS auf einem
+   Graphen mit Zyklen —, und mit zwei Startpunkten statt achtzehn wäre es
+   rund neunmal billiger bei gleicher Art von Antwort.
+
+Die Kopie eines Zustands je Zug (`state.applying`) kostet dagegen 0,5 bis
+0,7 µs und ist damit kein Posten. Die Wörterbücher schaden, aber nicht dort,
+wo man sie vermutet.
+
+### Mehrere Kerne: Faktor 3,6 auf acht, etwa 2 auf dem Gerät
+
+Die Suche läuft heute auf **einem** Kern. Der Versuch, die Legungen eines
+Auslagefelds in gleich große Stücke zu schneiden und nebenläufig zu wiegen,
+halbvolles Brett, 11.532 Züge, auf einem Mac mit vier schnellen und vier
+sparsamen Kernen:
+
+| Stücke | Zeit | Faktor |
+| --- | --- | --- |
+| seriell | 6,65 s | — |
+| 2 | 3,69 s | 1,80 |
+| 4 | 2,35 s | 2,83 |
+| 8 | 1,86 s | **3,57** |
+| 16 / 64 | 1,86 s | 3,57 |
+
+Acht Kerne geben 3,6, nicht 8: Die sparsamen Kerne sind langsamer, und die
+Bewertung legt so viel Speicher an, dass die Zuteilung selbst bremst. Feiner
+als acht Stücke bringt nichts.
+
+**Der Schnitt gehört über die Legungen**, nicht über die Auslagefelder: Davon
+gibt es höchstens fünf, sie sind ungleich groß (1.922 / 495 / 1.510 / 1.980 /
+1.014 Legungen bei belegt 12), und gleiche Felder werden zusammengefasst — im
+schlimmsten Fall bleibt ein einziges übrig und damit keine Nebenläufigkeit.
+Auch nicht über die Kartenwahl: Das ist die Ebene, auf der geteilt statt
+getrennt werden soll, siehe Befund 2 oben. Legungen dagegen gibt es zu
+Tausenden, sie sind gleich teuer und voneinander unabhängig.
+
+**Bedingung:** Das Verschmelzen der Teilergebnisse muss in fester Reihenfolge
+geschehen, nach Stücknummer und nicht danach, wer zuerst fertig wurde. Sonst
+entscheidet bei Gleichstand die Zuteilung, und dieselbe Stellung gibt zweimal
+verschiedene Züge — was `SearchTests` zusichert und die Momentaufnahmen aus
+`pruefverfahren.md` brauchen. Im Versuch ist es so gebaut, und bei 2, 4, 8, 16
+und 64 Stücken kam derselbe Zug heraus.
+
+Auf dem Gerät ist weniger zu erwarten: Der A17 Pro hat **zwei** schnelle und
+vier sparsame Kerne, nicht vier und vier. Hochgerechnet bleiben **Faktor 2 bis
+2,5**, dazu Drosselung bei minutenlanger Vollast und der Stromsparmodus, der
+Kerne wegnimmt.
+
+### Fünf Abhilfen, nach Wirkung geordnet
+
+0. **Im Release bauen und messen.** ✅ **Gemessen, Faktor 5,8 bis 7,8.**
+   Kostet nichts, ändert die Antwort nicht und verschiebt die Bewertung aller
+   folgenden Punkte. Offen bleibt, dass das Xcode-Schema beim Laufenlassen
+   weiter Debug baut — fürs Gerät gehört `-configuration Release` an den
+   Installationsbefehl.
+1. **Legungsabhängiges einmal je Legung rechnen.** Fluss, Landschaftswertung
+   und `Habitat.all` hängen allein an der Legung, nicht daran, welche Karte
+   genommen wurde; sechs Züge teilen sich eine. Dazu die Doppelrechnung von
+   `Habitat.all` zwischen Anwärtern und Vielfalt. Hochgerechnet aus den
+   gemessenen Teilen: **Faktor 3**, also rund 320 µs statt 1.100 µs je Zug.
+2. **Inkrementell bewerten.** Ein Zug ändert höchstens drei Felder. Die
    Landschaftswertung, die Flussaussicht und die Anwärter ändern sich nur
    dort. `04-architektur.md` sieht das Vorhalten der Musterinstanzen ohnehin
-   vor; hier ist der Beleg, dass es nötig ist. Größter Hebel.
-2. **Brettterme aus der Kartenschleife ziehen.** Punkte jetzt und
-   Landschaftsaussicht hängen allein am Brett, nicht daran, welche Karte
-   genommen wurde. Sie werden heute sechsmal je Brett gerechnet statt einmal.
-3. **Keine Wörterbücher für Brett und Zug.** 23 bis 25 feste Felder sind ein
-   Feld fester Länge, kein Streuwertspeicher. Ein Zug legt heute zwei
-   Wörterbücher an, nur um bewertet und weggeworfen zu werden.
+   vor; hier ist der Beleg, dass es nötig ist. Größter Hebel der verbleibenden.
+3. **Den längsten Fluss billiger suchen.** Zwei Startpunkte statt achtzehn,
+   siehe *Wohin die Zeit einer Bewertung geht*. Rund ein Fünftel einer
+   Bewertung, und die Näherung wird nicht schlechter begründet, als sie es
+   heute schon ist.
+4. **Über die Legungen auf mehrere Kerne verteilen.** Faktor 2 bis 2,5 auf dem
+   Gerät. Bewusst hinter dem Sparen: Nebenläufigkeit verteilt dieselbe Arbeit
+   und verbraucht denselben Strom in kürzerer Zeit — sechs Kerne, die
+   überflüssige Arbeit tun, tun überflüssige Arbeit.
+5. **Keine Wörterbücher für Spielplan und Zug.** 23 bis 25 feste Felder sind
+   ein Feld fester Länge, kein Streuwertspeicher. Gemessen ist der Posten
+   kleiner als gedacht — das Kopieren eines Zustands kostet 0,5 µs —, der
+   Gewinn läge in den Streuwerten innerhalb der Bewertung, nicht im Kopieren.
 
 Erledigt und gemessen sind bereits zwei kleinere: die Landschaftstabelle wird
 einmal gerechnet statt millionenfach, und die Würfelsuche der Handkarten hängt
@@ -342,9 +461,10 @@ Erzeugen.
 
 ## Was als Nächstes kommt
 
-1. **Die Bewertung schneller machen**, nach der Liste oben. Erst danach lohnt
-   sich Feinschliff an den Gewichten: Eine Stellschraube, deren Wirkung man
-   erst nach Minuten sieht, wird nicht gedreht.
+1. **Die Bewertung schneller machen**, nach der Liste oben — Punkt 0 ist
+   gemessen und kostet nichts, Punkt 1 ist der nächste Umbau. Erst danach
+   lohnt sich Feinschliff an den Gewichten: Eine Stellschraube, deren Wirkung
+   man erst nach Minuten sieht, wird nicht gedreht.
 2. **Den Dummy-Zustand ablösen.** Eine **Brücke** steht seit dem 2026-09-20
    (`MyApp/Dummy/EngineBridge.swift`): Sie übersetzt den Zustand des
    Klickdummys in einen `EngineState` und den Vorschlag zurück in einen
@@ -365,22 +485,6 @@ Erzeugen.
 
 3. **Stockwerk 2**, sobald eine Partie durchläuft.
 
-## Offene Punkte
-
-1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird
-   als unabhängig behandelt. Es überschätzt, und wie sehr, weiß niemand.
-   Richtig ist die Richtung, und darauf ruht die Reihenfolge der Züge — mehr
-   wird auch nicht zugesichert.
-2. **Die Zufallsschicht ist zusammengefasst, nicht gerechnet.** Die Kopplung
-   zwischen Brett und Auslage innerhalb eines Blattes geht dabei verloren: ob
-   genau der Stein nachrückt, den genau dieser Anwärter braucht. Der
-   Erwartungswert bleibt richtig, seine Streuung verschwindet.
-3. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
-   Punkte jetzt, Aussicht aus Anwärtern, Aussicht aus Landschaften,
-   Optionenvielfalt — greifen zu verschiedenen Zeiten der Partie. Womit sie
-   gegeneinander zu verrechnen sind, gehört gemessen, sobald Selbstspiel
-   läuft. Phase 3 nimmt v1 auf dem Durchlauf ab, nicht auf der Spielstärke;
-   geraten wird deshalb vorerst.
 ### Was die Suche über sich sagt
 
 **Angelegt am 2026-09-20**, nachdem sich beim Spielen auf dem Gerät zeigte,
@@ -414,3 +518,19 @@ kosten.
 **Was es nicht ist:** eine Abhilfe gegen die Rechenzeit. Die drei Hebel oben
 bleiben, was sie sind. Sichtbar ist jetzt nur, was dauert.
 
+## Offene Punkte
+
+1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird
+   als unabhängig behandelt. Es überschätzt, und wie sehr, weiß niemand.
+   Richtig ist die Richtung, und darauf ruht die Reihenfolge der Züge — mehr
+   wird auch nicht zugesichert.
+2. **Die Zufallsschicht ist zusammengefasst, nicht gerechnet.** Die Kopplung
+   zwischen Brett und Auslage innerhalb eines Blattes geht dabei verloren: ob
+   genau der Stein nachrückt, den genau dieser Anwärter braucht. Der
+   Erwartungswert bleibt richtig, seine Streuung verschwindet.
+3. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
+   Punkte jetzt, Aussicht aus Anwärtern, Aussicht aus Landschaften,
+   Optionenvielfalt — greifen zu verschiedenen Zeiten der Partie. Womit sie
+   gegeneinander zu verrechnen sind, gehört gemessen, sobald Selbstspiel
+   läuft. Phase 3 nimmt v1 auf dem Durchlauf ab, nicht auf der Spielstärke;
+   geraten wird deshalb vorerst.

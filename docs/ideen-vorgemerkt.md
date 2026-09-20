@@ -180,3 +180,42 @@ dass ein kleines Tierbild schneller und sicherer trifft als ein Name, den sich
 niemand merkt — und dass selbstgezeichnete Silhouetten das ohne die
 geschützten Originalillustrationen leisten. Beides bleibt richtig; es löst nur
 kein Problem, das am Tisch auftritt.
+
+## Für Phase 6 — Durchstich und Geschwindigkeit
+
+**„Legung" statt „Brett", `Laying` statt `Placement`/`boards`.** ✅
+Entschieden am 2026-09-20, **umzusetzen später** — am besten zusammen mit dem
+Umbau der Bewertung, der dieselben Stellen anfasst.
+
+Gemeint ist eine von vielen Möglichkeiten, die drei Steine eines
+Auslagefelds zu legen — bei halbvollem Spielplan rund 1900 je Feld. Heute
+heißt das Ding im Code `Moves.Placement` und die Funktion darüber
+`Moves.boards(placing:on:)`, im deutschen Text hieß es bisher „Brett". Beides
+ist schief: Ein Spielbrett gibt es genau eines, und `Placement` ist doppelt
+belegt — im Dummy meint es **einen** Stein auf **einem** Feld
+(`Placement(stone:cell:)`, 34 Fundstellen). Dazu trägt der Parametername
+`board:` zwei Bedeutungen, die Geometrie des Spielplans in
+`Habitat.all(…, board:)` und eine Legung in `Moves.turns(space:board:)`.
+
+Künftig:
+
+| heute | künftig |
+| --- | --- |
+| `Moves.Placement` | `Moves.Laying` |
+| `Moves.boards(placing:on:)` | `Moves.layings(of:on:)` |
+| `Moves.turns(space:board:…)` | `Moves.turns(space:laying:…)` |
+| „Brett" im deutschen Text | „Legung" |
+
+`Placement(stone:cell:)` im Dummy und `Move.placements` bleiben, wie sie
+sind: Dort ist ein Placement tatsächlich ein gelegter Stein. `board` bleibt
+dem Spielplan vorbehalten.
+
+Warum es zählt und nicht bloß Geschmack ist: Die Legung ist die Ebene, auf
+der die Geschwindigkeitsarbeit ansetzt. Sechs Züge teilen sich eine Legung —
+sie unterscheiden sich nur in der Kartenwahl und lassen den Spielplan
+unberührt. Alles Legungsabhängige (Fluss, Landschaftswertung, `Habitat.all`)
+wird deshalb sechsmal gerechnet statt einmal, und die Legungen sind
+zugleich der Schnitt, an dem sich die Suche auf mehrere Kerne verteilen
+ließe. Über eine Ebene, die „Brett" heißt, während daneben ein Spielplan
+liegt, lässt sich das nicht aufschreiben.
+

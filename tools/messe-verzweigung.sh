@@ -6,5 +6,9 @@
 #   tools/messe-verzweigung.sh
 #
 # The result belongs in `docs/06-durchstich.md` whenever it shifts.
+#
+# **Release, not debug.** Unoptimised Swift runs six to eight times slower
+# here, and this script's numbers went into the document as if they were the
+# engine's. See `docs/06-durchstich.md`, *Die Hälfte lag am Bau*.
 cd "${0:A:h}/.."
-exec swift run --package-path HarmonyRules HarmonyMeasure "$@"
+exec swift run -c release --package-path HarmonyRules HarmonyMeasure "$@"

@@ -20,17 +20,21 @@ Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
 Weglegen. Geprüft wird mit 133 Regelfällen (`tools/tests.sh`, unter einer
 Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
 
-**Das eine große Problem ist die Rechenzeit.** Auf einem iPhone 15 Pro Max
-gemessen: 110 Sekunden für eine halbvolle Stellung, hochgerechnet bis zu
-17 Minuten in der frühen Partie. Szenario 2 gibt etwa eine halbe Minute.
-Gebraucht wird also Faktor 2 bis 35, je nach Stellung.
+**Das eine große Problem ist die Rechenzeit** — es ist seit dem
+2026-09-20 abends kleiner als gedacht. Die 110 Sekunden, die auf einem
+iPhone 15 Pro Max für eine halbvolle Stellung gemessen wurden, stammen aus
+einem **Debug**-Bau; im Release-Bau sind es 9,5 Sekunden im Simulator,
+Faktor 5,8 bei identischem Vorschlag. Damit ist ein halbvolles Brett unter
+der halben Minute, die Szenario 2 gibt, und offen bleibt die frühe Partie
+mit rund drei Minuten, also Faktor 6.
 
 **Der nächste Schritt ist deshalb die Geschwindigkeit**, nicht der
-Feinschliff: `docs/06-durchstich.md` nennt unter *Drei Abhilfen* die
-Hebel, nach Wirkung geordnet — inkrementell bewerten, die brettabhängigen
-Terme aus der Schleife über die Kartenwahl ziehen, Brett und Zug nicht als
-Wörterbücher führen. Was danach ansteht, steht dort unter *Was als
-Nächstes kommt*. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am Ende
+Feinschliff: `docs/06-durchstich.md` nennt unter *Fünf Abhilfen* die Hebel,
+nach Wirkung geordnet und jeweils mit Messwert — im Release bauen
+(erledigt), das Legungsabhängige einmal je Legung rechnen statt sechsmal,
+inkrementell bewerten, den längsten Fluss billiger suchen, über die
+Legungen auf mehrere Kerne verteilen. Was danach ansteht, steht dort unter
+*Was als Nächstes kommt*. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am Ende
 auf.
 
 ## Aufbau
