@@ -184,8 +184,10 @@ kein Problem, das am Tisch auftritt.
 ## Für Phase 6 — Durchstich und Geschwindigkeit
 
 **„Legung" statt „Brett", `Laying` statt `Placement`/`boards`.** ✅
-Entschieden am 2026-09-20, **umzusetzen später** — am besten zusammen mit dem
-Umbau der Bewertung, der dieselben Stellen anfasst.
+Entschieden am 2026-09-20, **umgesetzt noch am selben Abend** — zusammen mit
+dem Umbau der Bewertung, wie vorgesehen: Der Umbau fasste dieselben Stellen
+an, und die Erklärung, was dort einmal je Legung gerechnet wird, ließ sich
+über eine Ebene namens „Brett" nicht aufschreiben.
 
 Gemeint ist eine von vielen Möglichkeiten, die drei Steine eines
 Auslagefelds zu legen — bei halbvollem Spielplan rund 1900 je Feld. Heute

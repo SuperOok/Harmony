@@ -106,6 +106,10 @@ struct OpponentTurnView: View {
     /// without measuring anything they are about.
     private let sampleOnly = ProcessInfo.processInfo.arguments.contains("-sampleMove")
 
+    /// Schreibt heraus, was eine Suche gekostet hat. Für Messungen auf dem
+    /// Gerät, wo weder das Messprogramm läuft noch jemand mitliest.
+    private let logsSearch = ProcessInfo.processInfo.arguments.contains("-logSearch")
+
     private var pendingMove: HarmonyMove? {
         guard isHarmony else { return nil }
         if sampleOnly { return state.sideB ? nil : Sample.harmonyMove }
@@ -172,6 +176,17 @@ struct OpponentTurnView: View {
             thinkingWeighed = suggestion?.weighed ?? 0
             thinkingComplete = suggestion?.complete ?? true
             computed = suggestion?.asHarmonyMove
+
+            // Auf dem Gerät gibt es keinen Bildschirm zum Mitlesen und kein
+            // Messprogramm: Was die Suche dort kostet, lässt sich nur aus
+            // der App selbst erfahren. `xcrun devicectl device process
+            // launch --console` nimmt diese Zeile auf.
+            if logsSearch {
+                print(String(format: "SUCHE %.1f s, %d Züge, %@, %@",
+                             thinkingTook ?? 0, thinkingWeighed,
+                             computed?.notation ?? "—",
+                             thinkingComplete ? "vollständig" : "abgebrochen"))
+            }
         }
     }
 

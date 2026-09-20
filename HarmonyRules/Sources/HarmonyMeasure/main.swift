@@ -89,8 +89,11 @@ Zufallsschicht vermeidet — siehe `docs/06-durchstich.md`.
 // timed and multiplied out: generating and weighing run together, so the
 // whole is the one plus the other.
 
-print("Was eine Bewertung kostet, und was die Suche daraus folgt\n")
-print(pad("belegt", 8) + pad("je Bewertung", 15) + pad("Züge", 12)
+print("Was ein Zug kostet, und was die Suche daraus folgt\n")
+print("Gewogen wird, wie die Suche es tut: einmal je Legung vorrechnen,")
+print("dann die Züge darunter. Die Spalte »einzeln« ist dieselbe Bewertung")
+print("ohne Vorgerechnetes — der Zustand vor dieser Beschleunigung.\n")
+print(pad("belegt", 8) + pad("je Zug", 11) + pad("einzeln", 11) + pad("Züge", 12)
       + pad("Erzeugen", 12) + "Suche gesamt")
 
 for down in [6, 12, 18] {
@@ -101,34 +104,65 @@ for down in [6, 12, 18] {
     let generating = Date().timeIntervalSince(generated)
     guard let sample = moves.first else { continue }
 
-    // Ein paar hundert Bewertungen, damit die Zahl nicht am Rauschen hängt.
+    // Ein paar hundert Züge, damit die Zahl nicht am Rauschen hängt.
     let rounds = 200
     let available = Search.availability(after: sample.space, of: state)
+
+    // So, wie die Suche rechnet: je Legung einmal vorrechnen.
+    let anchors = Moves.standingHabitatCells(of: state)
+    var weighed = 0
     let started = Date()
+    for laying in Moves.layings(of: state.display[0], on: state) {
+        if weighed >= rounds { break }
+        let laid = state.laying(stacks: laying.stacks, space: 0)
+        let prepared = Evaluator.prepare(laid, availability: available)
+        for move in Moves.turns(space: 0, laying: laying, from: state, anchors: anchors) {
+            weighed += 1
+            _ = Evaluator.evaluate(state.applying(move), availability: available,
+                                   prepared: move.cubes.isEmpty ? prepared : nil)
+        }
+    }
+    let each = Date().timeIntervalSince(started) / Double(max(weighed, 1))
+
+    // Und dieselbe Arbeit ohne Vorgerechnetes, zum Vergleich.
+    let alone = Date()
     for move in moves.prefix(rounds) {
         _ = Evaluator.evaluate(state.applying(move), availability: available)
     }
-    let each = Date().timeIntervalSince(started) / Double(min(rounds, moves.count))
+    let single = Date().timeIntervalSince(alone) / Double(min(rounds, moves.count))
 
     print(pad("\(down)", 8)
-          + pad(String(format: "%.0f µs", each * 1e6), 15)
+          + pad(String(format: "%.0f µs", each * 1e6), 11)
+          + pad(String(format: "%.0f µs", single * 1e6), 11)
           + pad(grouped(moves.count), 12)
           + pad(String(format: "%.1f s", generating), 12)
           + String(format: "%.0f s", generating + each * Double(moves.count)))
 }
 
 // Eine kleine Stellung ganz durchgerechnet, damit die Hochrechnung oben
-// einen Beleg hat.
-var small = position(side: .a, stonesDown: 18)
+// einen Beleg hat — und daneben dieselbe Suche auf einem Kern, damit
+// sichtbar bleibt, was das Verteilen bringt.
+var small = position(side: .a, stonesDown: 12)
 small.display = [small.display[0]]
-let started = Date()
+
+let serialStart = Date()
+let serial = Search.best(from: small, cores: 1)
+let serialTime = Date().timeIntervalSince(serialStart)
+
+let manyStart = Date()
 let suggestion = Search.best(from: small)
-let seconds = Date().timeIntervalSince(started)
-print(String(format: "\nEin Auslagenfeld, 18 Felder belegt: %.1f s für einen Vorschlag", seconds))
+let manyTime = Date().timeIntervalSince(manyStart)
+
+let cores = ProcessInfo.processInfo.activeProcessorCount
+print(String(format: "\nEin Auslagenfeld, 12 Felder belegt, %d Züge:",
+             suggestion?.weighed ?? 0))
+print(String(format: "  ein Kern      %5.2f s", serialTime))
+print(String(format: "  %2d Kerne      %5.2f s   ×%.2f", cores, manyTime, serialTime / manyTime))
 if let suggestion {
     let where_ = suggestion.move.placements.keys.sorted().map { cellName($0) }
-    print("Vorschlag: \(where_.joined(separator: " "))"
+    print("  Vorschlag: \(where_.joined(separator: " "))"
           + (suggestion.move.cardTaken.map { " +\($0)" } ?? "")
-          + String(format: ", Wert %.1f, Abstand %.1f",
-                   suggestion.value, suggestion.margin ?? 0))
+          + String(format: ", Wert %.1f", suggestion.value)
+          + (serial?.move == suggestion.move ? " — derselbe wie auf einem Kern"
+                                             : " — ANDERER ZUG als auf einem Kern"))
 }

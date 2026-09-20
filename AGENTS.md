@@ -14,28 +14,38 @@ Steinbilanz —, entstanden, weil der Dummy diese Regeln zum Anzeigen
 braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
 siehe `docs/`.
 
-**Wo es steht:** Stand 2026-09-20 abends. Der Durchstich aus Phase 6
+**Wo es steht:** Stand in der Nacht auf den 2026-09-21. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 133 Regelfällen (`tools/tests.sh`, unter einer
+Weglegen. Geprüft wird mit 139 Regelfällen (`tools/tests.sh`, unter einer
 Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
 
-**Das eine große Problem ist die Rechenzeit** — es ist seit dem
-2026-09-20 abends kleiner als gedacht. Die 110 Sekunden, die auf einem
-iPhone 15 Pro Max für eine halbvolle Stellung gemessen wurden, stammen aus
-einem **Debug**-Bau; im Release-Bau sind es 9,5 Sekunden im Simulator,
-Faktor 5,8 bei identischem Vorschlag. Damit ist ein halbvolles Brett unter
-der halben Minute, die Szenario 2 gibt, und offen bleibt die frühe Partie
-mit rund drei Minuten, also Faktor 6.
+**Die Rechenzeit war das große Problem und ist es kaum noch.** In der Nacht
+auf den 2026-09-21 sind vier Hebel gebaut und auf dem Gerät gemessen worden:
+im Release bauen (Faktor 5,8), Legungsabhängiges einmal je Legung rechnen
+statt sechsmal (2,5), die Nachbarschaft als Tabelle (1,15) und die Legungen
+auf mehrere Kerne verteilen (2,3 auf dem Gerät). Dazu das Sieben der
+Anwärter über einen Würfel hinweg, das den teuersten Fall halbiert.
 
-**Der nächste Schritt ist deshalb die Geschwindigkeit**, nicht der
-Feinschliff: `docs/06-durchstich.md` nennt unter *Fünf Abhilfen* die Hebel,
-nach Wirkung geordnet und jeweils mit Messwert — im Release bauen
-(erledigt), das Legungsabhängige einmal je Legung rechnen statt sechsmal,
-inkrementell bewerten, den längsten Fluss billiger suchen, über die
-Legungen auf mehrere Kerne verteilen. Was danach ansteht, steht dort unter
-*Was als Nächstes kommt*. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am Ende
-auf.
+Auf dem iPhone 15 Pro Max, Release-Bau:
+
+| Stellung | Züge | Zeit |
+| --- | --- | --- |
+| halbvolles Brett | 12.270 | 3 s |
+| Harmonys erster Zug | 235.290 | 14 s |
+| 6 Steine, 2 Karten | 112.085 | 8 s |
+| 3 Karten, fast leerer Plan | 401.856 | **54 s** |
+
+**Der teuerste Fall ist nicht der leerste Plan**, sondern drei Karten in der
+Hand auf offenem Plan: Dort legen sechs von zehn Zügen einen Würfel. Diese
+eine Zeile liegt weiter über der halben Minute aus Szenario 2, und deshalb
+bleibt der Abkürzen-Knopf. Was offen ist, steht in `docs/06-durchstich.md`
+unter *Fünf Abhilfen*: im Wesentlichen das inkrementelle Bewerten. Was in
+Phase 5 offen blieb, führt `docs/05-ui.md` am Ende auf.
+
+**Fürs Gerät `-configuration Release` bauen.** Das Schema baut beim
+Laufenlassen Debug, und Debug ist hier sechs- bis achtmal langsamer. Die
+Zahlen oben gelten nur für den Release-Bau.
 
 ## Aufbau
 
@@ -99,9 +109,16 @@ Signierung ist automatisch eingerichtet; das Profil gilt jeweils rund eine
 Woche und muss danach neu erzeugt werden.
 
 ```bash
-xcodebuild ... -destination 'platform=iOS,id=<Geräte-UDID>' -allowProvisioningUpdates build
+xcodebuild ... -configuration Release -destination 'platform=iOS,id=<Geräte-UDID>' -allowProvisioningUpdates build
+```
+
+```bash
 xcrun devicectl device install app --device <Geräte-UDID> <Pfad>/Harmony.app
 ```
+
+**`-configuration Release` gehört dazu**, sonst landet ein Debug-Bau auf dem
+Gerät und die Engine rechnet sechs- bis achtmal so lange. Der Pfad zum
+gebauten `Harmony.app` endet dann auf `Release-iphoneos/`.
 
 `xcrun devicectl list devices` zeigt gekoppelte Geräte.
 
@@ -198,14 +215,31 @@ Tisch liegt kein Mac.
 - Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
   Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
   benutzen. Siehe `docs/pruefverfahren.md`.
-- Sechs Startparameter: `-forgetGame` verwirft einen gespeicherten Stand
+- Sieben Startparameter: `-forgetGame` verwirft einen gespeicherten Stand
   beim Start, was die Persistenztests brauchen; `-harmonyTurn` öffnet direkt auf Harmonys
   Bildschirm, mit einer Attrappenstellung mitten in der Partie;
   `-sampleMove` hält zusätzlich die Engine heraus und zeigt den
   Beispielzug, was die Oberflächentests brauchen; `-longCards` legt die
   fünf längsten Kartennamen in die Auslage, um Umbrüche im schlechtesten
   Fall zu prüfen; `-endScore` und `-endScoreB` öffnen die Endwertung über
-  einem Schlussbrett der jeweiligen Planseite.
+  einem Schlussbrett der jeweiligen Planseite; `-logSearch` schreibt nach
+  jeder Suche eine Zeile mit Zeit, Zugzahl, Notation und Vollständigkeit auf
+  die Standardausgabe.
+
+  **`-logSearch` ist der einzige Weg an die Rechenzeit auf dem Gerät** — dort
+  läuft kein Messprogramm und liest niemand mit. Ein Spielstand lässt sich
+  vorher hineinlegen, um eine bestimmte Stellung zu messen:
+
+  ```bash
+  xcrun devicectl device copy to --device <UDID> --domain-type appDataContainer \
+    --domain-identifier de.superook.Harmony --source stellung.json \
+    --destination "Library/Application Support/spielstand.json"
+  ```
+
+  ```bash
+  xcrun devicectl device process launch --device <UDID> --console \
+    --terminate-existing de.superook.Harmony -- -logSearch
+  ```
 
   **Ohne Startparameter beginnt eine Partie leer** — leerer Spielplan,
   keine Karten in Harmonys Hand — und füllt sich über die Züge. Die

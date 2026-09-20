@@ -386,7 +386,7 @@ Die Kopie eines Zustands je Zug (`state.applying`) kostet dagegen 0,5 bis
 0,7 µs und ist damit kein Posten. Die Wörterbücher schaden, aber nicht dort,
 wo man sie vermutet.
 
-### Mehrere Kerne: Faktor 3,6 auf acht, etwa 2 auf dem Gerät
+### Mehrere Kerne: Faktor 3,7 auf acht, 2,3 auf dem Gerät
 
 Die Suche läuft heute auf **einem** Kern. Der Versuch, die Legungen eines
 Auslagefelds in gleich große Stücke zu schneiden und nebenläufig zu wiegen,
@@ -421,50 +421,168 @@ verschiedene Züge — was `SearchTests` zusichert und die Momentaufnahmen aus
 und 64 Stücken kam derselbe Zug heraus.
 
 Auf dem Gerät ist weniger zu erwarten: Der A17 Pro hat **zwei** schnelle und
-vier sparsame Kerne, nicht vier und vier. Hochgerechnet bleiben **Faktor 2 bis
-2,5**, dazu Drosselung bei minutenlanger Vollast und der Stromsparmodus, der
-Kerne wegnimmt.
+vier sparsame Kerne, nicht vier und vier. Hochgerechnet waren Faktor 2 bis
+2,5; **gemessen sind es 2,3** — 124,4 s gegen 53,7 s für dieselbe Stellung,
+siehe *Auf dem Gerät nachgemessen*. Dazu kommen Drosselung bei minutenlanger
+Vollast und der Stromsparmodus, der Kerne wegnimmt.
 
-### Fünf Abhilfen, nach Wirkung geordnet
+Gebaut ist es so: Die Legungen eines Auslagefelds werden in so viele Stücke
+geschnitten, wie Kerne da sind, jedes Stück für sich gewogen, und die
+Ergebnisse **in der Reihenfolge der Stücke** verschmolzen. Unter 64 Legungen
+bleibt die Suche auf einem Kern; die Übergabe lohnt dort nicht. Ein Prüffall
+hält die Bedingung: Auf 1, 2, 8 und 64 Stücken muss derselbe Zug mit
+demselben Wert, demselben zweitbesten und derselben Zugzahl herauskommen.
 
-0. **Im Release bauen und messen.** ✅ **Gemessen, Faktor 5,8 bis 7,8.**
-   Kostet nichts, ändert die Antwort nicht und verschiebt die Bewertung aller
-   folgenden Punkte. Offen bleibt, dass das Xcode-Schema beim Laufenlassen
-   weiter Debug baut — fürs Gerät gehört `-configuration Release` an den
-   Installationsbefehl.
-1. **Legungsabhängiges einmal je Legung rechnen.** Fluss, Landschaftswertung
-   und `Habitat.all` hängen allein an der Legung, nicht daran, welche Karte
-   genommen wurde; sechs Züge teilen sich eine. Dazu die Doppelrechnung von
-   `Habitat.all` zwischen Anwärtern und Vielfalt. Hochgerechnet aus den
-   gemessenen Teilen: **Faktor 3**, also rund 320 µs statt 1.100 µs je Zug.
-2. **Inkrementell bewerten.** Ein Zug ändert höchstens drei Felder. Die
-   Landschaftswertung, die Flussaussicht und die Anwärter ändern sich nur
-   dort. `04-architektur.md` sieht das Vorhalten der Musterinstanzen ohnehin
-   vor; hier ist der Beleg, dass es nötig ist. Größter Hebel der verbleibenden.
-3. **Den längsten Fluss billiger suchen.** Zwei Startpunkte statt achtzehn,
-   siehe *Wohin die Zeit einer Bewertung geht*. Rund ein Fünftel einer
-   Bewertung, und die Näherung wird nicht schlechter begründet, als sie es
-   heute schon ist.
-4. **Über die Legungen auf mehrere Kerne verteilen.** Faktor 2 bis 2,5 auf dem
-   Gerät. Bewusst hinter dem Sparen: Nebenläufigkeit verteilt dieselbe Arbeit
-   und verbraucht denselben Strom in kürzerer Zeit — sechs Kerne, die
-   überflüssige Arbeit tun, tun überflüssige Arbeit.
-5. **Keine Wörterbücher für Spielplan und Zug.** 23 bis 25 feste Felder sind
-   ein Feld fester Länge, kein Streuwertspeicher. Gemessen ist der Posten
-   kleiner als gedacht — das Kopieren eines Zustands kostet 0,5 µs —, der
-   Gewinn läge in den Streuwerten innerhalb der Bewertung, nicht im Kopieren.
+### Fünf Abhilfen, nach Wirkung geordnet — vier davon gebaut
 
-Erledigt und gemessen sind bereits zwei kleinere: die Landschaftstabelle wird
-einmal gerechnet statt millionenfach, und die Würfelsuche der Handkarten hängt
-nicht mehr in der Schleife über die Kartenwahl. Zusammen 43 s → 18,6 s für das
-Erzeugen.
+Die Liste stand am Abend des 2026-09-20 mit Hochrechnungen daneben. Am selben
+Abend sind vier davon gebaut und gemessen worden; die Messwerte stehen jetzt
+anstelle der Schätzungen, auch dort, wo sie die Schätzung widerlegen.
+
+0. **Im Release bauen und messen.** ✅ **Faktor 5,8 bis 7,8.** Kostet nichts
+   und ändert die Antwort nicht. Fürs Gerät gehört `-configuration Release`
+   an den Bau; das Xcode-Schema baut beim Laufenlassen weiter Debug.
+1. **Legungsabhängiges einmal je Legung rechnen.** ✅ **Faktor 2,5** (981 →
+   393 µs je Zug bei sechs belegten Feldern). Sechs Züge teilen sich eine
+   Legung. Gerechnet wird seither einmal je Legung: die Landschaftswertung,
+   die Flussaussicht und die Mustersuche je Karte — letztere lief bis dahin
+   **zweimal je Zug**, einmal für die Anwärter und einmal für die Vielfalt.
+   Siehe *Was ein Würfel davon übriglässt*.
+2. **Den längsten Fluss billiger suchen.** ✅ Anders gelöst als vorgesehen,
+   siehe *Die Geometrie wurde je Frage neu gerechnet*: Statt weniger
+   Startpunkte zu nehmen und damit die Näherung zu verschlechtern, ist die
+   Nachbarschaft jetzt eine Tabelle. Faktor 1,15 auf die ganze Bewertung,
+   bei unverändertem Ergebnis.
+3. **Über die Legungen auf mehrere Kerne verteilen.** ✅ **Faktor 3,7** auf
+   vier schnellen und vier sparsamen Kernen, **2,3** auf dem Gerät.
+4. **Inkrementell bewerten.** Offen, und damit der größte verbliebene Hebel.
+   Ein Zug ändert höchstens drei Felder; die Landschaftswertung, die
+   Flussaussicht und die Anwärter ändern sich nur dort.
+5. **Keine Wörterbücher für Spielplan und Zug.** Offen, aber kleiner als
+   gedacht: Das Kopieren eines Zustands kostet 0,5 µs. Der Gewinn läge in
+   den Streuwerten innerhalb der Bewertung, nicht im Kopieren.
+
+### Die Geometrie wurde je Frage neu gerechnet
+
+`Board.neighbours` addierte sechs Würfelrichtungen, rechnete sie in Namen
+zurück und warf die vom Brett gefallenen weg — drei Felder angelegt und
+weggeworfen, für eine der meistgestellten Fragen der Engine. Dazu baute
+`BoardScoring.geometry` bei **jeder** dieser Fragen ein neues `Board`.
+
+Jetzt ist die Nachbarschaft eine Tabelle, einmal je Brett gefüllt, und die
+zwei Bretter dieses Spiels stehen als `Board.sideA` und `Board.sideB`. Das
+Ergebnis ändert sich nicht, die Bewertung wird um ein Siebtel billiger.
+
+### Was ein Würfel davon übriglässt
+
+Das Vorgerechnete galt zunächst nur für Züge ohne Würfel — ein Würfel friert
+sein Feld ein, also liegen die Muster danach anders. Im Suchcode stand dazu,
+das betreffe *wenige Promille der Züge*. Diese Zahl war an einer einzigen
+Stellung abgelesen (183 von 154.785) und **um drei Größenordnungen falsch**:
+
+| Stellung | Züge | davon mit Würfel | je Zug |
+| --- | --- | --- | --- |
+| leerer Plan, 0 Karten | 235.290 | 0,0 % | 59 µs |
+| 6 Steine, 2 Karten | 112.085 | 0,3 % | 119 µs |
+| **3 Steine, 3 Karten** | 401.856 | **59,6 %** | **809 µs** |
+
+Drei Karten auf fast leerem Plan heißen drei Muster dicht vor der
+Vollendung, und jede Teilmenge der setzbaren Würfel ist ein eigener Zug. Dort
+ist der Sonderfall der Regelfall, und ein Würfelzug kostete 1274 µs gegen
+235 µs.
+
+**Ein Würfel verdirbt den Vorrat nicht, er siebt ihn.** `Habitat.append`
+weist einen Anwärter wegen eines Würfels auf Feld *x* aus genau zwei Gründen
+ab: *x* gehört zum Muster und müsste dort noch wachsen — das ist
+`missing[x]` —, oder *x* ist das Würfelfeld des Anwärters selbst. Sonst
+schaut die Funktion die Würfel nicht an. Die Anwärter für einen Würfel mehr
+sind also **genau** die des Vorrats, auf die beides nicht zutrifft, in
+derselben Reihenfolge. Der Fall, der das kippen könnte, tritt nicht ein: Zwei
+Anwärter mit demselben Schlüssel sind dieselbe Lage, also wirft ein Würfel
+beide oder keinen.
+
+Seither wird gesiebt statt neu gesucht:
+
+| | vorher | nachher |
+| --- | --- | --- |
+| Würfelzug (3 Karten) | 1274 µs | **249 µs** |
+| Mittel über alle Züge | 809 µs | **240 µs** |
+
+Ein Würfelzug kostet damit ungefähr so viel wie ein gewöhnlicher (249 gegen
+229 µs). Ein Prüffall hält das: *Über einen Würfel hinweg gilt das
+Vorgerechnete weiter* vergleicht auf echten Würfelzügen Term für Term gegen
+die vollständige Neuberechnung und verlangt, dass die Stellung mindestens
+zwanzig Würfelzüge hergibt.
+
+### Dieselbe Stellung war nicht immer dasselbe wert
+
+Beim Bau des Vorrechnens fiel eine Stelle auf, an der die Engine nicht
+reproduzierbar war. `BoardScoring.regions` lief mit `Set.first` über eine
+Menge, und `longestPath` behält von mehreren gleich langen Wegen den ersten.
+Damit hing die Flussaussicht an der Streuwertreihenfolge — die zwischen zwei
+gleich befüllten Mengen verschieden ausfällt und, weil Swift seine Streuwerte
+je Programmlauf anders würfelt, auch zwischen zwei Starts der App. Dieselbe
+Stellung konnte gestern einen Zehntelpunkt anders wert sein als heute.
+
+Die Reihenfolge ist jetzt festgelegt, und ein Prüffall in `ScoringTests`
+hält sie: Zwei Mengen mit demselben Inhalt, in umgekehrter Reihenfolge
+gefüllt, müssen dieselbe Auskunft geben. Gefunden wurde das nur, weil die
+Zusicherung *Vorgerechnetes ändert am Ergebnis nichts* Term für Term
+vergleicht statt nur die Summe.
+
+### Auf dem Gerät nachgemessen
+
+Am 2026-09-20 nachts auf dem iPhone 15 Pro Max, Release-Bau, über den
+Startparameter `-logSearch` und `devicectl … --console` ausgelesen:
+
+| Stellung | Züge | Zeit |
+| --- | --- | --- |
+| Harmonys erster Zug — leerer Plan, leere Hand | 235.290 | 13,8 s |
+| 6 Steine, 2 Karten | 112.085 | 8,2 s |
+| 3 Steine, 3 Karten, vor dem Sieben | 401.856 | 124,4 s |
+| **dieselbe, nach dem Sieben** | 401.856 | **53,7 s** |
+
+Die zweite Zeile ist genau der Fall, den die Tabelle *nötiger Faktor* mit
+17 Minuten hochrechnete. Die Hochrechnung war zu pessimistisch — sie
+multiplizierte eine an einer Stellung gemessene Bewertungszeit mit der
+Zugzahl, und diese Zeit schwankt um mehr als eine Größenordnung.
+
+**Der teuerste Fall ist nicht der leerste Plan.** Harmonys allererster Zug
+ist mit 59 µs je Zug der billigste überhaupt: leere Hand heißt keine
+Anwärter und keine Würfel. Teuer wird es, sobald sie drei Karten hält und
+der Plan noch offen ist — 401.856 Züge, und jede Karte mit 47 bis 85
+Anwärtern.
+
+Damit steht auch fest, dass der **Abbruchknopf bleibt**. Szenario 2 gibt
+etwa eine halbe Minute; 53,7 Sekunden sind mehr, und zwar in der frühen
+Partie, in der die Vorderfrau längst fertig überlegt hat.
+
+Aus einer früheren Runde stammen zwei kleinere, die schon vorher drin waren:
+die Landschaftstabelle wird einmal gerechnet statt millionenfach, und die
+Würfelsuche der Handkarten hängt nicht mehr in der Schleife über die
+Kartenwahl. Zusammen 43 s → 18,6 s für das Erzeugen.
+
+### Wo die Rechenzeit jetzt steht
+
+Alles zusammen, am Tisch gemessen und nicht gerechnet:
+
+| Stellung | am Morgen des 2026-09-20 | am Abend |
+| --- | --- | --- |
+| halbvolles Brett | 110 s | **3 s** |
+| 6 Steine, 2 Karten | 17 min (hochgerechnet) | **8 s** |
+| 3 Karten, fast leerer Plan | 124 s | **54 s** |
+
+Die Zeile, die offen bleibt, ist die letzte. Sie ist auch die einzige, für
+die es den Abbruch noch braucht.
 
 ## Was als Nächstes kommt
 
-1. **Die Bewertung schneller machen**, nach der Liste oben — Punkt 0 ist
-   gemessen und kostet nichts, Punkt 1 ist der nächste Umbau. Erst danach
-   lohnt sich Feinschliff an den Gewichten: Eine Stellschraube, deren Wirkung
-   man erst nach Minuten sieht, wird nicht gedreht.
+1. **Inkrementell bewerten** — Punkt 4 der Liste oben und das, was von ihr
+   übrig ist. Erst danach lohnt sich Feinschliff an den Gewichten: Eine
+   Stellschraube, deren Wirkung man erst nach Minuten sieht, wird nicht
+   gedreht. Nach der Nacht vom 2026-09-20 sieht man sie nach Sekunden, was
+   das Argument abschwächt, aber die Reihenfolge nicht umdreht: Der teuerste
+   Zug dauert weiter fast eine Minute.
 2. **Den Dummy-Zustand ablösen.** Eine **Brücke** steht seit dem 2026-09-20
    (`MyApp/Dummy/EngineBridge.swift`): Sie übersetzt den Zustand des
    Klickdummys in einen `EngineState` und den Vorschlag zurück in einen
