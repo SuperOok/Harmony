@@ -12,13 +12,17 @@ struct SetupView: View {
 
     @State private var step = 1
     @State private var players: [String] = []
-    @State private var harmonySeat = 2
+    /// The full turn order including Harmony. Kept apart from the choice of
+    /// players: who plays and in which order are two questions, and the
+    /// second is often settled only after the display is on the table —
+    /// once it is clear who starts and who works the device.
+    @State private var seating: [String] = ["Harmony"]
     @State private var taps = 0
 
     var body: some View {
         if step == 1 {
             SetupPlayersView(players: $players,
-                             harmonySeat: $harmonySeat,
+                             seating: $seating,
                              taps: $taps,
                              onNext: { step = 2 })
         } else {
@@ -28,35 +32,21 @@ struct SetupView: View {
                            onStart: onStart)
         }
     }
-
-    /// The order players were picked in **is** the seating; Harmony takes
-    /// the place chosen for her.
-    private var seating: [String] {
-        var order = players
-        order.insert("Harmony", at: min(harmonySeat, order.count))
-        return order
-    }
 }
 
 /// Step one: who is playing, and in which order.
 struct SetupPlayersView: View {
     @Binding var players: [String]
-    @Binding var harmonySeat: Int
+    @Binding var seating: [String]
     @Binding var taps: Int
     var onNext: () -> Void
 
     @State private var humanCount = 2
     @State private var pickerOpen = false
 
-    private var seating: [String] {
-        var order = players
-        order.insert("Harmony", at: min(harmonySeat, order.count))
-        return order
-    }
-
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 20) {
                 TitledBlock("Wie viele Menschen?") {
                     Picker("Menschen", selection: $humanCount) {
                         Text("1").tag(1)
@@ -66,20 +56,20 @@ struct SetupPlayersView: View {
                     .pickerStyle(.segmented)
                     .onChange(of: humanCount) { _, count in
                         if players.count > count { players.removeLast(players.count - count) }
-                        harmonySeat = min(harmonySeat, count)
+                        rebuildSeating()
                     }
                     .accessibilityIdentifier("human-count")
                 }
 
                 TitledBlock("Wer spielt mit?") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 10) {
                         if players.isEmpty {
                             Text("Noch niemand gewählt.")
                                 .font(.callout).foregroundStyle(.secondary)
                         } else {
                             FlowLayout(spacing: 8) {
-                                ForEach(Array(players.enumerated()), id: \.offset) { index, name in
-                                    Text("\(index + 1). \(name)")
+                                ForEach(players, id: \.self) { name in
+                                    Text(name)
                                         .font(.callout)
                                         .padding(.horizontal, 12).padding(.vertical, 7)
                                         .background(Capsule().fill(Color(.secondarySystemBackground)))
@@ -87,50 +77,46 @@ struct SetupPlayersView: View {
                             }
                         }
 
-                        HStack {
-                            Button(players.isEmpty ? "Spieler wählen" : "Ändern") {
-                                taps += 1
-                                pickerOpen = true
-                            }
-                            .accessibilityIdentifier("choose-players")
+                        Button(players.isEmpty ? "Spieler wählen" : "Ändern") {
+                            taps += 1
+                            pickerOpen = true
+                        }
+                        .accessibilityIdentifier("choose-players")
+                    }
+                }
 
-                            Spacer()
-
-                            if !players.isEmpty {
-                                Button("Zurück") {
-                                    taps += 1
-                                    players.removeLast()
+                if players.count == humanCount {
+                    TitledBlock("Zugreihenfolge — zum Verschieben ziehen") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            List {
+                                ForEach(seating, id: \.self) { name in
+                                    HStack {
+                                        Text("\((seating.firstIndex(of: name) ?? 0) + 1).")
+                                            .font(.callout.monospacedDigit())
+                                            .foregroundStyle(.secondary)
+                                        Text(name).font(.callout)
+                                    }
                                 }
-                                .font(.footnote)
-                                .accessibilityIdentifier("players-undo")
+                                .onMove { from, to in
+                                    seating.move(fromOffsets: from, toOffset: to)
+                                }
                             }
-                        }
-
-                        Text("Die Reihenfolge der Auswahl ist die Zugreihenfolge. "
-                             + "Bekannte Spieler stehen in der Liste; neue lassen "
-                             + "sich dort eintragen.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                }
-
-                TitledBlock("Harmonys Platz") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("Platz", selection: $harmonySeat) {
-                            ForEach(0...humanCount, id: \.self) { seat in
-                                Text("\(seat + 1).").tag(seat)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        Text(seating.enumerated()
-                             .map { "\($0.offset + 1). \($0.element)" }
-                             .joined(separator: "   "))
-                            .font(.footnote).foregroundStyle(.secondary)
+                            .environment(\.editMode, .constant(.active))
+                            .listStyle(.plain)
+                            .scrollDisabled(true)
+                            .frame(height: CGFloat(seating.count) * 46)
                             .accessibilityIdentifier("seating")
+
+                            Text("Auch Harmony lässt sich verschieben. Die "
+                                 + "Reihenfolge kann später noch geändert "
+                                 + "werden — der Weg zurück steht in der "
+                                 + "Auslage offen.")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
                     }
                 }
 
-                Spacer()
+                Spacer(minLength: 0)
             }
             .padding()
             .navigationTitle("Spieler")
@@ -168,7 +154,19 @@ struct SetupPlayersView: View {
                     onTap: { taps += 1 },
                     onComplete: { pickerOpen = false })
             }
+            .onChange(of: players) { _, _ in rebuildSeating() }
         }
+    }
+
+    /// Keeps the order already arranged and puts anyone new in front of
+    /// Harmony, so choosing a player does not silently reshuffle the seats.
+    private func rebuildSeating() {
+        var order = seating.filter { $0 == "Harmony" || players.contains($0) }
+        for name in players where !order.contains(name) {
+            order.insert(name, at: max(order.count - 1, 0))
+        }
+        if !order.contains("Harmony") { order.append("Harmony") }
+        seating = order
     }
 }
 
