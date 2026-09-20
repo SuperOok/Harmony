@@ -315,6 +315,25 @@ dort nicht.
 Zielstein muss unbesetzt sein. Das ist die Kehrseite davon, dass ein Stein zu
 mehreren Lebensräumen gehören darf.
 
+**Ein Tierwürfel versperrt das Weiterbauen auf seinem Stein.** Nachgetragen
+am 2026-09-20. Die Anleitung sagt es nicht, das Material beantwortet es: Der
+Würfel liegt obenauf, ein weiterer Spielstein hat dort keinen Platz. Für die
+Engine ist die Zelle damit eingefroren — sie kann nie mehr etwas anderes
+werden.
+
+Daraus folgt eine Feinheit, die gutes Spiel von bloß regelkonformem
+unterscheidet: **Ein Habitat absichtlich zu zerstören ist erlaubt und
+manchmal der beste Zug.** Ein Berg der Höhe 1 nimmt seinen Würfel, danach
+wächst dieselbe Zelle zum Berg der Höhe 2 für die nächste Karte. Das erste
+Muster ist dahin, sein Würfel bleibt liegen, und beide Karten sind mit einem
+Stein weniger bedient, als zwei getrennte Berge gekostet hätten. Möglich ist
+das nur, wenn der erste Würfel **nicht** auf der wachsenden Zelle liegt,
+sondern auf einer anderen seines Musters.
+
+Weil optionale Aktionen zwischen dem Legen zweier Spielsteine ausgeführt
+werden dürfen, passt das sogar in **einen** Zug: Stein, Würfel, Stein,
+Würfel.
+
 ## Offene Punkte
 
 Derzeit keine.

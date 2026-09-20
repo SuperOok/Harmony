@@ -159,6 +159,35 @@ wie senkrecht spiegelbar, was die Eröffnungszüge um etwa den Faktor vier
 kürzen würde. Sobald ein Stein liegt, ist die Symmetrie gebrochen; der
 Gewinn beschränkt sich auf den ersten Zug und lohnt den Sonderfall nicht.
 
+## Verschachtelte Landschaften
+
+Beim Bau der Mustersuche ist nachgerechnet worden, welche Landschaften
+überhaupt ineinander übergehen können — welche also auf derselben Zelle
+nacheinander zwei Karten bedienen. Die Bedingung ist, dass der eine Stapel
+ein **Anfangsstück** des anderen ist, denn ein Stein kommt nie wieder
+herunter. Es sind genau vier Paare:
+
+| von | nach | Stapel |
+| --- | --- | --- |
+| `Berg1` | `Berg2` | `S` → `SS` |
+| `Berg1` | `Berg3` | `S` → `SSS` |
+| `Berg2` | `Berg3` | `SS` → `SSS` |
+| `Berg1` | `Gebäude` | `S` → `SZ` |
+
+Die drei Bergpaare waren erwartet. **Der Übergang vom Berg der Höhe 1 ins
+Gebäude war es nicht**: Ein Gebäude ist ein roter Stein auf Rot, Braun oder
+Grau, und in der Grau-Variante steht darunter derselbe einzelne graue Stein,
+den `Berg1` verlangt. Eine Zelle kann also als Berg ihren Würfel nehmen und
+danach Gebäude für eine zweite Karte werden.
+
+Bäume können das nicht: `Baum1` ist ein grüner Stein auf nichts, `Baum2`
+verlangt einen braunen darunter, und der lässt sich nicht mehr unterschieben.
+Auf Wasser und Feld wird ohnehin nie gestapelt.
+
+Die Liste ist hergeleitet, nicht aufgeschrieben — sie fällt aus den vierzehn
+zulässigen Stapeln und der Präfixeigenschaft. Ein Test sichert genau diese
+vier Paare zu, damit eine spätere Änderung an der Stapelliste hier auffällt.
+
 ## Offene Punkte
 
 1. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
