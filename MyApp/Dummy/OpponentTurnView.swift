@@ -1,4 +1,5 @@
 import SwiftUI
+import HarmonyRules
 
 /// Phase 5 click-through prototype: recording other players' turns, one
 /// after another. No engine and no rule checking — what is measured is the

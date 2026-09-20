@@ -1,4 +1,5 @@
 import SwiftUI
+import HarmonyRules
 import Playgrounds
 
 struct ContentView: View {

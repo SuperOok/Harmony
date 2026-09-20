@@ -6,6 +6,10 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		000000000000000000000320 /* HarmonyRules in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000310 /* HarmonyRules */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Harmony.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Harmony.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -22,6 +26,7 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				000000000000000000000320 /* HarmonyRules in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -60,11 +65,28 @@
 				000000000000000000000010 /* MyApp */,
 			);
 			name = Harmony;
+			packageProductDependencies = (
+				000000000000000000000310 /* HarmonyRules */,
+			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Harmony.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		000000000000000000000300 /* XCLocalSwiftPackageReference "HarmonyRules" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = HarmonyRules;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		000000000000000000000310 /* HarmonyRules */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HarmonyRules;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin PBXProject section */
 		000000000000000000000000 /* Project object */ = {
@@ -90,6 +112,9 @@
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
+			packageReferences = (
+				000000000000000000000300 /* XCLocalSwiftPackageReference "HarmonyRules" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (

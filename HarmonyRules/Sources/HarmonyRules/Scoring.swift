@@ -1,6 +1,6 @@
 import Foundation
 
-enum BoardSide { case a, b }
+public enum BoardSide: Sendable { case a, b }
 
 /// Which cells currently earn points.
 ///
@@ -9,14 +9,20 @@ enum BoardSide { case a, b }
 /// exactly once, checked per `pruefverfahren.md`, storey one. It sits here
 /// because the dummy cannot show what it is meant to show without it. At
 /// the walking skeleton it moves and is deleted here, not copied.
-struct BoardScoring {
-    let side: BoardSide
-    let columns: [Int]
-    let stacks: [Int: [Stone]]
+public struct BoardScoring {
+    public let side: BoardSide
+    public let columns: [Int]
+    public let stacks: [Int: [Stone]]
+
+    public init(side: BoardSide, columns: [Int], stacks: [Int: [Stone]]) {
+        self.side = side
+        self.columns = columns
+        self.stacks = stacks
+    }
 
     /// Every space on the board, empty ones included — the island scoring
     /// on side B counts them.
-    var allCells: [Int] {
+    public var allCells: [Int] {
         columns.enumerated().flatMap { index, count in
             (1...count).map { (index + 1) * 10 + $0 }
         }
@@ -24,7 +30,7 @@ struct BoardScoring {
 
     /// Neighbours of a cell `<column><row>`. Even columns, counted from one,
     /// sit half a cell lower; see `regeln-basisspiel.md`.
-    func neighbours(_ cell: Int) -> [Int] {
+    public func neighbours(_ cell: Int) -> [Int] {
         let c = cell / 10 - 1, r = cell % 10 - 1        // zero based
         let offset = c % 2 == 0 ? -1 : 1
         var candidates = [(c, r - 1), (c, r + 1)]
@@ -89,7 +95,7 @@ struct BoardScoring {
     }
 
     /// Every cell that currently earns points.
-    func scoringCells() -> Set<Int> {
+    public func scoringCells() -> Set<Int> {
         var result: Set<Int> = []
 
         // Trees carry no condition, they always score.
@@ -151,7 +157,7 @@ struct BoardScoring {
 extension BoardSide {
     /// Spaces per column. Side A is 5-4-5-4-5 with 23 spaces, side B is
     /// 4-3-4-3-4-3-4 with 25 — the geometry from `regeln-basisspiel.md`.
-    var columns: [Int] {
+    public var columns: [Int] {
         switch self {
         case .a: [5, 4, 5, 4, 5]
         case .b: [4, 3, 4, 3, 4, 3, 4]
@@ -160,7 +166,7 @@ extension BoardSide {
 }
 
 /// A cell as it is spoken and written: `43` is "4.3".
-func cellName(_ cell: Int) -> String { "\(cell / 10).\(cell % 10)" }
+public func cellName(_ cell: Int) -> String { "\(cell / 10).\(cell % 10)" }
 
 
 // MARK: - Endwertung
@@ -171,25 +177,36 @@ func cellName(_ cell: Int) -> String { "\(cell / 10).\(cell % 10)" }
 /// which a total alone cannot be. Every line therefore names the spaces it
 /// is about, and lines worth nothing are kept — they are the ones someone
 /// goes looking for.
-struct ScoreLine: Identifiable {
-    let id = UUID()
-    let label: String
-    let points: Int
+public struct ScoreLine: Identifiable, Sendable {
+    public let id = UUID()
+    public let label: String
+    public let points: Int
+
+    public init(label: String, points: Int) {
+        self.label = label
+        self.points = points
+    }
 }
 
-struct ScoreGroup: Identifiable {
-    let id = UUID()
-    let title: String
-    let lines: [ScoreLine]
+public struct ScoreGroup: Identifiable, Sendable {
+    public let id = UUID()
+    public let title: String
+    public let lines: [ScoreLine]
     /// Read under the group when the rule is easier to check than to recall.
-    var note: String? = nil
+    public var note: String? = nil
 
-    var points: Int { lines.reduce(0) { $0 + $1.points } }
+    public init(title: String, lines: [ScoreLine], note: String? = nil) {
+        self.title = title
+        self.lines = lines
+        self.note = note
+    }
+
+    public var points: Int { lines.reduce(0) { $0 + $1.points } }
 }
 
 extension BoardScoring {
     /// Trees and mountains share one ladder: height 1/2/3 scores 1/3/7.
-    static func heightPoints(_ height: Int) -> Int {
+    public static func heightPoints(_ height: Int) -> Int {
         switch height {
         case 1: 1
         case 2: 3
@@ -200,7 +217,7 @@ extension BoardScoring {
 
     /// The river ladder: 0, 2, 5, 8, 11, 15, and four more per cell beyond
     /// the sixth.
-    static func riverPoints(_ length: Int) -> Int {
+    public static func riverPoints(_ length: Int) -> Int {
         switch length {
         case 2: 2
         case 3: 5
@@ -213,7 +230,7 @@ extension BoardScoring {
 
     /// The landscape score, group by group. Empty groups are left out —
     /// a board without a single building has nothing to check there.
-    func breakdown() -> [ScoreGroup] {
+    public func breakdown() -> [ScoreGroup] {
         [trees, mountains, fieldGroups, waterGroup, buildings]
             .filter { !$0.lines.isEmpty }
     }

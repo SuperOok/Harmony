@@ -1,4 +1,5 @@
 import SwiftUI
+import HarmonyRules
 
 /// Szenario 1, in two steps so that neither has to be scrolled: first who
 /// is playing, then what lies on the table.

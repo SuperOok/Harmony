@@ -476,16 +476,25 @@ Züge zählt, zählt sie nicht mit; wer den Zustand nachspielt, wendet sie an.
 
 Kein Beschluss, nur eine Reihenfolge, die aus dem Obigen folgt:
 
-1. **Jetzt nichts.** Es gibt keinen Engine-Code, also nichts zu prüfen.
-2. **Mit der ersten Engine-Zeile** ein Unit-Test-Target und Stockwerk 1.
-   Die Tests entstehen mit der Regel, nicht danach — nachträglich
-   angelegte Tests prüfen meist nur, was das Programm ohnehin tut.
-3. **Mit dem Klickdummy** ein UI-Test-Target, zunächst mit einem einzigen
-   Test: der Antippzahl für einen fremden Zug.
+1. ~~**Jetzt nichts.** Es gibt keinen Engine-Code, also nichts zu
+   prüfen.~~ Überholt am 2026-09-20: Der Klickdummy hat unterwegs
+   Regelcode angesetzt — die Wertung, die Liste zulässiger Stapel, die
+   Steinbilanz. Damit gab es zu prüfen, bevor Phase 6 begann.
+2. ✅ **Stockwerk 1 läuft**, seit 2026-09-20. Der regelreine Code liegt im
+   Swift Package `HarmonyRules/`, die Tests daneben; `tools/tests.sh`
+   führt sie aus. 28 Fälle, unter einer Sekunde. Die Auflage aus
+   Phase 4 — Engine als eigenes Modul — ist damit eingelöst, und sie war
+   keine Formalie: Erst dadurch laufen die Tests ohne Host-App und ohne
+   Simulator.
+3. **Als Nächstes** ein UI-Test-Target, zunächst mit einem einzigen Test:
+   der Antippzahl für einen fremden Zug. Die Bezeichner dafür stehen
+   bereits durchgängig in den Views.
 4. **Wenn eine Partie durchläuft**, Stockwerk 2.
 
-Das Anlegen der Targets ändert `project.pbxproj` und ist damit keine
-Nebenbei-Änderung, siehe `CLAUDE.md`. Bis dahin gilt dort weiterhin: keine
+Das Anlegen von Targets ändert `project.pbxproj` und ist keine
+Nebenbei-Änderung, siehe `CLAUDE.md`. Für Stockwerk 1 entfiel das: Ein
+Swift Package braucht kein Target, nur eine Referenz im App-Target. Für
+Stockwerk 3 steht es noch aus, und bis dahin gilt: keine
 `xcodebuild test`-Aufrufe erfinden.
 
 ## Nicht gewählt, weil

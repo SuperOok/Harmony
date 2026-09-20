@@ -7,25 +7,36 @@ Die Partie läuft am echten Tisch mit echtem Material; die App verwaltet nur
 das Wissen eines einzelnen Spielers und schlägt dessen Züge vor. Sie ist
 keine Digitalfassung des Spiels. Siehe `docs/` für Produktkern und Konzept.
 
-Der Code ist derzeit ein **Klickdummy** aus Phase 5: Ansichten über
-Attrappendaten, ohne Engine. Die Konzeptarbeit ist weiter, siehe `docs/`.
+Der Code ist zweierlei. `MyApp/` ist der **Klickdummy** aus Phase 5:
+Ansichten über Attrappendaten, ohne Engine. `HarmonyRules/` ist der
+Anfang des **Regelmoduls** — Wertung, Landschaften, zulässige Stapel,
+Steinbilanz —, entstanden, weil der Dummy diese Regeln zum Anzeigen
+braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
+siehe `docs/`.
+
+**Wo es steht:** Phase 5 ist abgeschlossen, alle Ansichten der
+Funktionsliste sind gebaut. Der nächste Schritt ist in
+`docs/pruefverfahren.md` unter *Vorschlag zum Zeitpunkt* festgehalten:
+ein UI-Test-Target mit der Antippzahl als erster Zusicherung. Was in
+Phase 5 offen blieb, führt `docs/05-ui.md` am Ende auf.
 
 ## Aufbau
 
 ```
 Harmony.xcodeproj      ein Target und ein Schema, beide „Harmony“
-MyApp/                 sämtlicher Quellcode
+HarmonyRules/          Swift Package: die Regeln, samt ihren Tests
+MyApp/                 der Rest des Quellcodes
   MyApp.swift          @main, WindowGroup
   ContentView.swift    Wurzel-View
   Dummy/               Klickdummy aus Phase 5, keine Engine
-    SampleData.swift   Steine, Landschaften, Attrappendaten
-    Scoring.swift      Wertungsregeln — vorläufig, gehört ins Engine-Modul
+    SampleData.swift   Attrappendaten, dazu die Farben der Steine
     BoardView.swift    Sechseckgitter, Zelldarstellung
     OpponentTurnView.swift  Erfassung fremder Züge
+    CorrectionView.swift    Berichtigung von Harmonys Tableau
   Assets.xcassets/
 docs/                  Konzeptdokumente; nummeriert nach Phasen, dazu
                        phasenübergreifende wie `pruefverfahren.md`
-tools/                 Python-Werkzeuge zur Prüfung der Kartendaten
+tools/                 Prüfwerkzeuge: Kartendaten (Python), Tests (tests.sh)
 ```
 
 `MyApp/` ist eine **synchronisierte Gruppe** (`PBXFileSystemSynchronizedRootGroup`).
@@ -72,8 +83,25 @@ xcrun devicectl device install app --device <Geräte-UDID> <Pfad>/Harmony.app
 
 `xcrun devicectl list devices` zeigt gekoppelte Geräte.
 
-Es gibt **kein Test-Target**. Keine `xcodebuild test`-Aufrufe erfinden,
-solange keines existiert.
+### Tests
+
+Die Regeln liegen im Swift Package `HarmonyRules/` und werden dort
+geprüft — ohne Xcode-Projekt, ohne Simulator, in unter einer Sekunde:
+
+```bash
+tools/tests.sh
+```
+
+`tools/tests.sh -v` nennt jeden Fall einzeln. Der Rückgabewert ist der von
+`swift test`, das Skript taugt also für eine Automatik.
+
+Der Build läuft dabei **außerhalb** des Arbeitsverzeichnisses. In iCloud
+Drive setzen sich erweiterte Attribute an die Build-Produkte, woran die
+Signatur scheitert: „resource fork, Finder information, or similar
+detritus not allowed".
+
+Es gibt **kein UI-Test-Target**. Keine `xcodebuild test`-Aufrufe für die
+App erfinden, solange keines existiert.
 
 ### Wenn xcodebuild Xcode nicht findet
 
@@ -142,6 +170,21 @@ anzulegen.
   ihre konkrete Ausformulierung und Gestaltung nicht.
 - `xcuserdata/` ist ignoriert. Xcode erzeugt das Schema beim ersten Öffnen
   neu, ein frischer Klon braucht also keine Zusatzschritte.
-- Das Arbeitsverzeichnis liegt in iCloud Drive. Bei merkwürdigem
+- **Das Arbeitsverzeichnis zieht aus iCloud Drive weg.** Beschlossen am
+  2026-09-20. Solange es noch dort liegt, gilt: Bei merkwürdigem
   Git-Verhalten — fehlende Objekte, Konfliktkopien in `.git/` — zuerst
-  iCloud-Synchronisation verdächtigen, nicht Git.
+  iCloud verdächtigen, nicht Git.
+
+  Der Grund ist nicht Bequemlichkeit: Über denselben Dateien laufen zwei
+  Synchronisationen, und eine davon ist überflüssig, weil das
+  GitHub-Remote dasselbe leistet — mit Historie und ohne Konfliktkopien.
+  Gemessen wurde außerdem, dass `swift test` **nur außerhalb** von iCloud
+  ohne Sonderbehandlung durchläuft; darin scheitert es am Signieren, weil
+  erweiterte Attribute an den Build-Produkten hängen.
+
+  Nach dem Umzug (ein `git clone` an den neuen Ort, es ist alles gepusht)
+  sind drei Dinge nachzuziehen: dieser Absatz, die Begründung für
+  `--scratch-path` in `tools/tests.sh` samt dem Hinweis im
+  Abschnitt *Tests* — beides wird dann gegenstandslos — und das
+  Projektgedächtnis von Claude Code, das am Pfad hängt und im neuen
+  Verzeichnis leer beginnt.

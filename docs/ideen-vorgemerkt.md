@@ -138,11 +138,18 @@ sortiert: Alle 27 passen auf einen Bildschirm, das Scrollen entfällt. Die
 Antippzahl bleibt bei 8, aber die teure Sucherei ist weg — sie war das
 eigentliche Problem, nicht die Taps.
 
-Offen bleibt, dass der Betreuer weiterhin **unseren** Namen für die Karte in
-seiner Hand kennen muss. Zwei Ideen dagegen, beide unerprobt: Jede Karte
-trägt laut `regeln-basisspiel.md` einen **Farbstreifen** in der Farbe des
-Zielsteins — ein Tipp darauf verengte 27 Karten auf eine Handvoll, ohne dass
-ein Name fällt. Und Piktogramme (siehe unten) ersetzten den Namen ganz.
+Die Sorge, der Betreuer müsse **unseren** Namen für die Karte in seiner Hand
+kennen, hat sich am Gerät nicht bestätigt und ist am 2026-09-20 **verworfen**:
+Alle Karten passen in das Raster, und die Namen sind eindeutig genug, um eine
+Karte wiederzufinden. Damit entfallen die beiden Auswege, die dagegen gedacht
+waren — der **Farbstreifen** als Filter und die Piktogramme weiter unten.
+
+Für den Farbstreifen wurde vorher geprüft, ob die Daten ihn hergäben: Sie tun
+es. Er wird laut `kartennotation.md` nicht erfasst, weil er redundant ist —
+seine Farbe ist die des Zielsteins, und die steht als Landschaft der
+Würfelzelle in jeder Karte. Über alle 32 Karten verteilte er sich auf fünf
+Farben (Baum 8, Wasser 7, Berg 6, Feld 6, Gebäude 5). Gebraucht wird er
+trotzdem nicht.
 
 **Die Tierwürfel sind durchscheinend orange.** Für keine Regel erheblich —
 die Engine braucht die Farbe nicht —, aber die Oberfläche sollte sie
@@ -161,11 +168,15 @@ nachgespielt, wie Phase 4 es vorsieht.
 Dazu Punkt 7 (Spielende) mit beiden Auslösern und der
 ausgespielten letzten Runde.
 
-**Offen bleiben** Punkt 6 (Korrekturweg für
-Harmonys Tableau), Punkt 7 (Spielende) und Punkt 8 (Endwertung), dazu der
-Merker „jemand ist fast fertig". `05-ui.md` ist noch nicht geschrieben.
+Inzwischen ebenso Punkt 8 (Endwertung, für beide Planseiten) und Punkt 6
+(Korrekturweg für Harmonys Tableau) samt dem Merker „jemand ist fast
+fertig". Damit ist die Funktionsliste von Phase 3 im Dummy vollständig
+abgedeckt, soweit sie Oberfläche ist; `05-ui.md` ist geschrieben und führt,
+was offen blieb.
 
-**Bildsymbole statt Namen.** Karten am Tisch über ein kleines Tierbild
-auszuwählen ist schneller und sicherer als über einen Namen, den sich niemand
-merkt. Die Originalillustrationen sind allerdings geschützt — selbstgezeichnete
-Silhouetten oder Piktogramme erfüllen denselben Zweck ohne dieses Problem.
+**Bildsymbole statt Namen.** ❌ Verworfen am 2026-09-20, zusammen mit dem
+Farbstreifen und aus demselben Grund: Die Namen tragen. Die Überlegung war,
+dass ein kleines Tierbild schneller und sicherer trifft als ein Name, den sich
+niemand merkt — und dass selbstgezeichnete Silhouetten das ohne die
+geschützten Originalillustrationen leisten. Beides bleibt richtig; es löst nur
+kein Problem, das am Tisch auftritt.

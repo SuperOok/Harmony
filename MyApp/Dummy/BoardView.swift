@@ -1,4 +1,5 @@
 import SwiftUI
+import HarmonyRules
 
 /// Flat-top hexagon: corners left and right, edges top and bottom.
 /// Fitted into a rectangle of width 2R and height √3·R.

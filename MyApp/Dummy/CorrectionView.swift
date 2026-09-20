@@ -1,4 +1,5 @@
 import SwiftUI
+import HarmonyRules
 
 /// Störfall B: the operator placed a stone other than the one announced and
 /// noticed it later. App and table have drifted apart.
