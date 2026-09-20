@@ -10,11 +10,8 @@ struct OpponentTurnView: View {
     /// producing a test case are one mechanism rather than three.
     @State private var events: [GameEvent] = []
 
-    /// Launch argument for tests and for looking at a single screen, the
-    /// hook `pruefverfahren.md` foresees for storey three.
-    private let startState = GameState.initial(
-        seat: ProcessInfo.processInfo.arguments.contains("-harmonyTurn")
-              ? Sample.turnOrder.count - 1 : 0)
+    /// The position the log starts from — what the setup produced.
+    let startState: GameState
 
     // Input of the turn in progress
     @State private var takenIndex: Int?
@@ -38,8 +35,11 @@ struct OpponentTurnView: View {
 
     /// Harmony has a move to show whenever it is her turn. Undoing her turn
     /// brings it back, which is the replay doing its work.
+    /// The sample moves are built for side A; on side B their cells do not
+    /// all exist, so none is offered there.
     private var pendingMove: HarmonyMove? {
-        isHarmony ? (showSetupExample ? Sample.harmonyMoveSetup : Sample.harmonyMove) : nil
+        guard isHarmony, !state.sideB else { return nil }
+        return showSetupExample ? Sample.harmonyMoveSetup : Sample.harmonyMove
     }
 
     private var isComplete: Bool {
@@ -216,7 +216,9 @@ struct OpponentTurnView: View {
                 }
                 .pickerStyle(.segmented)
 
-                BoardView(side: .a, columns: BoardView.sideA, cells: harmonyCells)
+                BoardView(side: state.sideB ? .b : .a,
+                          columns: state.sideB ? BoardView.sideB : BoardView.sideA,
+                          cells: harmonyCells)
                     .padding(.horizontal, 4)
 
                 if let move = pendingMove {
@@ -263,8 +265,11 @@ struct OpponentTurnView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Zug eingetragen. Das Brett zeigt jetzt den Stand, "
-                         + "der auch auf dem Tisch liegen sollte.")
+                    Text(state.sideB
+                         ? "Der Beispielzug ist für Seite A gebaut; auf Seite B "
+                           + "gibt es seine Zellen nicht alle."
+                         : "Zug eingetragen. Das Brett zeigt jetzt den Stand, "
+                           + "der auch auf dem Tisch liegen sollte.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -622,7 +627,7 @@ struct TitledBlock<Content: View>: View {
 }
 
 /// A wrapping row — the card names differ in length.
-private struct FlowLayout: Layout {
+struct FlowLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -652,5 +657,5 @@ private struct FlowLayout: Layout {
 }
 
 #Preview {
-    OpponentTurnView()
+    OpponentTurnView(startState: .initial())
 }

@@ -22,8 +22,11 @@ struct GameState {
     var seatIndex: Int
     var harmonyBoard: [Int: [Stone]]
     var harmonyCubes: [Int: String]
+    /// Seating in turn order, Harmony among them. Comes from the setup.
+    var seating: [String]
+    var sideB: Bool
 
-    var currentPlayer: String { Sample.turnOrder[seatIndex] }
+    var currentPlayer: String { seating[seatIndex] }
     var isHarmonysTurn: Bool { currentPlayer == "Harmony" }
 
     static func initial(seat: Int = 0) -> GameState {
@@ -32,7 +35,9 @@ struct GameState {
                   seenCards: Set(Sample.openCards),
                   seatIndex: seat,
                   harmonyBoard: Sample.harmonyBoard,
-                  harmonyCubes: [:])
+                  harmonyCubes: [:],
+                  seating: Sample.turnOrder,
+                  sideB: false)
     }
 
     mutating func apply(_ event: GameEvent) {
@@ -49,7 +54,7 @@ struct GameState {
             harmonyBoard = move.applied(to: harmonyBoard)
             for cube in move.cubes { harmonyCubes[cube.cell] = cube.card }
         }
-        seatIndex = (seatIndex + 1) % Sample.turnOrder.count
+        seatIndex = (seatIndex + 1) % seating.count
     }
 
     /// How the event reads in the transcript. Needs the state **before**
