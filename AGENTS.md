@@ -82,7 +82,8 @@ docs/                  Konzeptdokumente; nummeriert nach Phasen, dazu
                        phasenübergreifende wie `pruefverfahren.md`
 tools/                 Prüfwerkzeuge: Kartendaten (Python), Regeltests
                        (tests.sh), Oberflächentests (uitests.sh),
-                       Verzweigung messen (messe-verzweigung.sh)
+                       Verzweigung messen (messe-verzweigung.sh),
+                       App-Icon zeichnen (app-icon.swift)
 ```
 
 `MyApp/` und `HarmonyUITests/` sind **synchronisierte Gruppen**
