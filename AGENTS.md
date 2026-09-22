@@ -17,7 +17,7 @@ siehe `docs/`.
 **Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 149 Regelfällen (`tools/tests.sh`, unter einer
+Weglegen. Geprüft wird mit 152 Regelfällen (`tools/tests.sh`, unter einer
 Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
 
 **Gespielt zu werden findet Lücken, die kein Prüffall findet.** Am
@@ -27,10 +27,11 @@ am Tisch gefunden*. Am Tisch aufgefallen: Die Bewertung kannte für Gebäude
 unmöglich sind; und `ownTurnsLeft` zählte nur den Beutel, während in
 Wahrheit der eigene Spielplan die Partie beendet — Harmony rechnete durchweg
 mit etwa der doppelten Restzeit und schloss darum nichts ab. Beim Nachzählen
-kam die dritte dazu: Dieselbe Lücke bestand für **Bergnachbarschaft und
-Feldgruppe**. Alle drei tragen jetzt `Evaluator.dormant` gemeinsam — eine
-Landschaft, die 0 zählt und auf Steine auf freien Nachbarfeldern wartet.
-Offen bleibt die Aussicht auf **Baumhöhe**.
+kam die dritte dazu: Dieselbe Lücke bestand für **Bergnachbarschaft,
+Feldgruppe und Baumhöhe**. Alle vier tragen jetzt `Evaluator.dormant`
+gemeinsam — etwas, das 0 zählt und auf Steine auf noch offenen Feldern
+wartet —, und sie teilen sich ein Steinbudget von `3 · ownTurnsLeft`, weil
+ihre Summe sonst mehr verspricht, als Züge hergeben.
 
 **Die Rechenzeit war das große Problem und ist es nicht mehr.** Am
 2026-09-20/21 sind fünf Hebel gebaut und jeweils auf dem Gerät gemessen

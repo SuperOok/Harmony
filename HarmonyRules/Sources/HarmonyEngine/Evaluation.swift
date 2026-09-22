@@ -492,15 +492,17 @@ public enum Evaluator {
 
     // MARK: - (3b) Landschaften, die noch schlafen
 
-    /// A landscape lying on the board that earns nothing yet, and what it
-    /// would take to wake it.
+    /// One way a landscape that earns nothing yet could come to earn.
     struct Dormant: Sendable {
-        /// What it pays once the neighbours are there.
+        /// What it will be once it wakes. A brown stack is on its way to a
+        /// tree, so it answers `.tree` although it is no landscape today.
+        let kind: Landscape
+        /// What it pays then.
         let gain: Int
-        /// Which stones have to arrive, and on how many spaces. Each one
-        /// needs a free neighbouring space of its own.
+        /// Which stones have to arrive. Each one needs a space of its own.
         let needed: [Stone: Int]
-        /// How many neighbouring spaces are still free to take them.
+        /// How many spaces are still open for them — free neighbours, or
+        /// the room left on the stack where the way is to build upwards.
         let free: Int
 
         /// Enough room for what is missing. Where there is not, no sequence
@@ -508,67 +510,101 @@ public enum Evaluator {
         var isPossible: Bool { needed.values.reduce(0, +) <= free }
     }
 
-    /// Whether this space holds a landscape that does not score yet, and
-    /// what it is waiting for.
+    /// The ways this space could come to score, if it does not already.
     ///
-    /// **Three of the six scoring sources have a dormant phase**, and they
-    /// share one shape: some stones have to land on free neighbouring
-    /// spaces, after which the landscape pays its full points. Only which
-    /// stones and what it pays differ.
+    /// **Four of the six scoring sources have a dormant phase**, and they
+    /// share one shape: some stones have to arrive on spaces that are still
+    /// open, after which the landscape pays its full points. Only which
+    /// stones, where they go and what it pays differ.
     ///
     /// | Landschaft | zahlt | wartet auf |
     /// | --- | --- | --- |
     /// | Berg ohne Bergnachbarn | 1/3/7 nach Höhe | einen grauen Stein daneben |
     /// | einzelner gelber Stein | 5 | einen gelben Stein daneben |
     /// | Gebäude ohne drei Farben | 5 | die fehlenden Farben ringsum |
+    /// | brauner Stapel | 3 oder 7 | sein Grün, **obendrauf** |
     ///
-    /// The other three do not belong here. The river and the islands have
-    /// their own outlook above, and a tree pays from the first green stone
-    /// and grows by stacking rather than by neighbours — which is possible
-    /// on every space and so tells no two apart.
+    /// Several ways can lead out of one space — the caller takes the best,
+    /// not their sum, since a space is built once.
+    ///
+    /// The river and the islands are not here; they have their own outlook
+    /// above. Neither is a finished tree: nothing stacks on green, so a
+    /// tree never grows, and the only prospect a tree ever has is the one
+    /// before its green stone.
     ///
     /// Neighbours already standing count as fixed. A stack can be built
     /// over, so this understates — the cheap direction.
     static func dormant(at cell: Int, on state: EngineState,
-                        supply: (Stone) -> Double) -> Dormant? {
-        guard let stack = state.stacks[cell], let landscape = stack.landscape else { return nil }
+                        supply: (Stone) -> Double) -> [Dormant] {
+        guard let stack = state.stacks[cell] else { return [] }
         let ring = state.board.neighbours(cell)
         let free = ring.count { state.stacks[$0] == nil }
 
-        switch landscape {
+        switch stack.landscape {
         case .mountain:
             guard !ring.contains(where: { (state.stacks[$0] ?? []).landscape == .mountain })
-            else { return nil }
+            else { return [] }
             // A lone grey stone is a mountain of height one, so one stone
             // on one free space is the whole requirement. It wakes the
             // neighbour too, which this does not count — the new mountain
             // brings its own points with it.
-            return Dormant(gain: BoardScoring.heightPoints(stack.count),
-                           needed: [.stone: 1], free: free)
+            return [Dormant(kind: .mountain, gain: BoardScoring.heightPoints(stack.count),
+                            needed: [.stone: 1], free: free)]
 
         case .field:
             // A group of two or more already scores, and a group of one is
             // a space without a yellow neighbour — so asking the ring is
             // the same question as asking the group, and cheaper.
             guard !ring.contains(where: { (state.stacks[$0] ?? []).landscape == .field })
-            else { return nil }
-            return Dormant(gain: 5, needed: [.field: 1], free: free)
+            else { return [] }
+            return [Dormant(kind: .field, gain: 5, needed: [.field: 1], free: free)]
 
         case .building:
             let colours = Set(ring.compactMap { state.stacks[$0]?.last })
-            guard colours.count < 3 else { return nil }
+            guard colours.count < 3 else { return [] }
             // Which colours are missing is decided by supply — the largest
             // stocks first, since those are the ones she will see.
             let wanted = Stone.allCases
                 .filter { !colours.contains($0) }
                 .sorted { supply($0) > supply($1) }
                 .prefix(3 - colours.count)
-            return Dormant(gain: 5,
-                           needed: Dictionary(uniqueKeysWithValues: wanted.map { ($0, 1) }),
-                           free: free)
+            return [Dormant(kind: .building, gain: 5,
+                            needed: Dictionary(uniqueKeysWithValues: wanted.map { ($0, 1) }),
+                            free: free)]
 
         case .tree, .water:
-            return nil
+            return []
+
+        case nil:
+            // No landscape at all: a brown stack waiting for its green
+            // stone, which is where the whole tree ladder is decided. `HH`
+            // scores nothing and is two thirds of the way to seven points,
+            // the densest single space in the game — and the evaluation
+            // used to value it exactly like bare ground.
+            //
+            // A lone red stone is left out although it is dormant too: it
+            // becomes a building only with a second red one, and that
+            // building then still wants three colours around it. Two
+            // uncertain steps chained, and rare on the table.
+            guard stack.allSatisfy({ $0 == .wood }) else { return [] }
+            // A cube freezes the space, and nothing more goes on top.
+            guard !state.cubeCells.contains(cell) else {
+                return [Dormant(kind: .tree,
+                                gain: BoardScoring.heightPoints(stack.count + 1),
+                                needed: [.leaves: 1], free: 0)]
+            }
+            let room = 3 - stack.count
+            var ways = [Dormant(kind: .tree,
+                                gain: BoardScoring.heightPoints(stack.count + 1),
+                                needed: [.leaves: 1], free: room)]
+            // Going one brown higher first pays seven instead of three, so
+            // waiting is usually worth more than finishing — until the
+            // clock makes the second stone unlikely, and then it is not.
+            if room >= 2 {
+                ways.append(Dormant(kind: .tree, gain: BoardScoring.heightPoints(3),
+                                    needed: [.wood: 1, .leaves: 1], free: room))
+            }
+            return ways
         }
     }
 
@@ -591,30 +627,61 @@ public enum Evaluator {
         let supply: (Stone) -> Double = {
             Double(state.bag.remaining($0)) + (available.perColour[$0] ?? 0)
         }
-        var worth: [Landscape: Double] = [:]
         var asleep: [Landscape: Int] = [:]
         var hopeless: [Landscape: Int] = [:]
+        var waiting: [(kind: Landscape, worth: Double, stones: Int)] = []
 
         // Over the board's spaces rather than over the stacks: a dictionary
         // hands them out in no fixed order, and summing doubles in a
         // different order each time would make the same position weigh
         // differently.
         for cell in state.board.cells {
-            guard let landscape = state.stacks[cell]?.landscape,
-                  let dormant = dormant(at: cell, on: state, supply: supply) else { continue }
-            asleep[landscape, default: 0] += 1
-            guard dormant.isPossible else {
-                hopeless[landscape, default: 0] += 1
+            let ways = dormant(at: cell, on: state, supply: supply)
+            guard let kind = ways.first?.kind else { continue }
+            asleep[kind, default: 0] += 1
+            // The best way out, not the sum of them: a space is built once,
+            // and a brown stack that could take either a green stone now or
+            // a brown one first will do one of the two.
+            let best = ways.filter(\.isPossible).map { way in
+                (worth: Double(way.gain) * chance(ofBuilding: way.needed, state: state,
+                                                  available: available),
+                 stones: way.needed.values.reduce(0, +))
+            }.max { $0.worth < $1.worth }
+            guard let best else {
+                hopeless[kind, default: 0] += 1
                 continue
             }
-            worth[landscape, default: 0] += Double(dormant.gain)
-                * chance(ofBuilding: dormant.needed, state: state, available: available)
+            waiting.append((kind, best.worth, best.stones))
         }
 
-        return [Landscape.mountain, .field, .building].compactMap { landscape in
+        // **They compete for the same stones**, and there are three a turn
+        // and no more. Added up without that cap, nine brown stacks promised
+        // 34 points — nine finished trees, which would take eighteen stones
+        // she does not have. Each one on its own is right; the sum is the
+        // lie, exactly as with the candidates in family (2), which are
+        // selected rather than added for the same reason.
+        //
+        // Taken in order of worth per stone until the budget runs out. A
+        // greedy pass, not an optimum: the exact answer is a knapsack, and
+        // paying for one per laying would not be worth what it buys.
+        var budget = 3 * state.ownTurnsLeft
+        var worth: [Landscape: Double] = [:]
+        var unaffordable: [Landscape: Int] = [:]
+        for one in waiting.sorted(by: { $0.worth * Double($1.stones)
+                                        > $1.worth * Double($0.stones) }) {
+            guard one.stones <= budget else {
+                unaffordable[one.kind, default: 0] += 1
+                continue
+            }
+            budget -= one.stones
+            worth[one.kind, default: 0] += one.worth
+        }
+
+        return [Landscape.mountain, .field, .building, .tree].compactMap { landscape in
             guard let count = asleep[landscape] else { return nil }
             var detail = "\(count) \(waitingFor(landscape, count))"
             if let blind = hopeless[landscape] { detail += ", \(blind) davon ohne Aussicht" }
+            if let short = unaffordable[landscape] { detail += ", für \(short) fehlt die Zeit" }
             return Term(name: name(of: landscape),
                         points: (worth[landscape] ?? 0) * weights.landscape * weights.outlook,
                         detail: detail)
@@ -636,7 +703,8 @@ public enum Evaluator {
         case .mountain: "Berg\(count == 1 ? "" : "e") ohne Bergnachbarn"
         case .field: "einzelne\(count == 1 ? "r" : "") gelbe\(count == 1 ? "r" : "") Stein\(count == 1 ? "" : "e")"
         case .building: "Gebäude ohne drei Farben"
-        case .tree, .water: ""
+        case .tree: "braune\(count == 1 ? "r" : "") Stapel ohne Grün"
+        case .water: ""
         }
     }
 

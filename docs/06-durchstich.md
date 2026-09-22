@@ -283,7 +283,7 @@ passen nicht auf zwei Felder. Auf Seite A kommen zwei Felder mit drei
 Nachbarn dazu, auf Seite B vier.
 
 **Die Lücke war größer als der eine Fall.** Auf Nachfrage, ob die Aussicht
-für alle Punktquellen vollständig sei, kam heraus: Sie fehlte für **drei**
+für alle Punktquellen vollständig sei, kam heraus: Sie fehlte für **vier**
 von sechs. Das Gebäude war nur der auffälligste, weil bei ihm die Ecke
 beweisbar wertlos ist.
 
@@ -300,29 +300,55 @@ Gemessen vor dem Umbau, gleiche Stellung, nur der Ort wechselt: ein einsamer
 Berg in der Mitte und einer in der Ecke kamen auf **drei Nachkommastellen
 gleich** heraus, ein einzelner gelber Stein ebenso.
 
-Die drei fehlenden Fälle haben **eine Form**: Eine Landschaft liegt auf dem
-Brett, zählt 0, und wacht auf, sobald die richtigen Steine auf *freie*
-Nachbarfelder kommen. Nur worauf sie warten und was sie zahlen, ist
-verschieden — `Evaluator.dormant` beantwortet das je Feld, `dormantTerms`
-gibt je Art einen Term aus.
+Die vier fehlenden Fälle haben **eine Form**: Etwas liegt auf dem Brett,
+zählt 0, und wacht auf, sobald die richtigen Steine auf Felder kommen, die
+noch offen sind. Nur worauf sie warten, wohin die Steine gehören und was sie
+zahlen, ist verschieden — `Evaluator.dormant` beantwortet das je Feld,
+`dormantTerms` gibt je Art einen Term aus.
 
 | Landschaft | zahlt | wartet auf |
 | --- | --- | --- |
 | Berg ohne Bergnachbarn | 1/3/7 nach Höhe | einen grauen Stein daneben |
 | einzelner gelber Stein | 5 | einen gelben Stein daneben |
 | Gebäude ohne drei Farben | 5 | die fehlenden Farben ringsum |
+| brauner Stapel | 3 oder 7 | sein Grün, **obendrauf** |
 
-Reichen die freien Nachbarn zahlenmäßig nicht, ist der Beitrag 0 und die
+Reichen die offenen Felder zahlenmäßig nicht, ist der Beitrag 0 und die
 Begründung weist den Fall als „ohne Aussicht" aus. Welche Farben ein Gebäude
 sucht, entscheidet der Vorrat: die größten Bestände zuerst, weil Harmony die
 am ehesten zu sehen bekommt. Was schon zählt, bleibt außen vor, sonst stünden
 dieselben Punkte zweimal da.
 
-**Die Baumhöhe gehört nicht dazu.** Ein Baum zahlt ab dem ersten grünen Stein
-und wächst durch Stapeln, nicht durch Nachbarn — und Stapeln geht auf jedem
-Feld, unterscheidet die Lagen also nicht. Die Aussicht auf das Höherbauen
-(die Staffel 1/3/7 ist superlinear) fehlt weiterhin und ist eine eigene
-Frage.
+**Beim Baum liegt die Aussicht vor dem grünen Stein, nicht danach.** Das war
+zunächst falsch eingeschätzt und beim Bauen korrigiert: Auf Grün stapelt die
+Regel nichts, ein fertiger Baum wächst also **nie**. Höhe 1, 2 und 3 sind
+Endzustände, die 1, 3 und 7 zahlen und nichts mehr versprechen. Die einzige
+Nullphase, die ein Baum hat, ist der braune Stapel davor — und der ist der
+wertvollste Rohling im Spiel: `HH` zählt 0 und steht einen einzigen grünen
+Stein vor **sieben Punkten**, der dichtesten Einzelstelle des Bretts. Die
+Bewertung hielt ihn für so viel wert wie leeren Boden.
+
+Aus einem `H` führen zwei Wege: sofort grün (Höhe 2, drei Punkte, ein Stein)
+oder erst noch braun (Höhe 3, sieben Punkte, zwei Steine). Gewertet wird der
+bessere, nicht ihre Summe — ein Feld wird einmal bebaut. Früh gewinnt der
+lange Weg, weil 7·p² über 3·p liegt, solange *p* groß ist; wenn die Zeit
+knapp wird, dreht sich das. Ein Tierwürfel auf dem Stapel friert ihn ein und
+nimmt ihm die Aussicht ganz.
+
+**Der rote Einzelstein bleibt draußen**, obwohl auch er schläft: Er wird erst
+mit einem zweiten roten Stein ein Gebäude, und das will dann noch drei Farben
+ringsum. Zwei unsichere Schritte hintereinander, und am Tisch selten.
+
+**Sie teilen sich die Steine.** Die Baumaussicht hat einen Fehler sichtbar
+gemacht, den die kleineren Fälle verdeckt hatten: Neun braune Stapel
+versprachen zusammen **34 Punkte** — neun fertige Bäume, wofür achtzehn
+Steine nötig wären, während drei je Zug kommen. Jede Rechnung für sich war
+richtig, die Summe war die Lüge. Dasselbe Problem hatten die Anwärter in
+Familie (2), und es ist dieselbe Antwort: auswählen statt addieren. Ein
+gieriger Durchgang nach Wert je Stein, bis `3 · ownTurnsLeft` aufgebraucht
+ist; was nicht mehr hineinpasst, steht in der Begründung als „für *n* fehlt
+die Zeit". Die neun Stapel kommen damit auf 15 statt 34. Genau zu rechnen
+wäre ein Rucksackproblem und je Legung nicht zu bezahlen.
 
 **Für Berg und Feld ist die Ecke nicht schlecht**, und die Bewertung sagt das
 jetzt richtig: Zwei freie Nachbarn reichen für den einen fehlenden Stein, also
@@ -332,7 +358,7 @@ Term auf 0. Vorhersagen muss die Bewertung das nicht; sie sieht den Verlust,
 wenn er eintritt.
 
 **Die Rechenzeit trägt es.** Gemessen im Release auf einem Brett mit zwölf
-Steinen: `dormantTerms` kostet 6 µs, ein ganzes `prepare` 857 µs — **0,7
+Steinen: `dormantTerms` kostet 7,5 µs, ein ganzes `prepare` 833 µs — **0,9
 Prozent**. Der Term läuft einmal je Legung, nicht je Zug, und geht über die
 Felder des Bretts statt über das Stapel-Dictionary, damit die Summe
 unabhängig von der Aufzählungsreihenfolge gleich bleibt.

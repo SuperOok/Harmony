@@ -272,6 +272,67 @@ struct EvaluationTests {
         #expect(!Evaluator.evaluate(scoring).terms.contains { $0.name == "Gebäude" })
     }
 
+    @Test("Ein brauner Stapel verspricht seinen Baum, ein fertiger Baum nichts mehr")
+    func abrownStackPromisesItsTreeAndAFinishedTreePromisesNothing() {
+        // Auf Grün stapelt nichts, ein fertiger Baum wächst also nie. Die
+        // einzige Aussicht, die ein Baum je hat, liegt vor seinem grünen
+        // Stein — und `HH` steht zwei Drittel vor sieben Punkten, während
+        // es 0 zählt.
+        let raw = Evaluator.evaluate(state(stacks: [33: [.wood]]))
+        let higher = Evaluator.evaluate(state(stacks: [33: [.wood, .wood]]))
+        #expect(raw.pointsNow == 0)
+        #expect((raw.terms.first { $0.name == "Bäume" }?.points ?? 0) > 0)
+        #expect((higher.terms.first { $0.name == "Bäume" }?.points ?? 0) > 0)
+
+        for finished in [[Stone.leaves], [.wood, .leaves], [.wood, .wood, .leaves]] {
+            let done = Evaluator.evaluate(state(stacks: [33: finished]))
+            #expect(done.pointsNow == BoardScoring.heightPoints(finished.count))
+            #expect(!done.terms.contains { $0.name == "Bäume" })
+        }
+    }
+
+    @Test("Ein Würfel auf dem braunen Stapel nimmt ihm die Aussicht")
+    func acubeOnTheBrownStackTakesItsOutlookAway() {
+        // Der Würfel friert das Feld ein, und auf ein eingefrorenes Feld
+        // kommt kein grüner Stein mehr.
+        let meerkat = card("Erdmännchen", [11: .field, 12: .mountain1], cube: 12)
+        var frozen = state(stacks: [33: [.wood]], hand: [HeldCard(card: meerkat,
+                                                                  cubesPlaced: 1)])
+        frozen.cubes = [33: "Erdmännchen"]
+        let term = Evaluator.evaluate(frozen).terms.first { $0.name == "Bäume" }
+        #expect(term?.points == 0)
+        #expect(term?.detail?.contains("ohne Aussicht") == true)
+    }
+
+    @Test("Schlafende Landschaften teilen sich die Steine, die noch kommen")
+    func dormantLandscapesShareTheStonesStillToCome() {
+        // Jede für sich ist richtig gerechnet, die Summe wäre die Lüge:
+        // Neun braune Stapel zu Bäumen zu machen kostet achtzehn Steine,
+        // und drei je Zug sind alles, was kommt. Wie bei den Anwärtern in
+        // Familie (2) wird ausgewählt statt addiert.
+        let cells = BoardSide.a.board.cells
+        func brownStacks(_ n: Int) -> Double {
+            var stacks: [Int: [Stone]] = [:]
+            for cell in cells.prefix(n) { stacks[cell] = [.wood] }
+            return Evaluator.evaluate(state(stacks: stacks))
+                .terms.first { $0.name == "Bäume" }?.points ?? 0
+        }
+
+        // Wenige wachsen noch linear, viele nicht mehr — und neun sind
+        // weniger wert als sechs, weil das vollere Brett die Partie früher
+        // beendet und das Steinbudget mit ihm schrumpft.
+        #expect(brownStacks(3) > brownStacks(1) * 2)
+        #expect(brownStacks(9) < brownStacks(6))
+
+        let many = { () -> Term? in
+            var stacks: [Int: [Stone]] = [:]
+            for cell in cells.prefix(9) { stacks[cell] = [.wood] }
+            return Evaluator.evaluate(state(stacks: stacks))
+                .terms.first { $0.name == "Bäume" }
+        }()
+        #expect(many?.detail?.contains("fehlt die Zeit") == true)
+    }
+
     // MARK: - Das Spielende
 
     @Test("Ein fertiger Anwärter verspricht nichts, wenn kein eigener Zug mehr bleibt")
