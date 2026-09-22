@@ -129,7 +129,8 @@ struct OpponentTurnView: View {
     private func think() {
         thinker?.cancel()
         guard isHarmony, !sampleOnly else { return }
-        guard let position = state.engineState(events: events) else {
+        guard let position = state.engineState(events: events,
+                                                endsAfter: end.endsAfter) else {
             engineFailed = true
             return
         }

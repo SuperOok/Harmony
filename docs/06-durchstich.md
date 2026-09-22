@@ -382,7 +382,9 @@ Zeit. Vor dem ersten eigenen Zug gibt es nichts zu messen, dann gilt der
 schnellste Fall. Zwei Feinheiten bleiben außen vor: Die laufende Runde wird
 zu Ende gespielt, was die echte Zahl um eins heben kann, und ein fremdes
 Tableau kann die Partie früher beenden, was Harmony ohnehin nicht sieht.
-Beide sind kleiner als der Fehler, den sie ersetzen.
+Beide sind kleiner als der Fehler, den sie ersetzen. *Nachtrag
+2026-09-22:* Beide sind inzwischen eingerechnet, siehe *Das Ende der Partie*
+weiter unten.
 
 **Dazu ein dritter Punkt, derselben Wurzel entsprungen.** In
 `chance(ofBuilding:)` stand die Frage nach den fehlenden Steinen **vor** der
@@ -885,6 +887,34 @@ Der Prüffall dazu trägt die Stellung vom Tisch, samt Gegenprobe: Dasselbe
 Legen auf ein Brett, auf dem 3.2 **leer** war, vollendet das Muster
 tatsächlich. Ohne diese zweite Hälfte hielte die Zusicherung nur fest, dass
 `passed` nichts findet.
+
+## Das Ende der Partie, und was es für die Anwärter heißt
+
+**Durchdacht und gebaut am 2026-09-22**, im Anschluss an die Frage, ob sich
+das Ende durch einen fremden Spielplan vorhersagen lässt. Die Antwort kam in
+vier Schritten, und der erste war keine Vorhersage.
+
+### Das gemeldete Ende erreichte die Engine nicht
+
+Der Verlauf kannte alle drei Auslöser — Beutel, Harmonys Plan und den
+Schalter „*X* hat jetzt zwei oder weniger freie Felder" — und zeigte das
+Banner der letzten Runde. `EngineState` bekam davon nichts: Die Brücke gab es
+nicht weiter, und `ownTurnsLeft` rechnete nur aus Beutel und eigenem Plan.
+Nach der Meldung glaubte Harmony also womöglich an drei eigene Züge, wo einer
+oder keiner blieb.
+
+`EngineState.endsAfter` trägt jetzt die Zugzahl, nach der die Partie vorbei
+ist, die zu Ende gespielte Runde eingerechnet, und `ownTurnsLeft` nimmt das
+Minimum. **Ob die Meldung Harmony noch einen Zug lässt, hängt an der
+Sitzordnung:** Wer nach der Auslöserin sitzt, bekommt einen, wer davor sitzt,
+keinen. Die Startspielerin bekommt **nie** einen — jedes fremde Ende fällt in
+eine Runde, in der sie schon gezogen hat. Für sie ist die Meldung kein
+Korrektiv, und das ist der Grund, weshalb eine Vorhersage überhaupt lohnt.
+
+Dabei ist die Feinheit aus dem Beutel mit behoben. Er trägt 35 Züge, aber der
+36. wird noch gespielt — aus der Auslage —, und erst dessen Nachfüllen
+scheitert; danach wird die Runde zu Ende gespielt. Zu dritt sind das zwölf
+Runden auf **jedem** Platz. Gerechnet waren elf für den dritten.
 
 ## Offene Punkte
 

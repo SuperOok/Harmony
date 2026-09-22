@@ -106,6 +106,12 @@ public struct EngineState: Sendable {
     /// count needs them.
     public var players: Int
     public var seat: Int
+    /// The number of turns after which the game is over, once an end has
+    /// been announced — `nil` while none has. The app knows all three
+    /// triggers, including the one she cannot see for herself: the operator
+    /// reporting that a foreign board is down to two free spaces. The round
+    /// being played out is already in the number.
+    public var endsAfter: Int?
 
     public init(side: BoardSide = .a,
                 stacks: [Int: [Stone]] = [:],
@@ -117,7 +123,8 @@ public struct EngineState: Sendable {
                 drawn: [Stone: Int] = [:],
                 turnsPlayed: Int = 0,
                 players: Int = 3,
-                seat: Int = 0) {
+                seat: Int = 0,
+                endsAfter: Int? = nil) {
         self.side = side
         self.stacks = stacks
         self.cubes = cubes
@@ -129,6 +136,7 @@ public struct EngineState: Sendable {
         self.turnsPlayed = turnsPlayed
         self.players = players
         self.seat = seat
+        self.endsAfter = endsAfter
     }
 }
 
@@ -157,32 +165,42 @@ extension EngineState {
     public var boardIsFull: Bool { freeCells <= 2 }
 
     /// `regeln-basisspiel.md` counts it out: 105 stones in the bag, three a
-    /// turn, so the bag carries exactly 35 turns. An upper bound — a full
-    /// board can end it sooner, and the round is played out after either
-    /// trigger.
+    /// turn, so the bag carries exactly 35 turns. The 36th is still played —
+    /// from the display — and its refill is the one that fails.
     public static let turnsInTheBag = 35
 
     public var turnsLeftInGame: Int { max(0, Self.turnsInTheBag - turnsPlayed) }
+
+    /// The turn count after which the round is over: whoever triggers the
+    /// end, everyone gets the same number of turns.
+    func roundOut(_ turns: Int) -> Int {
+        guard players > 0 else { return turns }
+        return (turns + players - 1) / players * players
+    }
 
     /// How many turns are left for Harmony herself. The evaluation needs
     /// this one, not the game's: whether a candidate is still reachable is a
     /// question about **her** remaining turns.
     ///
-    /// **Both triggers count, not just the bag.** `regeln-basisspiel.md`
+    /// **Every trigger counts, not just the bag.** `regeln-basisspiel.md`
     /// calls the bag an upper bound and says plainly that a full board can
     /// cut the game short — and her own board almost always does: side A
     /// holds 23 spaces and ends at 21 filled, which is seven turns of three
-    /// stones, while the bag promises about twelve at a table of three.
-    /// Counting the bag alone she believed all game long that she had
-    /// roughly twice the turns she had, and `chance(ofBuilding:)` inherited
-    /// the error, since it raises every prospect by `1 - (1 - p)^(3t)`.
-    /// Nothing then pressed her to finish anything.
+    /// stones, while the bag promises twelve at a table of three. Counting
+    /// the bag alone she believed all game long that she had roughly twice
+    /// the turns she had, and `chance(ofBuilding:)` inherited the error,
+    /// since it raises every prospect by `1 - (1 - p)^(3t)`. Nothing then
+    /// pressed her to finish anything.
     ///
-    /// The round is played out after either trigger, so the true figure can
-    /// be one higher — and a foreign board can end it sooner, which she
-    /// cannot see at all. Neither is modelled; both are smaller than the
-    /// error they replace.
-    public var ownTurnsLeft: Int { min(ownTurnsInTheBag, ownTurnsUntilFull) }
+    /// A foreign board she cannot see; she learns of it once the operator
+    /// reports it, through `endsAfter`. Whether that report still leaves her
+    /// a turn depends on where she sits: after the player who triggered it
+    /// she gets one more, before them none — as starting player, never.
+    public var ownTurnsLeft: Int {
+        let left = min(ownTurnsInTheBag, ownTurnsUntilFull)
+        guard let endsAfter else { return left }
+        return min(left, max(0, ownTurns(before: endsAfter) - ownTurnsPlayed))
+    }
 
     /// How many of the game's first `limit` turns are hers — those at
     /// `seat`, `seat + players`, and so on.
@@ -195,9 +213,10 @@ extension EngineState {
         return (limit - seat + players - 1) / players
     }
 
-    /// Her own turns still covered by the bag.
+    /// Her own turns still covered by the bag, the 36th turn and the round
+    /// it ends included.
     public var ownTurnsInTheBag: Int {
-        ownTurns(before: Self.turnsInTheBag) - ownTurnsPlayed
+        max(0, ownTurns(before: roundOut(Self.turnsInTheBag + 1)) - ownTurnsPlayed)
     }
 
     /// Turns she has played herself.

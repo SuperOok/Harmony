@@ -16,7 +16,11 @@ extension GameState {
     /// The dummy knows its cards only by name; the patterns come from
     /// `animals.json`. A name that is not in there is a mistake in the
     /// sample data and gives `nil` rather than a quietly wrong position.
-    func engineState(events: [GameEvent]) -> EngineState? {
+    ///
+    /// `endsAfter` is the end the log has announced, if any — see
+    /// `EndStatus`. It is the only way a foreign full board reaches the
+    /// engine.
+    func engineState(events: [GameEvent], endsAfter: Int? = nil) -> EngineState? {
         let deck = HarmonyRules.AnimalCards.all
         let byName = Dictionary(uniqueKeysWithValues: deck.map { ($0.name, $0) })
 
@@ -49,7 +53,8 @@ extension GameState {
             drawn: stonesDrawn(events: events),
             turnsPlayed: events.turnCount,
             players: seating.count,
-            seat: seating.firstIndex(of: "Harmony") ?? 0)
+            seat: seating.firstIndex(of: "Harmony") ?? 0,
+            endsAfter: endsAfter)
     }
 
     /// Everything that has left the bag: the fifteen of the setup and three

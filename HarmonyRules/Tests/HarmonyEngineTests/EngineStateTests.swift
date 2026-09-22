@@ -100,19 +100,32 @@ struct EngineStateTests {
     @Test("Von den verbleibenden Zügen gehört Harmony nur jeder soundsovielte")
     func onlyEveryNthOfTheRemainingTurnsIsHers() {
         // Drei Spielerinnen, Harmony auf dem dritten Platz: die Züge 2, 5,
-        // 8 … der Partie sind ihre.
+        // 8 … der Partie sind ihre. Der 36. Zug wird noch gespielt, aus der
+        // Auslage, und er schließt die zwölfte Runde — also zwölf, auf
+        // jedem Platz.
         let state = EngineState(turnsPlayed: 0, players: 3, seat: 2)
-        #expect(state.ownTurnsInTheBag == 11)      // 2, 5, 8 … 32, also elf
+        #expect(state.ownTurnsInTheBag == 12)      // 2, 5, 8 … 35
+        #expect(EngineState(turnsPlayed: 0, players: 3, seat: 0).ownTurnsInTheBag == 12)
         #expect(state.ownTurnsPlayed == 0)
-        #expect(EngineState(turnsPlayed: 33, players: 3, seat: 2).ownTurnsInTheBag == 0)
-        #expect(EngineState(turnsPlayed: 0, players: 1, seat: 0).ownTurnsInTheBag == 35)
+        #expect(EngineState(turnsPlayed: 33, players: 3, seat: 2).ownTurnsInTheBag == 1)
+        #expect(EngineState(turnsPlayed: 36, players: 3, seat: 2).ownTurnsInTheBag == 0)
+        #expect(EngineState(turnsPlayed: 0, players: 1, seat: 0).ownTurnsInTheBag == 36)
         #expect(EngineState(turnsPlayed: 34, players: 3, seat: 2).ownTurnsPlayed == 11)
+    }
+
+    @Test("Zu viert wird die Runde des 36. Zugs zu Ende gespielt")
+    func atFourTheRoundOfTheThirtySixthTurnIsPlayedOut() {
+        // 36 geht in Vierer-Runden auf, zu zweit auch; der letzte Platz
+        // bekommt dieselbe Zahl wie der erste.
+        #expect(EngineState(players: 4, seat: 0).ownTurnsInTheBag == 9)
+        #expect(EngineState(players: 4, seat: 3).ownTurnsInTheBag == 9)
+        #expect(EngineState(players: 2, seat: 1).ownTurnsInTheBag == 18)
     }
 
     @Test("Der eigene Spielplan endet die Partie früher als der Beutel")
     func herOwnBoardRunsOutBeforeTheBagDoes() {
         // Leeres Brett, Seite A: 23 Felder, Schluss bei 21 belegten, drei
-        // Steine je Zug — sieben eigene Züge. Der Beutel verspricht elf.
+        // Steine je Zug — sieben eigene Züge. Der Beutel verspricht zwölf.
         let empty = EngineState(turnsPlayed: 0, players: 3, seat: 2)
         #expect(empty.ownTurnsUntilFull == 7)
         #expect(empty.ownTurnsLeft == 7)
@@ -120,15 +133,44 @@ struct EngineStateTests {
         // Wer stapelt, verbraucht weniger Felder und hat länger Zeit. Nach
         // zwei eigenen Zügen liegen sechs Steine, aber nur drei Felder sind
         // belegt: anderthalb je Zug, also achtzehn zu füllende Felder in
-        // zwölf Zügen — gedeckelt auf die neun, die der Beutel noch hergibt.
+        // zwölf Zügen — gedeckelt auf die zehn, die der Beutel noch hergibt.
         let board = BoardSide.a.board
         let stacked = EngineState(stacks: Dictionary(uniqueKeysWithValues:
                                       board.cells.prefix(3).map { ($0, [Stone.wood, .leaves]) }),
                                   turnsPlayed: 6, players: 3, seat: 2)
         #expect(stacked.ownTurnsPlayed == 2)
         #expect(stacked.ownTurnsUntilFull == 12)
-        #expect(stacked.ownTurnsInTheBag == 9)
-        #expect(stacked.ownTurnsLeft == 9)
+        #expect(stacked.ownTurnsInTheBag == 10)
+        #expect(stacked.ownTurnsLeft == 10)
+    }
+
+    @Test("Ein gemeldetes Ende lässt nur, wer nach der Auslöserin sitzt, noch ziehen")
+    func anAnnouncedEndLeavesATurnOnlyToThoseSeatedAfterTheTrigger() {
+        // Zu dritt. Im 13. Zug (Platz 0) meldet eine Mitspielerin zwei freie
+        // Felder; die Runde endet nach dem 15. Zug. Harmony auf Platz 2
+        // hat die Züge 2, 5, 8, 11 hinter sich und bekommt noch den 14.
+        let last = EngineState(turnsPlayed: 13, players: 3, seat: 2, endsAfter: 15)
+        #expect(last.ownTurnsPlayed == 4)
+        #expect(last.ownTurnsLeft == 1)
+
+        // Als Startspielerin hat sie den 12. Zug dieser Runde schon gespielt,
+        // bevor die Meldung kam — für sie war es der letzte, ohne Vorwarnung.
+        let first = EngineState(turnsPlayed: 14, players: 3, seat: 0, endsAfter: 15)
+        #expect(first.ownTurnsLeft == 0)
+
+        // Nach ihrem eigenen Zug, wie die Bewertung die Stellung sieht,
+        // bleibt auch auf Platz 2 nichts mehr.
+        let after = EngineState(turnsPlayed: 15, players: 3, seat: 2, endsAfter: 15)
+        #expect(after.ownTurnsLeft == 0)
+    }
+
+    @Test("Ein gemeldetes Ende kürzt nur, es verlängert nie")
+    func anAnnouncedEndOnlyShortens() {
+        // Ein Ende nach dem Beutel ändert nichts an dem, was Beutel und
+        // eigener Spielplan ohnehin hergeben.
+        let plain = EngineState(turnsPlayed: 0, players: 3, seat: 2)
+        let late = EngineState(turnsPlayed: 0, players: 3, seat: 2, endsAfter: 60)
+        #expect(late.ownTurnsLeft == plain.ownTurnsLeft)
     }
 
     // MARK: - Das Brett
