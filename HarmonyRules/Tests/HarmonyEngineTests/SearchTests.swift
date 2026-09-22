@@ -226,6 +226,7 @@ struct SearchTests {
             }
             // Die übrigen Teile dürfen sich davon nicht unterscheiden.
             #expect(fresh.landscapeTerms == grown.landscapeTerms)
+            #expect(fresh.sleepers == grown.sleepers)
             #expect(fresh.landscapeNow == grown.landscapeNow)
         }
 

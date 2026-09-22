@@ -106,7 +106,10 @@ public struct Availability: Sendable {
 /// only one of them.
 public struct Prepared: Sendable {
     let landscapeNow: Int
+    /// The river or the islands. The sleeping landscapes are kept apart,
+    /// because what they get depends on what the turn's cards take first.
     let landscapeTerms: [Term]
+    let sleepers: Evaluator.Sleepers
     /// Card name to every way its pattern could still lie on this board.
     /// Held for the cards in hand **and** for the open ones, because the
     /// turn may take one of those and it is then in hand.
@@ -218,6 +221,7 @@ public enum Evaluator {
             landscapeNow: scoring.breakdown().reduce(0) { $0 + $1.points },
             landscapeTerms: landscapeTerms(state, scoring: scoring, weights: weights,
                                            available: available),
+            sleepers: sleepers(state, weights: weights, available: available),
             habitats: habitats,
             prospects: prospects,
             cubesPlaced: cubesPlaced,
@@ -246,14 +250,19 @@ public enum Evaluator {
         terms.append(Term(name: "Landschaften", points: Double(landscapeNow) * weights.pointsNow))
         terms.append(Term(name: "Tierkarten", points: Double(cardsNow) * weights.pointsNow))
 
-        // (2) Aussicht aus Anwärtern
-        terms.append(contentsOf: candidateTerms(state, weights: weights,
-                                                available: available, prepared: prepared))
-
-        // (3) Aussicht aus Landschaften
-        terms.append(contentsOf: prepared?.landscapeTerms
+        // (2) Aussicht aus Anwärtern und (3) aus Landschaften — die
+        // Anwärter und die schlafenden Landschaften aus einem Steinbudget.
+        let promises = candidateTerms(state, weights: weights,
+                                      available: available, prepared: prepared)
+        let sleepers = prepared?.sleepers
+            ?? sleepers(state, weights: weights, available: available)
+        let river = prepared?.landscapeTerms
             ?? landscapeTerms(state, scoring: scoring!, weights: weights,
-                              available: available))
+                              available: available)
+        let (cards, asleep) = share(promises, sleepers, weights: weights)
+        terms.append(contentsOf: cards)
+        terms.append(contentsOf: river)
+        terms.append(contentsOf: asleep)
 
         // (4) Optionenvielfalt
         if weights.variety != 0 {
@@ -305,7 +314,7 @@ public enum Evaluator {
     /// candidates that exclude each other would promise points twice.
     static func candidateTerms(_ state: EngineState, weights: Weights,
                                available: Availability,
-                               prepared: Prepared? = nil) -> [Term] {
+                               prepared: Prepared? = nil) -> [Promise] {
         let laid = prepared.map { state.cubeCells.subtracting($0.cubes) } ?? []
         let best = state.hand.filter { !$0.isFinished }.compactMap { held -> Prospect? in
             // Vorgewogen gilt, solange diese Karte seither keinen Würfel
@@ -341,10 +350,20 @@ public enum Evaluator {
         let factor = apart > 0 ? bestWorth / apart : 1
 
         return chosen.map { prospect in
-            Term(name: "Aussicht \(prospect.card)",
-                 points: prospect.worth * factor * weights.candidates * weights.outlook,
-                 detail: prospect.detail)
+            Promise(term: Term(name: "Aussicht \(prospect.card)",
+                               points: prospect.worth * factor * weights.candidates
+                                   * weights.outlook,
+                               detail: prospect.detail),
+                    stones: prospect.habitat.missingStoneCount)
         }
+    }
+
+    /// A candidate's term, with the stones it still has to be paid in.
+    struct Promise: Sendable {
+        let term: Term
+        /// Counted on its own. Where two chosen candidates share a space the
+        /// stone is counted twice — the cautious direction.
+        let stones: Int
     }
 
     /// What one candidate promises: the next cube's gain, weighted by the
@@ -486,7 +505,6 @@ public enum Evaluator {
             }
         }
 
-        terms.append(contentsOf: dormantTerms(state, weights: weights, available: available))
         return terms
     }
 
@@ -608,6 +626,32 @@ public enum Evaluator {
         }
     }
 
+    /// A sleeping landscape's best way out, weighed.
+    struct Waiting: Sendable, Hashable {
+        let kind: Landscape
+        let worth: Double
+        let stones: Int
+    }
+
+    /// The sleeping landscapes of one board, weighed but not yet paid for.
+    ///
+    /// Worked out once per laying, like the rest of the landscape. Which of
+    /// them the stones still stretch to depends on the turn's cards, and
+    /// that part is left to `share`.
+    struct Sleepers: Sendable, Equatable {
+        /// Their best ways out, in order of worth per stone.
+        let waiting: [Waiting]
+        let asleep: [Landscape: Int]
+        let hopeless: [Landscape: Int]
+        /// Three stones for each turn she has left.
+        let budget: Int
+        /// What they come to with the whole budget to themselves.
+        let terms: [Term]
+        /// And what that leaves over. A turn whose candidates need no more
+        /// than this changes nothing here.
+        let leftover: Int
+    }
+
     /// What the sleeping landscapes promise, one term per kind.
     ///
     /// Before this the evaluation promised them nothing, and that is not a
@@ -622,14 +666,14 @@ public enum Evaluator {
     /// One term per kind rather than one for all three: the reasoning names
     /// the largest contributions, and "Berge" says something there that a
     /// collective name would not.
-    static func dormantTerms(_ state: EngineState, weights: Weights,
-                             available: Availability) -> [Term] {
+    static func sleepers(_ state: EngineState, weights: Weights,
+                         available: Availability) -> Sleepers {
         let supply: (Stone) -> Double = {
             Double(state.bag.remaining($0)) + (available.perColour[$0] ?? 0)
         }
         var asleep: [Landscape: Int] = [:]
         var hopeless: [Landscape: Int] = [:]
-        var waiting: [(kind: Landscape, worth: Double, stones: Int)] = []
+        var waiting: [Waiting] = []
 
         // Over the board's spaces rather than over the stacks: a dictionary
         // hands them out in no fixed order, and summing doubles in a
@@ -651,33 +695,44 @@ public enum Evaluator {
                 hopeless[kind, default: 0] += 1
                 continue
             }
-            waiting.append((kind, best.worth, best.stones))
+            waiting.append(Waiting(kind: kind, worth: best.worth, stones: best.stones))
         }
 
         // **They compete for the same stones**, and there are three a turn
         // and no more. Added up without that cap, nine brown stacks promised
         // 34 points — nine finished trees, which would take eighteen stones
         // she does not have. Each one on its own is right; the sum is the
-        // lie, exactly as with the candidates in family (2), which are
-        // selected rather than added for the same reason.
+        // lie.
         //
         // Taken in order of worth per stone until the budget runs out. A
         // greedy pass, not an optimum: the exact answer is a knapsack, and
         // paying for one per laying would not be worth what it buys.
-        var budget = 3 * state.ownTurnsLeft
+        waiting.sort { $0.worth * Double($1.stones) > $1.worth * Double($0.stones) }
+        let budget = 3 * state.ownTurnsLeft
+        var left = budget
         var worth: [Landscape: Double] = [:]
         var unaffordable: [Landscape: Int] = [:]
-        for one in waiting.sorted(by: { $0.worth * Double($1.stones)
-                                        > $1.worth * Double($0.stones) }) {
-            guard one.stones <= budget else {
+        for one in waiting {
+            guard one.stones <= left else {
                 unaffordable[one.kind, default: 0] += 1
                 continue
             }
-            budget -= one.stones
+            left -= one.stones
             worth[one.kind, default: 0] += one.worth
         }
 
-        return [Landscape.mountain, .field, .building, .tree].compactMap { landscape in
+        return Sleepers(waiting: waiting, asleep: asleep, hopeless: hopeless,
+                        budget: budget,
+                        terms: sleeperTerms(asleep: asleep, hopeless: hopeless,
+                                            worth: worth, unaffordable: unaffordable,
+                                            weights: weights),
+                        leftover: left)
+    }
+
+    static func sleeperTerms(asleep: [Landscape: Int], hopeless: [Landscape: Int],
+                             worth: [Landscape: Double], unaffordable: [Landscape: Int],
+                             weights: Weights) -> [Term] {
+        [Landscape.mountain, .field, .building, .tree].compactMap { landscape in
             guard let count = asleep[landscape] else { return nil }
             var detail = "\(count) \(waitingFor(landscape, count))"
             if let blind = hopeless[landscape] { detail += ", \(blind) davon ohne Aussicht" }
@@ -686,6 +741,59 @@ public enum Evaluator {
                         points: (worth[landscape] ?? 0) * weights.landscape * weights.outlook,
                         detail: detail)
         }
+    }
+
+    /// The candidates and the sleeping landscapes, out of **one** budget.
+    ///
+    /// The sleepers had shared their stones among themselves since the
+    /// nine brown stacks; the candidates of family (2) each checked the
+    /// limit on their own. In the last turn two cards and a mountain could
+    /// together promise nine stones where three come — the same lie as
+    /// the nine stacks, only across two families.
+    ///
+    /// Nothing changes while the turn's candidates fit into what the
+    /// sleepers leave over, and that is the common case: the terms worked
+    /// out once per laying stand as they are. Only where the stones run
+    /// short does one greedy pass by worth per stone go over both, and a
+    /// candidate that does not fit then promises nothing.
+    static func share(_ promises: [Promise], _ sleepers: Sleepers,
+                      weights: Weights) -> (cards: [Term], asleep: [Term]) {
+        let wanted = promises.reduce(0) { $0 + $1.stones }
+        guard wanted > sleepers.leftover else {
+            return (promises.map(\.term), sleepers.terms)
+        }
+
+        // Compared in points, since the two families carry different weights.
+        let scale = weights.landscape * weights.outlook
+        enum Item { case card(Int), asleep(Int) }
+        var items: [(item: Item, points: Double, stones: Int)] =
+            promises.indices.map { (.card($0), promises[$0].term.points, promises[$0].stones) }
+        items += sleepers.waiting.indices.map {
+            (.asleep($0), sleepers.waiting[$0].worth * scale, sleepers.waiting[$0].stones)
+        }
+        items.sort { $0.points * Double($1.stones) > $1.points * Double($0.stones) }
+
+        var left = sleepers.budget
+        var kept = Set<Int>()
+        var worth: [Landscape: Double] = [:]
+        var unaffordable: [Landscape: Int] = [:]
+        for one in items {
+            let fits = one.stones <= left
+            if fits { left -= one.stones }
+            switch one.item {
+            case let .card(index):
+                if fits { kept.insert(index) }
+            case let .asleep(index):
+                let kind = sleepers.waiting[index].kind
+                if fits { worth[kind, default: 0] += sleepers.waiting[index].worth }
+                else { unaffordable[kind, default: 0] += 1 }
+            }
+        }
+
+        let cards = promises.indices.filter(kept.contains).map { promises[$0].term }
+        return (cards, sleeperTerms(asleep: sleepers.asleep, hopeless: sleepers.hopeless,
+                                    worth: worth, unaffordable: unaffordable,
+                                    weights: weights))
     }
 
     static func name(of landscape: Landscape) -> String {

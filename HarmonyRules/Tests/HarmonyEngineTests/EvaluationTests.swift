@@ -333,6 +333,51 @@ struct EvaluationTests {
         #expect(many?.detail?.contains("fehlt die Zeit") == true)
     }
 
+    @Test("Anwärter und schlafende Landschaften teilen sich ein Budget")
+    func candidatesAndSleepersShareOneBudget() {
+        // Der letzte eigene Zug bringt drei Steine. Der Anwärter braucht
+        // zwei graue, der einsame gelbe Stein, der einsame Berg und der
+        // braune Stapel je einen weiteren: fünf, wo drei kommen. Jede Familie
+        // für sich hielte ihre Grenze ein, zusammen versprachen sie mehr.
+        let tall = card("Hoch", [11: .field, 12: .mountain2], cube: 12)
+        var last = state(stacks: [11: [.field], 33: [.stone], 51: [.wood]],
+                         hand: [HeldCard(card: tall)])
+        last.turnsPlayed = 33
+        #expect(last.ownTurnsLeft == 1)
+
+        let weights = Weights()
+        let available = Availability(counting: last.display)
+        let promises = Evaluator.candidateTerms(last, weights: weights, available: available)
+        let sleepers = Evaluator.sleepers(last, weights: weights, available: available)
+        #expect(sleepers.budget == 3)
+        #expect(promises.reduce(0) { $0 + $1.stones } > sleepers.leftover)
+
+        let (cards, asleep) = Evaluator.share(promises, sleepers, weights: weights)
+        let apart = promises.reduce(0) { $0 + $1.term.points }
+            + sleepers.terms.reduce(0) { $0 + $1.points }
+        let together = cards.reduce(0) { $0 + $1.points } + asleep.reduce(0) { $0 + $1.points }
+        #expect(together < apart)
+        #expect(cards.count < promises.count
+                || asleep.contains { $0.detail?.contains("fehlt die Zeit") == true })
+    }
+
+    @Test("Mit genug Zeit ändert das gemeinsame Budget nichts")
+    func withTimeEnoughTheSharedBudgetChangesNothing() {
+        // Mitten in der Partie passen die Anwärter in das, was die
+        // schlafenden Landschaften übrig lassen — dann bleiben beide Seiten,
+        // wie sie für sich gerechnet wurden.
+        let tall = card("Hoch", [11: .field, 12: .mountain2], cube: 12)
+        let middle = state(stacks: [11: [.field], 33: [.stone], 51: [.wood]],
+                           hand: [HeldCard(card: tall)])
+        let weights = Weights()
+        let available = Availability(counting: middle.display)
+        let promises = Evaluator.candidateTerms(middle, weights: weights, available: available)
+        let sleepers = Evaluator.sleepers(middle, weights: weights, available: available)
+        let (cards, asleep) = Evaluator.share(promises, sleepers, weights: weights)
+        #expect(cards == promises.map(\.term))
+        #expect(asleep == sleepers.terms)
+    }
+
     // MARK: - Das Spielende
 
     @Test("Ein fertiger Anwärter verspricht nichts, wenn kein eigener Zug mehr bleibt")

@@ -916,6 +916,33 @@ Dabei ist die Feinheit aus dem Beutel mit behoben. Er trägt 35 Züge, aber der
 scheitert; danach wird die Runde zu Ende gespielt. Zu dritt sind das zwölf
 Runden auf **jedem** Platz. Gerechnet waren elf für den dritten.
 
+### Ein Budget für Anwärter und schlafende Landschaften
+
+Die schlafenden Landschaften teilten sich seit den neun braunen Stapeln ein
+Steinbudget von `3 · ownTurnsLeft`. Die Anwärter aus Familie (2) prüften die
+Grenze dagegen jeder für sich, und zwischen beiden Familien galt sie gar
+nicht. Im letzten eigenen Zug konnten damit zwei Karten und ein Berg
+zusammen neun Steine versprechen, wo drei kommen — dieselbe Übertreibung wie
+bei den Stapeln, nur über zwei Familien hinweg.
+
+Jetzt gilt **ein** Budget für beide (`Evaluator.share`). Die schlafenden
+Landschaften werden weiter einmal je Legung gewogen und behalten, was sie
+dabei übrig lassen. Passen die Anwärter des Zuges in diesen Rest, bleibt
+alles, wie es war, und das ist der Regelfall. Nur wo die Steine nicht
+reichen, geht ein gieriger Durchgang nach Punkten je Stein über beide
+Familien, und ein Anwärter, der nicht mehr hineinpasst, verspricht nichts.
+Dass beides auf dasselbe hinausläuft, solange die Anwärter in den Rest
+passen, ist keine Näherung: Kein Posten, der vorher Platz fand, verliert ihn,
+und keiner, der vorher keinen fand, bekommt einen.
+
+Fluss und Inseln stehen weiter außerhalb. Ihre Aussicht ist eine obere
+Schranke über viele Steine, deren Chance bei knapper Zeit ohnehin gegen null
+geht, und alles oder nichts aus dem Budget passte zu ihr schlecht.
+
+Gemessen mit `tools/messe-verzweigung.sh`, je zwei Läufe vorher und nachher:
+306 und 309 µs je Zug gegen 306 und 304 µs bei sechs belegten Feldern. Der
+Unterschied liegt im Rauschen.
+
 ## Offene Punkte
 
 1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird
