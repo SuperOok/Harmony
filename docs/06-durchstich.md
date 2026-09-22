@@ -230,7 +230,7 @@ könnte.
 | --- | --- | --- |
 | Punkte jetzt | die Endwertung | `BoardScoring.breakdown()` und die Kartenleitern |
 | Aussicht aus Anwärtern | die mittlere Partie | Anwärter × Wahrscheinlichkeit |
-| Aussicht aus Landschaften | die **frühe** Partie | Fluss auf Seite A, Inseln auf Seite B |
+| Aussicht aus Landschaften | die **frühe** Partie | Fluss auf Seite A, Inseln auf Seite B, Gebäude auf beiden |
 | Optionenvielfalt | den ersten Zug | wie viele Anwärter den Zug überleben |
 
 **Anwärter werden ausgewählt, nicht addiert.** Je Karte der beste Anwärter,
@@ -260,6 +260,73 @@ die Steine zusammen gebraucht werden und die Auslage allen gehört. Richtig
 ist daran die Richtung — knappere Farbe, weniger Zeit oder mehr fehlende
 Steine senken den Wert —, und darauf ruht die Reihenfolge. Die Form gehört
 gemessen, sobald Selbstspiel läuft.
+
+### Zwei Lücken, am Tisch gefunden
+
+**Aufgefallen beim Spielen am 2026-09-22**, behoben am selben Tag. Beide
+waren keine Rechenfehler, sondern Dinge, nach denen die Bewertung gar nicht
+erst fragte — und beide zeigten sich erst in einer ganzen Partie, nicht in
+einem Prüffall.
+
+**Harmony baute Gebäude in die äußersten Ecken.** Ein Gebäude zahlt 5 Punkte
+für drei verschiedenfarbige Nachbarn und sonst nichts. In der Familie
+*Punkte jetzt* steht es am Tag seiner Legung also mit 0, und eine Aussicht
+gab es für Gebäude überhaupt nicht — die dritte Familie kannte nur Fluss und
+Inseln. Damit waren **alle** Felder für ein Gebäude gleich bewertet, und
+entschieden hat dann die vierte Familie: Die *Optionenvielfalt* bevorzugt den
+Rand, weil ein Stein dort die wenigsten Anwärter zubaut. Die Bewertung trieb
+das Gebäude also in die Ecke, und zwar systematisch.
+
+Dort ist es beweisbar wertlos. Auf beiden Planseiten haben vier Felder nur
+**zwei** Nachbarn — auf Seite A 1.1, 1.5, 5.1 und 5.5 —, und drei Farben
+passen nicht auf zwei Felder. Auf Seite A kommen zwei Felder mit drei
+Nachbarn dazu, auf Seite B vier.
+
+`Evaluator.buildingTerm` schließt die Lücke: je Gebäude ohne die drei Farben
+5 Punkte mal der Aussicht, die fehlenden Farben auf seinen **freien**
+Nachbarn unterzubringen. Reichen die freien Nachbarn zahlenmäßig nicht, ist
+der Beitrag 0 und das Gebäude in der Begründung als „ohne Aussicht"
+ausgewiesen. Welche Farben gesucht werden, entscheidet der Vorrat: die
+größten Bestände zuerst, weil Harmony die am ehesten zu sehen bekommt. Schon
+gewertete Gebäude bleiben außen vor, sonst stünden ihre 5 Punkte zweimal da.
+
+**Harmony merkte nicht, dass die Partie zu Ende geht.** `ownTurnsLeft` zählte
+nur den Beutel: 35 Züge, geteilt durch die Sitzordnung. Der zweite Auslöser —
+ein persönlicher Spielplan mit 2 oder weniger freien Feldern — floss nirgends
+ein; `boardIsFull` war eine Eigenschaft, die die Engine nie las.
+
+Die Rechnung zeigt, wie groß der Fehler ist: Seite A hat 23 Felder und endet
+bei 21 belegten, das sind bei drei Steinen je Zug **sieben** eigene Züge. Der
+Beutel verspricht am Tisch zu dritt **zwölf**. Harmony rechnete also die halbe
+Partie lang mit ungefähr der doppelten verbleibenden Zeit, und weil
+`1 - (1 - p)^(3t)` unmittelbar an *t* hängt, wirkte fast jeder Anwärter noch
+erreichbar. Nichts drängte, also schloss sie nichts ab.
+
+`ownTurnsLeft` ist jetzt das Minimum aus beiden Auslösern. Wie schnell der
+eigene Plan zugeht, wird **gemessen** statt angenommen — belegte Felder je
+eigenem Zug —, denn wer stapelt, verbraucht weniger Felder und hat länger
+Zeit. Vor dem ersten eigenen Zug gibt es nichts zu messen, dann gilt der
+schnellste Fall. Zwei Feinheiten bleiben außen vor: Die laufende Runde wird
+zu Ende gespielt, was die echte Zahl um eins heben kann, und ein fremdes
+Tableau kann die Partie früher beenden, was Harmony ohnehin nicht sieht.
+Beide sind kleiner als der Fehler, den sie ersetzen.
+
+**Dazu ein dritter Punkt, derselben Wurzel entsprungen.** In
+`chance(ofBuilding:)` stand die Frage nach den fehlenden Steinen **vor** der
+Frage nach der Zeit. Ein Anwärter, der fertig dasteht und nur noch den Würfel
+braucht, braucht keine Steine — er antwortete also mit Wahrscheinlichkeit 1,
+ganz gleich, wie spät es war, und versprach noch im letzten Zug seinen vollen
+Zuwachs. Der Deckel lohnte damit kaum: Den Würfel zu legen brachte den
+Zuwachs ganz, ihn liegen zu lassen `outlook = 0,85` davon. Die beiden Fragen
+stehen jetzt in der anderen Reihenfolge; ohne eigenen Zug verspricht auch ein
+fertiger Anwärter nichts.
+
+**Was offen bleibt:** `weights.outlook` ist weiterhin eine Konstante. Der
+Anreiz, einen fertigen Anwärter zu bewürfeln statt ihn stehen zu lassen,
+beträgt damit immer 15 Prozent seines Zuwachses, ob nun zehn eigene Züge
+folgen oder einer. Naheliegend wäre, ihn mit der Restzeit fallen zu lassen.
+Das ist aber eine Gewichtsfrage, und Gewichte gehören hier gemessen statt
+geraten — es hängt an derselben offenen Frage wie die vier Familien.
 
 ## Die Suche, und was sie kostet
 

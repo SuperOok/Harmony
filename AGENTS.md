@@ -14,11 +14,19 @@ Steinbilanz —, entstanden, weil der Dummy diese Regeln zum Anzeigen
 braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
 siehe `docs/`.
 
-**Wo es steht:** Stand 2026-09-21. Der Durchstich aus Phase 6
+**Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 141 Regelfällen (`tools/tests.sh`, unter einer
+Weglegen. Geprüft wird mit 146 Regelfällen (`tools/tests.sh`, unter einer
 Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
+
+**Gespielt zu werden findet Lücken, die kein Prüffall findet.** Am
+2026-09-22 zwei Stück, beide in `docs/06-durchstich.md` unter *Zwei Lücken,
+am Tisch gefunden*: Die Bewertung kannte für Gebäude **keine Aussicht** und
+schob sie deshalb in die Ecken, wo drei Farben unmöglich sind; und
+`ownTurnsLeft` zählte nur den Beutel, während in Wahrheit der eigene
+Spielplan die Partie beendet — Harmony rechnete durchweg mit etwa der
+doppelten Restzeit und schloss darum nichts ab. Beides ist behoben.
 
 **Die Rechenzeit war das große Problem und ist es nicht mehr.** Am
 2026-09-20/21 sind fünf Hebel gebaut und jeweils auf dem Gerät gemessen
@@ -47,12 +55,12 @@ Was offen ist, steht in `docs/06-durchstich.md` unter *Fünf Abhilfen*: die
 Landschaft wird weiter je Legung ganz gerechnet und ist damit der größte
 Posten des Vorrechnens.
 
-**Zwei Regelfragen sind offen**, beide beim Spielen am 2026-09-21
-aufgeworfen und in `docs/ideen-vorgemerkt.md` festgehalten: ob ein Gebäude
-ohne drei Farben ringsum 0 zählt (so der Regeltext dieses Projekts und der
-Code) oder **−2** (so der Einwand am Tisch — die Broschüre entscheidet), und
-dass die Bewertung nur die Karten in Harmonys Hand kennt, nie die offenen. Was in Phase 5 offen blieb, führt `docs/05-ui.md` am
-Ende auf.
+**Eine Regelfrage ist noch offen**, aufgeworfen beim Spielen am 2026-09-21
+und in `docs/ideen-vorgemerkt.md` festgehalten: dass die Bewertung nur die
+Karten in Harmonys Hand kennt, nie die offenen. Die zweite, ob ein Gebäude
+ohne drei Farben ringsum 0 oder −2 zählt, ist am 2026-09-22 geklärt — die
+Broschüre bestätigt 0, wie Regeltext und Code es bereits umsetzen. Was in
+Phase 5 offen blieb, führt `docs/05-ui.md` am Ende auf.
 
 **Fürs Gerät `-configuration Release` bauen.** Das Schema baut beim
 Laufenlassen Debug, und Debug ist hier sechs- bis achtmal langsamer. Die

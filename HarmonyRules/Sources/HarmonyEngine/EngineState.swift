@@ -167,9 +167,55 @@ extension EngineState {
     /// How many turns are left for Harmony herself. The evaluation needs
     /// this one, not the game's: whether a candidate is still reachable is a
     /// question about **her** remaining turns.
-    public var ownTurnsLeft: Int {
-        guard players > 0 else { return 0 }
-        return (turnsPlayed..<Self.turnsInTheBag).count { $0 % players == seat }
+    ///
+    /// **Both triggers count, not just the bag.** `regeln-basisspiel.md`
+    /// calls the bag an upper bound and says plainly that a full board can
+    /// cut the game short — and her own board almost always does: side A
+    /// holds 23 spaces and ends at 21 filled, which is seven turns of three
+    /// stones, while the bag promises about twelve at a table of three.
+    /// Counting the bag alone she believed all game long that she had
+    /// roughly twice the turns she had, and `chance(ofBuilding:)` inherited
+    /// the error, since it raises every prospect by `1 - (1 - p)^(3t)`.
+    /// Nothing then pressed her to finish anything.
+    ///
+    /// The round is played out after either trigger, so the true figure can
+    /// be one higher — and a foreign board can end it sooner, which she
+    /// cannot see at all. Neither is modelled; both are smaller than the
+    /// error they replace.
+    public var ownTurnsLeft: Int { min(ownTurnsInTheBag, ownTurnsUntilFull) }
+
+    /// How many of the game's first `limit` turns are hers — those at
+    /// `seat`, `seat + players`, and so on.
+    ///
+    /// Counted rather than enumerated, because `chance(ofBuilding:)` asks
+    /// for the remaining turns once per candidate per move, which is
+    /// millions of times per search.
+    func ownTurns(before limit: Int) -> Int {
+        guard players > 0, limit > seat else { return 0 }
+        return (limit - seat + players - 1) / players
+    }
+
+    /// Her own turns still covered by the bag.
+    public var ownTurnsInTheBag: Int {
+        ownTurns(before: Self.turnsInTheBag) - ownTurnsPlayed
+    }
+
+    /// Turns she has played herself.
+    public var ownTurnsPlayed: Int { ownTurns(before: turnsPlayed) }
+
+    /// How many more turns her own board holds before it triggers the end.
+    ///
+    /// Three stones a turn take **at most** three new spaces, and fewer as
+    /// soon as she stacks — so the rate is measured rather than assumed:
+    /// spaces filled per own turn so far. Before her first turn there is
+    /// nothing to measure and the fastest case is taken.
+    public var ownTurnsUntilFull: Int {
+        let toFill = max(0, freeCells - 2)
+        let perTurn = ownTurnsPlayed > 0
+            ? Double(stacks.count) / Double(ownTurnsPlayed)
+            : 3
+        guard perTurn > 0 else { return Self.turnsInTheBag }
+        return Int((Double(toFill) / perTurn).rounded(.up))
     }
 
     /// The cards she could still draw or take — everything not already hers

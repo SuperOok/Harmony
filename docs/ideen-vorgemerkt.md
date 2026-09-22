@@ -223,31 +223,14 @@ liegt, lässt sich das nicht aufschreiben.
 
 ## Offen aus Phase 6 — am Tisch aufgeworfen
 
-**Zählt ein Gebäude ohne drei Farben ringsum 0 oder −2?** ❓ **Ungeklärt,
-aufgeworfen am 2026-09-21.** Der Regeltext dieses Projekts sagt in
-`regeln-basisspiel.md`: „5 Punkte je Gebäude, das von mindestens 3
-verschiedenfarbigen Spielsteinen umgeben ist […] Andernfalls 0 Punkte."
-`Scoring.swift` setzt genau das um (`colors.count >= 3 ? 5 : 0`), und der
-Prüffall *Ein Gebäude am Rand hat zu wenige Farben* sichert die 0 zu.
-
-Beim Spielen kam der Einwand, die Broschüre nenne **−2** statt 0. Das ist
-nicht von hier aus zu entscheiden: `regeln-basisspiel.md` ist eine Abschrift,
-und wenn sie hier falsch ist, ist der Code es mit ihr — er folgt ihr treu.
-**Zu tun: in der Broschüre nachsehen.**
-
-Trifft −2 zu, ist der Umbau klein, die Wirkung aber nicht:
-
-- eine Zeile in `BoardScoring.buildings`, dazu `scoringCells`, das heute „was
-  Punkte bringt" mit „was positiv zählt" gleichsetzt, und die Prüffälle;
-- die Endwertung zeigt heute 0 statt eines Abzugs — zwei erfolglose Gebäude
-  sind 4 Punkte Unterschied;
-- **Harmony baut zu sorglos.** Ein Gebäude ohne Aussicht auf drei Farben
-  kostet sie heute nichts. Da die Bewertung „Punkte jetzt" direkt aus
-  `breakdown()` zieht, schlüge die Änderung sofort auf ihr Spiel durch.
-
-Im ganzen Regelmodul steht **kein einziger negativer Punktwert**. Wenn die
-Broschüre einen kennt, gehören die anderen Nullstellen mitgeprüft: der Berg
-ohne Bergnachbarn und der einzelne gelbe Stein.
+**Zählt ein Gebäude ohne drei Farben ringsum 0 oder −2?** ✅ **Geklärt am
+2026-09-22: 0 Punkte, kein Abzug.** Aufgeworfen am 2026-09-21 beim Spielen,
+mit dem Einwand, die Broschüre nenne −2. Ein Blick in die Broschüre
+bestätigt stattdessen den Regeltext dieses Projekts: `regeln-basisspiel.md`
+sagt „5 Punkte je Gebäude, das von mindestens 3 verschiedenfarbigen
+Spielsteinen umgeben ist […] Andernfalls 0 Punkte", `Scoring.swift` setzt
+das unverändert um (`colors.count >= 3 ? 5 : 0`), und der Prüffall *Ein
+Gebäude am Rand hat zu wenige Farben* sichert die 0 zu. Kein Umbau nötig.
 
 **Die Bewertung sieht die Auslage nicht.** ❓ Bekannte Modellgrenze, am
 2026-09-21 an einem Beispiel vermessen. Ein Zug, der ein Feld zubaut, das ein

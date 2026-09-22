@@ -201,6 +201,69 @@ struct EvaluationTests {
         #expect(!b.terms.contains { $0.name == "Fluss" })
     }
 
+    // MARK: - Gebäude
+
+    @Test("Ein Gebäude in der Ecke verspricht nichts, eines in der Mitte schon")
+    func abuildingInTheCornerPromisesNothingAndOneInTheMiddleDoes() {
+        // Fünf Punkte für drei verschiedene Farben ringsum, sonst gar
+        // nichts. 1.1 hat zwei Nachbarn — dort sind drei Farben unmöglich,
+        // und das Gebäude kann nie zählen. 3.3 hat sechs.
+        let corner = Evaluator.evaluate(state(stacks: [11: [.stone, .brick]]))
+        let middle = Evaluator.evaluate(state(stacks: [33: [.stone, .brick]]))
+        let inCorner = corner.terms.first { $0.name == "Gebäude" }
+        let inMiddle = middle.terms.first { $0.name == "Gebäude" }
+        #expect(inCorner?.points == 0)
+        #expect(inCorner?.detail?.contains("ohne Aussicht") == true)
+        #expect((inMiddle?.points ?? 0) > 0)
+    }
+
+    @Test("Ein Gebäude, das schon zählt, verspricht nichts mehr")
+    func abuildingThatAlreadyScoresPromisesNothingMore() {
+        // Drei Farben stehen: die fünf Punkte sind in „Landschaften", und
+        // eine Aussicht daneben wäre dieselben Punkte ein zweites Mal.
+        let scoring = state(stacks: [33: [.stone, .brick], 23: [.water],
+                                     32: [.field], 34: [.wood, .leaves]])
+        #expect(!Evaluator.evaluate(scoring).terms.contains { $0.name == "Gebäude" })
+    }
+
+    // MARK: - Das Spielende
+
+    @Test("Ein fertiger Anwärter verspricht nichts, wenn kein eigener Zug mehr bleibt")
+    func afinishedCandidatePromisesNothingWithoutATurnToLayTheCubeIn() {
+        // Das Muster steht, der Würfel liegt noch nicht. Ihn zu legen
+        // kostet einen eigenen Zug — bleibt keiner, ist der Anwärter
+        // wertlos. Vorher versprach er seinen vollen Zuwachs, auch im
+        // letzten Zug, und dann lohnte der Deckel kaum noch.
+        let meerkat = card("Erdmännchen", [11: .field, 12: .mountain1], cube: 12)
+        var standing = state(stacks: [11: [.field], 12: [.stone]],
+                             hand: [HeldCard(card: meerkat)])
+        #expect(Evaluator.evaluate(standing).terms.contains { $0.name.hasPrefix("Aussicht") })
+
+        standing.turnsPlayed = 35
+        #expect(standing.ownTurnsLeft == 0)
+        #expect(!Evaluator.evaluate(standing).terms.contains { $0.name.hasPrefix("Aussicht") })
+    }
+
+    @Test("Ein volles Brett drängt stärker als der Beutel")
+    func afullBoardPressesHarderThanTheBagDoes() {
+        // Vier fehlende Steine sind in fünf Zügen noch zu schaffen, in
+        // einem nicht. Der Beutel gibt die fünf her, das eigene Brett aber
+        // geht vorher zu — und danach richtet sich die Rechnung.
+        var tight = state()
+        for cell in BoardSide.a.board.cells.dropFirst(3).prefix(19) {
+            tight.stacks[cell] = [.field]
+        }
+        tight.turnsPlayed = 21              // sieben eigene Züge gespielt
+        #expect(tight.ownTurnsInTheBag == 5)
+        #expect(tight.ownTurnsUntilFull == 1)
+        #expect(Evaluator.chance(ofBuilding: [.stone: 4], state: tight) == 0)
+
+        // Dasselbe Brett, nur leerer: dann reicht die Zeit.
+        var roomy = tight
+        roomy.stacks = [:]
+        #expect(Evaluator.chance(ofBuilding: [.stone: 4], state: roomy) > 0)
+    }
+
     // MARK: - Determinismus
 
     @Test("Zweimal dieselbe Stellung gibt zweimal denselben Wert")

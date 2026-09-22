@@ -102,9 +102,33 @@ struct EngineStateTests {
         // Drei Spielerinnen, Harmony auf dem dritten Platz: die Züge 2, 5,
         // 8 … der Partie sind ihre.
         let state = EngineState(turnsPlayed: 0, players: 3, seat: 2)
-        #expect(state.ownTurnsLeft == 11)          // 2, 5, 8 … 32, also elf
-        #expect(EngineState(turnsPlayed: 33, players: 3, seat: 2).ownTurnsLeft == 0)
-        #expect(EngineState(turnsPlayed: 0, players: 1, seat: 0).ownTurnsLeft == 35)
+        #expect(state.ownTurnsInTheBag == 11)      // 2, 5, 8 … 32, also elf
+        #expect(state.ownTurnsPlayed == 0)
+        #expect(EngineState(turnsPlayed: 33, players: 3, seat: 2).ownTurnsInTheBag == 0)
+        #expect(EngineState(turnsPlayed: 0, players: 1, seat: 0).ownTurnsInTheBag == 35)
+        #expect(EngineState(turnsPlayed: 34, players: 3, seat: 2).ownTurnsPlayed == 11)
+    }
+
+    @Test("Der eigene Spielplan endet die Partie früher als der Beutel")
+    func herOwnBoardRunsOutBeforeTheBagDoes() {
+        // Leeres Brett, Seite A: 23 Felder, Schluss bei 21 belegten, drei
+        // Steine je Zug — sieben eigene Züge. Der Beutel verspricht elf.
+        let empty = EngineState(turnsPlayed: 0, players: 3, seat: 2)
+        #expect(empty.ownTurnsUntilFull == 7)
+        #expect(empty.ownTurnsLeft == 7)
+
+        // Wer stapelt, verbraucht weniger Felder und hat länger Zeit. Nach
+        // zwei eigenen Zügen liegen sechs Steine, aber nur drei Felder sind
+        // belegt: anderthalb je Zug, also achtzehn zu füllende Felder in
+        // zwölf Zügen — gedeckelt auf die neun, die der Beutel noch hergibt.
+        let board = BoardSide.a.board
+        let stacked = EngineState(stacks: Dictionary(uniqueKeysWithValues:
+                                      board.cells.prefix(3).map { ($0, [Stone.wood, .leaves]) }),
+                                  turnsPlayed: 6, players: 3, seat: 2)
+        #expect(stacked.ownTurnsPlayed == 2)
+        #expect(stacked.ownTurnsUntilFull == 12)
+        #expect(stacked.ownTurnsInTheBag == 9)
+        #expect(stacked.ownTurnsLeft == 9)
     }
 
     // MARK: - Das Brett

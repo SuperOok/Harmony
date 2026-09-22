@@ -408,10 +408,17 @@ public enum Evaluator {
     static func chance(ofBuilding needed: [Stone: Int], state: EngineState,
                        available: Availability? = nil) -> Double {
         let available = available ?? Availability(counting: state.display)
+        let turns = state.ownTurnsLeft
+        // The turn count is asked **before** the missing stones, and that
+        // order is the point. A candidate that stands complete needs nothing
+        // and used to answer 1 here whatever the clock said — so on her last
+        // turn an uncubed pattern still promised its full gain and she left
+        // the cube unlaid. Realising it takes a turn of her own; with none
+        // left it promises nothing.
+        guard turns > 0 else { return 0 }
         let total = needed.values.reduce(0, +)
         guard total > 0 else { return 1 }
-        let turns = state.ownTurnsLeft
-        guard turns > 0, total <= 3 * turns else { return 0 }
+        guard total <= 3 * turns else { return 0 }
 
         let bag = state.bag
         var chance = 1.0
@@ -478,7 +485,59 @@ public enum Evaluator {
                                       + "\(cellName(cut.cell)) ergäben eine Insel"))
             }
         }
+
+        terms.append(contentsOf: buildingTerm(state, weights: weights, available: available))
         return terms
+    }
+
+    /// What the buildings that do not score yet could still be worth.
+    ///
+    /// A building pays five for three differently coloured neighbours and
+    /// nothing at all below that, so it is worth exactly what the colours
+    /// that can still reach it are worth. Without this the evaluation knew
+    /// **no difference at all** between a building in the middle and one in
+    /// a corner — both score zero the turn they are laid, and neither
+    /// promised anything. Family (4) then decided, and it prefers the edge,
+    /// where a stone spoils the fewest candidates. So the evaluation drove
+    /// the building into the corner, where four spaces on either side have
+    /// two neighbours and three colours can never stand.
+    ///
+    /// Which colours are still missing is decided by supply: the largest
+    /// stocks first, because those are the ones she will actually see. The
+    /// neighbours already standing are taken as fixed, although a stack can
+    /// be built over — an understatement, and the cheap direction.
+    static func buildingTerm(_ state: EngineState, weights: Weights,
+                             available: Availability) -> [Term] {
+        let supply: (Stone) -> Double = {
+            Double(state.bag.remaining($0)) + (available.perColour[$0] ?? 0)
+        }
+        var worth = 0.0
+        var open = 0
+        var hopeless = 0
+
+        for (cell, stack) in state.stacks where stack.landscape == .building {
+            let ring = state.board.neighbours(cell)
+            let colours = Set(ring.compactMap { state.stacks[$0]?.last })
+            guard colours.count < 3 else { continue }
+            open += 1
+            let needed = 3 - colours.count
+            let free = ring.count { state.stacks[$0] == nil }
+            guard free >= needed else { hopeless += 1; continue }
+            let wanted = Stone.allCases
+                .filter { !colours.contains($0) }
+                .sorted { supply($0) > supply($1) }
+                .prefix(needed)
+            let odds = chance(ofBuilding: Dictionary(uniqueKeysWithValues: wanted.map { ($0, 1) }),
+                              state: state, available: available)
+            worth += 5 * odds
+        }
+
+        guard open > 0 else { return [] }
+        var detail = "\(open) Gebäude ohne drei Farben"
+        if hopeless > 0 { detail += ", \(hopeless) davon ohne Aussicht" }
+        return [Term(name: "Gebäude",
+                     points: worth * weights.landscape * weights.outlook,
+                     detail: detail)]
     }
 
     // MARK: - (4) Wie viel noch offen ist
