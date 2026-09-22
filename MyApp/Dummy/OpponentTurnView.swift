@@ -112,10 +112,11 @@ struct OpponentTurnView: View {
     /// Gerät, wo weder das Messprogramm läuft noch jemand mitliest.
     private let logsSearch = ProcessInfo.processInfo.arguments.contains("-logSearch")
 
-    /// Lässt die Vorhersage des Spielendes in die Bewertung ein. Ohne den
-    /// Parameter wird sie nur mit `-logSearch` geschrieben, damit sie sich
-    /// erst am Tisch bewähren kann, bevor sie Züge verändert.
-    private let usesForecast = ProcessInfo.processInfo.arguments.contains("-forecastEnd")
+    /// Die Vorhersage des Spielendes steuert die Bewertung, seit dem
+    /// 2026-09-22 als Voreinstellung — sonst sagte die Zeile über dem Brett
+    /// etwas anderes, als die Zugwahl annimmt. `-noForecastEnd` schaltet sie
+    /// ab, für den Vergleich mit den sicheren Auslösern allein.
+    private let usesForecast = !ProcessInfo.processInfo.arguments.contains("-noForecastEnd")
 
     private var pendingMove: HarmonyMove? {
         guard isHarmony else { return nil }
@@ -236,7 +237,7 @@ struct OpponentTurnView: View {
         return "ENDE belegt \(boards.joined(separator: ", "))"
             + " — Restzüge sicher \(position.ownTurnsLeft),"
             + " vorhergesagt \(spread.joined(separator: ", "))"
-            + (steering ? " — steuert" : " — nur protokolliert")
+            + (steering ? " — steuert" : " — abgeschaltet")
     }
 
     private var isComplete: Bool {

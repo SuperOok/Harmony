@@ -33,6 +33,12 @@ gemeinsam — etwas, das 0 zählt und auf Steine auf noch offenen Feldern
 wartet —, und sie teilen sich ein Steinbudget von `3 · ownTurnsLeft`, weil
 ihre Summe sonst mehr verspricht, als Züge hergeben.
 
+**Das Spielende wird vorhergesagt**, seit dem 2026-09-22 auch für die
+fremden Spielpläne: aus den Steinen, die jede Mitspielerin genommen hat
+(`EndForecast`). Die Vorhersage steuert die Bewertung und steht in „Harmony
+ist am Zug" über dem Brett; ihre Stapelwerte sind geschätzt, nicht geeicht.
+Einzelheiten in `docs/06-durchstich.md` unter *Das Ende der Partie*.
+
 **Die Rechenzeit war das große Problem und ist es nicht mehr.** Am
 2026-09-20/21 sind fünf Hebel gebaut und jeweils auf dem Gerät gemessen
 worden: im Release bauen (Faktor 5,8), Legungsabhängiges einmal je Legung
@@ -49,6 +55,10 @@ Auf dem iPhone 15 Pro Max, Release-Bau:
 | Harmonys erster Zug | 235.290 | 9 s |
 | 6 Steine, 2 Karten | 112.085 | 3,5 s |
 | 3 Karten, fast leerer Plan | 401.856 | **24 s** |
+
+Gemessen vor der Vorhersage des Spielendes; mit ihr rechnet die Bewertung
+auf dem Mac rund zehn Prozent länger. Auf dem Gerät nachgemessen ist das
+noch nicht.
 
 **Der teuerste Fall ist nicht der leerste Plan**, sondern drei Karten in der
 Hand auf offenem Plan: Dort legen sechs von zehn Zügen einen Würfel. Keine
@@ -251,8 +261,8 @@ Tisch liegt kein Mac.
   einem Schlussbrett der jeweiligen Planseite; `-logSearch` schreibt nach
   jeder Suche eine Zeile mit Zeit, Zugzahl, Notation und Vollständigkeit auf
   die Standardausgabe, dazu eine Zeile `ENDE` mit der Vorhersage, wann die
-  fremden Spielpläne voll sind; `-forecastEnd` lässt diese Vorhersage in
-  die Bewertung ein, ohne ihn wird sie nur geschrieben.
+  fremden Spielpläne voll sind; `-noForecastEnd` nimmt diese Vorhersage
+  aus der Bewertung, die sonst mit ihr rechnet.
 
   **`-logSearch` ist der einzige Weg an die Rechenzeit auf dem Gerät** — dort
   läuft kein Messprogramm und liest niemand mit. Ein Spielstand lässt sich

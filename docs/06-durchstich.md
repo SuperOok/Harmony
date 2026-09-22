@@ -983,7 +983,7 @@ vergleichen Punktarten miteinander und bleiben, wie sie sind.
 Gemessen mit `tools/messe-verzweigung.sh`: 293 und 290 µs je Zug bei sechs
 belegten Feldern, vorher 306 und 304. Kein Aufschlag.
 
-### Wann die anderen fertig sind: eine Vorhersage, zunächst nur protokolliert
+### Wann die anderen fertig sind: eine Vorhersage
 
 Die Endmeldung ist kein verlässliches Korrektiv, siehe oben: Als
 Startspielerin kommt sie für Harmony immer zu spät. Eine Vorhersage lohnt
@@ -1027,25 +1027,30 @@ verspricht damit P(noch ein eigener Zug) · 0,85 seines Zuwachses. Der Anreiz,
 den Würfel sofort zu legen, wächst also, je unsicherer das Ende ist. Die 0,85
 selbst bleibt für den ersten Teil stehen.
 
-**Geschaltet ist sie noch nicht.** Ohne Startparameter rechnet Harmony wie
-bisher, und `-logSearch` schreibt vor jeder Suche eine Zeile, etwa so (die
-Zahlen sind ein Beispiel für die Form):
+**Sie steuert, ungeeicht.** Gebaut war sie zunächst nur zum Protokollieren,
+mit `-forecastEnd` als Schalter. Noch am selben Abend kam die Zeile über dem
+Brett dazu (siehe unten), und damit ein Widerspruch: Der Bildschirm nannte
+die Vorhersage, die Zugwahl rechnete ohne sie. Am Tisch sähe das aus, als
+ignoriere Harmony ihre eigene Schätzung. Entschieden wurde deshalb, sie
+sofort steuern zu lassen, obwohl die Stapelwerte der größte geratene Posten
+bleiben. `-noForecastEnd` schaltet sie ab, für den Vergleich.
+
+`-logSearch` schreibt vor jeder Suche eine Zeile, etwa so (die Zahlen sind
+ein Beispiel für die Form):
 
 ```
-ENDE belegt Anke 14.2±1.3, Bernd 11.0±0.9 — Restzüge sicher 5, vorhergesagt 3: 22 %, 4: 41 %, 5: 37 % — nur protokolliert
+ENDE belegt Anke 14.2±1.3, Bernd 11.0±0.9 — Restzüge sicher 5, vorhergesagt 3: 22 %, 4: 41 %, 5: 37 % — steuert
 ```
 
-Mit `-forecastEnd` steuert sie. Umgelegt werden sollte der Schalter erst,
-wenn einige Partien gezeigt haben, dass die belegten Felder am Tisch in dem
-Band liegen, das die Zeile nennt. Die Stapelwerte sind der größte geratene
-Posten.
+Geeicht wird am Tisch: Die belegten Felder lassen sich nachzählen und mit
+dem Band vergleichen, das die Zeile nennt.
 
 Gerechnet wird die Vorhersage einmal je Suche, abseits der Oberfläche, in
 einem Zahlenfeld statt in Dictionaries: Deren Reihenfolge unterscheidet sich
 von Instanz zu Instanz, und die Summen hätten in der letzten Stelle
 geschwankt. Im Release dauert sie wenige Millisekunden.
 
-**Auf dem Bildschirm steht sie immer**, auch wenn sie nicht steuert: In
+**Auf dem Bildschirm steht sie immer**, auch wenn sie abgeschaltet ist: In
 „Harmony ist am Zug" nennt eine Zeile über dem Brett die Restzüge, als
 Spanne ohne das unwahrscheinlichste Zehntel an beiden Enden, und den
 wahrscheinlichsten Auslöser — etwa „noch 3–4 Züge für Harmony, dieser
@@ -1053,7 +1058,7 @@ mitgezählt — am ehesten durch den Spielplan von Dieter (60 %)". Ist ein Ende
 gemeldet, steht dort die sichere Zahl. Gerechnet wird sie vor der Suche,
 damit sie nicht auf den Zug wartet (`EndEstimate`).
 
-**Steuert sie, kostet die Bewertung rund zehn Prozent mehr:** 320 statt
+**Dass sie steuert, kostet die Bewertung rund zehn Prozent:** 320 statt
 293 µs je Zug bei sechs belegten Feldern, 194 statt 176 µs bei zwölf,
 gemessen mit `tools/messe-verzweigung.sh` und einer Vorhersage über drei
 mögliche Restzahlen. Die Chance wird dann je Restzahl einmal gerechnet statt

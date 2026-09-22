@@ -251,8 +251,8 @@ damit an derselben offenen Frage wie die Gewichte.
 **Die Vorhersage des Spielendes eichen.** ❓ Seit dem 2026-09-22 schreibt
 `-logSearch` vor jeder Suche, wie viele Felder die Mitspielerinnen nach dem
 Modell belegt haben (`ENDE belegt …`). Am Tisch lässt sich das nachzählen.
-Liegen die echten Zahlen einige Partien lang im genannten Band, wird
-`-forecastEnd` zur Voreinstellung. Liegen sie daneben, sind zuerst die
+Die Vorhersage steuert seit demselben Abend, ungeeicht; `-noForecastEnd`
+schaltet sie ab. Liegen die echten Zahlen daneben, sind zuerst die
 Stapelwerte in `EndForecast.stacking` zu prüfen. Siehe `06-durchstich.md`,
 *Wann die anderen fertig sind*.
 
