@@ -12,10 +12,13 @@ public struct EndOutcome: Sendable, Hashable {
     /// Turns after which the game is over, the played-out round included.
     public let endsAfter: Int
     public let chance: Double
+    /// Whose board it is, where the forecast knows.
+    public let seat: Int?
 
-    public init(endsAfter: Int, chance: Double) {
+    public init(endsAfter: Int, chance: Double, seat: Int? = nil) {
         self.endsAfter = endsAfter
         self.chance = chance
+        self.seat = seat
     }
 }
 
@@ -98,21 +101,22 @@ extension EndForecast {
         }
 
         // The first to trigger ends it, and the round is played out. The
-        // boards are taken as independent of each other.
-        var outcomes: [Int: Double] = [:]
+        // boards are taken as independent of each other. Only one of them
+        // moves in any one turn, so whoever's turn it is, is the one who
+        // ended it.
+        var outcomes: [EndOutcome] = []
         var noneYet = 1.0
         for turn in turnsPlayed..<max(lastTurn, turnsPlayed) {
             let stillNone = full.reduce(1.0) { $0 * (1 - $1[turn]) }
             let now = noneYet - stillNone
             if now > 1e-9 {
-                outcomes[roundOut(turn + 1, players), default: 0] += now
+                outcomes.append(EndOutcome(endsAfter: roundOut(turn + 1, players),
+                                           chance: now, seat: turn % players))
             }
             noneYet = stillNone
         }
 
-        return EndForecast(
-            outcomes: outcomes.keys.sorted().map { EndOutcome(endsAfter: $0, chance: outcomes[$0]!) },
-            taken: summary)
+        return EndForecast(outcomes: outcomes, taken: summary)
     }
 
     static func roundOut(_ turns: Int, _ players: Int) -> Int {
@@ -338,3 +342,83 @@ struct Spread {
         return variance.squareRoot()
     }
 }
+
+/// The end as it can be told at the table: how many turns she has left, as
+/// narrow a range as the forecast allows, and what will most likely end it.
+public struct EndEstimate: Sendable, Equatable {
+    public enum Cause: Sendable, Equatable {
+        /// An end has been reported; the numbers are certain.
+        case announced
+        /// Her own board fills first.
+        case ownBoard
+        /// The bag runs dry first.
+        case bag
+        /// The board of the player at this seat.
+        case opponent(seat: Int)
+    }
+
+    /// Her own turns left, **this one included** when she is on: the least
+    /// and the most the forecast holds likely, one chance in ten cut off at
+    /// either end. Equal when there is nothing to estimate.
+    public let fewest: Int
+    public let most: Int
+    public let cause: Cause
+    /// How likely that cause is the one. One when certain.
+    public let causeChance: Double
+}
+
+extension EngineState {
+    /// What the forecast says about the end, summed up for the screen.
+    ///
+    /// Asked of the position **before** her turn, so the turn she is about
+    /// to play is among those counted.
+    public func endEstimate(_ forecast: EndForecast) -> EndEstimate {
+        let certain = ownTurnsLeft
+        guard endsAfter == nil else {
+            return EndEstimate(fewest: certain, most: certain, cause: .announced,
+                               causeChance: 1)
+        }
+        let known: EndEstimate.Cause = ownTurnsUntilFull <= ownTurnsInTheBag ? .ownBoard : .bag
+
+        var withForecast = self
+        withForecast.endForecast = forecast.outcomes
+        let spread = withForecast.turnsLeftSpread
+        func quantile(_ q: Double) -> Int {
+            var below = 0.0
+            for turns in spread.indices {
+                below += spread[turns]
+                if below >= q - 1e-12 { return turns }
+            }
+            return certain
+        }
+
+        // Which trigger it will be: a foreign board where it comes before
+        // the known ones, the known one otherwise.
+        var byCause: [EndEstimate.Cause: Double] = [:]
+        var rest = 1.0
+        for outcome in forecast.outcomes {
+            let turns = max(0, ownTurns(before: outcome.endsAfter) - ownTurnsPlayed)
+            let cause = turns < certain ? outcome.seat.map { .opponent(seat: $0) } ?? known : known
+            byCause[cause, default: 0] += outcome.chance
+            rest -= outcome.chance
+        }
+        byCause[known, default: 0] += max(0, rest)
+        // The likeliest, and of equals the known one, then the lower seat —
+        // a dictionary alone would pick at random.
+        let order: (EndEstimate.Cause) -> Int = {
+            switch $0 {
+            case .announced: -2
+            case .ownBoard, .bag: -1
+            case let .opponent(seat): seat
+            }
+        }
+        let likeliest = byCause.max {
+            $0.value != $1.value ? $0.value < $1.value : order($0.key) > order($1.key)
+        }!
+
+        return EndEstimate(fewest: quantile(0.1), most: quantile(0.9),
+                           cause: likeliest.key, causeChance: likeliest.value)
+    }
+}
+
+extension EndEstimate.Cause: Hashable {}

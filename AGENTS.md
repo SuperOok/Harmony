@@ -17,7 +17,7 @@ siehe `docs/`.
 **Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 172 Regelfällen (`tools/tests.sh`, gut eine
+Weglegen. Geprüft wird mit 175 Regelfällen (`tools/tests.sh`, gut eine
 Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
 
 **Gespielt zu werden findet Lücken, die kein Prüffall findet.** Am

@@ -52,6 +52,9 @@ struct OpponentTurnView: View {
     /// says so while it does. That is the point of putting it on a device at
     /// all: the figure from a Mac says nothing about the table.
     @State private var computed: HarmonyMove?
+    /// Wann die Partie voraussichtlich endet, für die Zeile über dem Brett.
+    /// Wird vor der Suche gerechnet, damit sie nicht auf den Zug wartet.
+    @State private var endEstimate: EndEstimate?
     @State private var thinkingSince: Date?
     @State private var thinkingTook: TimeInterval?
     @State private var thinkingWeighed = 0
@@ -133,6 +136,7 @@ struct OpponentTurnView: View {
     /// the position changes, which the engine asks about while it works.
     private func think() {
         thinker?.cancel()
+        endEstimate = nil
         guard isHarmony, !sampleOnly else { return }
         guard let position = state.engineState(events: events,
                                                 endsAfter: end.endsAfter) else {
@@ -159,12 +163,19 @@ struct OpponentTurnView: View {
         thinkingOpen = true
 
         thinker = Task {
+            // Die Vorhersage zuerst, für sich: Sie dauert Millisekunden, und
+            // die Zeile über dem Brett soll nicht auf die Suche warten.
+            let forecast = await Task.detached(priority: .userInitiated) {
+                EndForecast.forecast(taken: takes, side: position.side,
+                                     players: position.players,
+                                     turnsPlayed: position.turnsPlayed,
+                                     bag: position.bag)
+            }.value
+            guard self.monitor === monitor else { return }
+            endEstimate = position.endEstimate(forecast)
+
             let work = Task.detached(priority: .userInitiated) {
                 var position = position
-                let forecast = EndForecast.forecast(taken: takes, side: position.side,
-                                                    players: position.players,
-                                                    turnsPlayed: position.turnsPlayed,
-                                                    bag: position.bag)
                 if usesForecast { position.endForecast = forecast.outcomes }
                 if logsSearch {
                     print(Self.forecastLine(forecast, position, names: names,
@@ -433,6 +444,7 @@ struct OpponentTurnView: View {
                 // der Bildschirm, und was unter ihm steht, sieht am Tisch
                 // niemand.
                 engineStatus
+                if let estimate = endEstimate { endLine(estimate) }
 
                 BoardView(side: state.sideB ? .b : .a,
                           columns: state.sideB ? BoardView.sideB : BoardView.sideA,
@@ -725,6 +737,42 @@ struct OpponentTurnView: View {
         case .building: return "Gebäude"
         case .none:     return "noch keine Landschaft"
         }
+    }
+
+    /// Wann die Partie endet, so genau, wie es sich sagen lässt. Geschätzt
+    /// ist es eine Spanne und der wahrscheinlichste Auslöser; gemeldet ist
+    /// es eine Zahl.
+    private func endLine(_ estimate: EndEstimate) -> some View {
+        Label(endInWords(estimate), systemImage: estimate.cause == .announced
+                  ? "flag.checkered" : "hourglass")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("end-estimate")
+    }
+
+    private func endInWords(_ estimate: EndEstimate) -> String {
+        let turns = estimate.fewest == estimate.most
+            ? "\(estimate.most) \(estimate.most == 1 ? "Zug" : "Züge")"
+            : "\(estimate.fewest)–\(estimate.most) Züge"
+        if estimate.cause == .announced {
+            return estimate.most <= 1
+                ? "Spielende gemeldet: Dies ist Harmonys letzter Zug."
+                : "Spielende gemeldet: noch \(turns) für Harmony, dieser mitgezählt."
+        }
+        let cause: String
+        switch estimate.cause {
+        case let .opponent(seat):
+            cause = "am ehesten durch den Spielplan von \(state.seating[seat])"
+        case .ownBoard:
+            cause = "am ehesten durch Harmonys eigenen Spielplan"
+        default:
+            cause = "am ehesten, weil der Beutel leer ist"
+        }
+        let chance = estimate.causeChance < 0.995
+            ? String(format: " (%.0f %%)", estimate.causeChance * 100)
+            : ""
+        return "Spielende geschätzt: noch \(turns) für Harmony, dieser mitgezählt — "
+            + cause + chance + "."
     }
 
     /// The end is announced, not imposed: the round is played out so

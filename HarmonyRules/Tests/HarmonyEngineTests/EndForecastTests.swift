@@ -167,4 +167,49 @@ struct EndForecastTests {
         #expect(Evaluator.chance(ofBuilding: need, state: announced)
                 == Evaluator.chance(ofBuilding: need, state: harmony(endsAfter: 15)))
     }
+
+    // MARK: - Für den Bildschirm
+
+    @Test("Ohne fremdes Ende nennt die Schätzung den eigenen Auslöser, ohne Spanne")
+    func withoutAForeignEndTheEstimateNamesTheKnownTrigger() {
+        // Ein Feld belegt nach vier eigenen Zügen: So langsam wird ihr Plan
+        // nie voll, es endet mit dem Beutel.
+        let slow = harmony()
+        let none = EndForecast(outcomes: [], taken: [])
+        let estimate = slow.endEstimate(none)
+        #expect(estimate.fewest == slow.ownTurnsLeft)
+        #expect(estimate.most == slow.ownTurnsLeft)
+        #expect(estimate.cause == .bag)
+        #expect(estimate.causeChance == 1)
+
+        // Zwölf Felder nach vier Zügen: drei je Zug, neun fehlen bis 21 —
+        // nach drei weiteren Zügen ist ihr eigener Plan voll.
+        var fast = slow
+        for cell in BoardSide.a.board.cells.prefix(12) { fast.stacks[cell] = [.water] }
+        #expect(fast.endEstimate(none).cause == .ownBoard)
+        #expect(fast.endEstimate(none).fewest == 3)
+    }
+
+    @Test("Ein wahrscheinliches fremdes Ende nennt die Mitspielerin und eine Spanne")
+    func alikelyForeignEndNamesThePlayerAndARange() {
+        // Platz 1 füllt den Plan zu 60 % im 17. Zug (Schluss nach dem 18.),
+        // zu 30 % im 20. (Schluss nach dem 21.). Harmony auf Platz 2 hat
+        // dann noch die Züge 14 und 17, oder 14, 17 und 20.
+        let forecast = EndForecast(outcomes: [
+            EndOutcome(endsAfter: 18, chance: 0.6, seat: 1),
+            EndOutcome(endsAfter: 21, chance: 0.3, seat: 1),
+        ], taken: [])
+        let estimate = harmony().endEstimate(forecast)
+        #expect(estimate.fewest == 2)
+        #expect(estimate.most == 3)
+        #expect(estimate.cause == .opponent(seat: 1))
+        #expect(abs(estimate.causeChance - 0.9) < 1e-12)
+    }
+
+    @Test("Ein gemeldetes Ende ist keine Schätzung")
+    func anAnnouncedEndIsNoEstimate() {
+        let estimate = harmony(endsAfter: 15).endEstimate(
+            EndForecast(outcomes: [EndOutcome(endsAfter: 30, chance: 1, seat: 0)], taken: []))
+        #expect(estimate == EndEstimate(fewest: 1, most: 1, cause: .announced, causeChance: 1))
+    }
 }

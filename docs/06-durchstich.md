@@ -1045,6 +1045,14 @@ einem Zahlenfeld statt in Dictionaries: Deren Reihenfolge unterscheidet sich
 von Instanz zu Instanz, und die Summen hätten in der letzten Stelle
 geschwankt. Im Release dauert sie wenige Millisekunden.
 
+**Auf dem Bildschirm steht sie immer**, auch wenn sie nicht steuert: In
+„Harmony ist am Zug" nennt eine Zeile über dem Brett die Restzüge, als
+Spanne ohne das unwahrscheinlichste Zehntel an beiden Enden, und den
+wahrscheinlichsten Auslöser — etwa „noch 3–4 Züge für Harmony, dieser
+mitgezählt — am ehesten durch den Spielplan von Dieter (60 %)". Ist ein Ende
+gemeldet, steht dort die sichere Zahl. Gerechnet wird sie vor der Suche,
+damit sie nicht auf den Zug wartet (`EndEstimate`).
+
 **Steuert sie, kostet die Bewertung rund zehn Prozent mehr:** 320 statt
 293 µs je Zug bei sechs belegten Feldern, 194 statt 176 µs bei zwölf,
 gemessen mit `tools/messe-verzweigung.sh` und einer Vorhersage über drei
