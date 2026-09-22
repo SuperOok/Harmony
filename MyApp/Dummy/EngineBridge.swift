@@ -20,7 +20,8 @@ extension GameState {
     /// `endsAfter` is the end the log has announced, if any — see
     /// `EndStatus`. It is the only way a foreign full board reaches the
     /// engine.
-    func engineState(events: [GameEvent], endsAfter: Int? = nil) -> EngineState? {
+    func engineState(events: [GameEvent], endsAfter: Int? = nil,
+                     endForecast: [EndOutcome] = []) -> EngineState? {
         let deck = HarmonyRules.AnimalCards.all
         let byName = Dictionary(uniqueKeysWithValues: deck.map { ($0.name, $0) })
 
@@ -54,7 +55,8 @@ extension GameState {
             turnsPlayed: events.turnCount,
             players: seating.count,
             seat: seating.firstIndex(of: "Harmony") ?? 0,
-            endsAfter: endsAfter)
+            endsAfter: endsAfter,
+            endForecast: endForecast)
     }
 
     /// Everything that has left the bag: the fifteen of the setup and three
@@ -70,6 +72,27 @@ extension GameState {
             for stone in turn.refill { drawn[stone, default: 0] += 1 }
         }
         return drawn
+    }
+}
+
+extension Array where Element == GameEvent {
+    /// What each opponent has taken, turn by turn: the three stones of the
+    /// space they emptied. The log records the space, the display replayed
+    /// from the start says what lay on it — so this costs no input at all.
+    ///
+    /// Seats as in the seating, which is also the order of play from the
+    /// first turn on; `EndForecast` counts turns on that assumption.
+    func takes(from start: GameState) -> [(seat: Int, turns: [[Stone]])] {
+        var state = start
+        var taken: [Int: [[Stone]]] = [:]
+        for event in self {
+            if case let .opponentTurn(turn) = event, turn.taken < state.display.count {
+                taken[state.seatIndex, default: []].append(state.display[turn.taken].stones)
+            }
+            state.apply(event)
+        }
+        let harmony = start.seating.firstIndex(of: "Harmony")
+        return start.seating.indices.filter { $0 != harmony }.map { ($0, taken[$0] ?? []) }
     }
 }
 

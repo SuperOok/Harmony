@@ -17,7 +17,7 @@ siehe `docs/`.
 **Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 152 Regelfällen (`tools/tests.sh`, unter einer
+Weglegen. Geprüft wird mit 172 Regelfällen (`tools/tests.sh`, gut eine
 Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
 
 **Gespielt zu werden findet Lücken, die kein Prüffall findet.** Am
@@ -79,7 +79,8 @@ Harmony.xcodeproj      zwei Targets, „Harmony“ und „HarmonyUITests“,
 HarmonyRules/          Swift Package, zwei Bibliotheken samt Tests
   Sources/HarmonyRules   die Regeln: Steine, Geometrie, Karten, Lebensräume
     Resources/animals.json  die 32 Tierkarten, Quelle der Wahrheit
-  Sources/HarmonyEngine  das Verfahren: Zustand, Züge, Bewertung, Suche
+  Sources/HarmonyEngine  das Verfahren: Zustand, Züge, Bewertung, Suche,
+                         Vorhersage des Spielendes
   Sources/HarmonyMeasure zählt den Zugraum
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
 MyApp/                 der Rest des Quellcodes
@@ -240,7 +241,7 @@ Tisch liegt kein Mac.
 - Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
   Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
   benutzen. Siehe `docs/pruefverfahren.md`.
-- Sieben Startparameter: `-forgetGame` verwirft einen gespeicherten Stand
+- Acht Startparameter: `-forgetGame` verwirft einen gespeicherten Stand
   beim Start, was die Persistenztests brauchen; `-harmonyTurn` öffnet direkt auf Harmonys
   Bildschirm, mit einer Attrappenstellung mitten in der Partie;
   `-sampleMove` hält zusätzlich die Engine heraus und zeigt den
@@ -249,7 +250,9 @@ Tisch liegt kein Mac.
   Fall zu prüfen; `-endScore` und `-endScoreB` öffnen die Endwertung über
   einem Schlussbrett der jeweiligen Planseite; `-logSearch` schreibt nach
   jeder Suche eine Zeile mit Zeit, Zugzahl, Notation und Vollständigkeit auf
-  die Standardausgabe.
+  die Standardausgabe, dazu eine Zeile `ENDE` mit der Vorhersage, wann die
+  fremden Spielpläne voll sind; `-forecastEnd` lässt diese Vorhersage in
+  die Bewertung ein, ohne ihn wird sie nur geschrieben.
 
   **`-logSearch` ist der einzige Weg an die Rechenzeit auf dem Gerät** — dort
   läuft kein Messprogramm und liest niemand mit. Ein Spielstand lässt sich

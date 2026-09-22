@@ -591,7 +591,23 @@ public enum Evaluator {
     static func chance(ofBuilding needed: [Stone: Int], state: EngineState,
                        available: Availability? = nil) -> Double {
         let available = available ?? Availability(of: state)
-        let turns = state.ownTurnsLeft
+        guard !state.endForecast.isEmpty, state.endsAfter == nil else {
+            return chance(ofBuilding: needed, turns: state.ownTurnsLeft, state: state,
+                          available: available)
+        }
+        // With a forecast end, the chance over the turns she might have.
+        return state.withTurnsLeft { chances in
+            var total = 0.0
+            for turns in chances.indices where chances[turns] > 0 {
+                total += chances[turns] * chance(ofBuilding: needed, turns: turns,
+                                                 state: state, available: available)
+            }
+            return total
+        }
+    }
+
+    static func chance(ofBuilding needed: [Stone: Int], turns: Int, state: EngineState,
+                       available: Availability) -> Double {
         // The turn count is asked **before** the missing stones, and that
         // order is the point. A candidate that stands complete needs nothing
         // and used to answer 1 here whatever the clock said — so on her last
@@ -875,7 +891,7 @@ public enum Evaluator {
         // greedy pass, not an optimum: the exact answer is a knapsack, and
         // paying for one per laying would not be worth what it buys.
         waiting.sort { $0.worth * Double($1.stones) > $1.worth * Double($0.stones) }
-        let budget = 3 * state.ownTurnsLeft
+        let budget = 3 * state.ownTurnsBudgeted
         var left = budget
         var worth: [Landscape: Double] = [:]
         var unaffordable: [Landscape: Int] = [:]

@@ -245,3 +245,30 @@ sich nur über „Offene Möglichkeiten" mit 0,05 je Anwärter nieder. Beides is
 Absicht, beides wäre zu ändern, wenn sich die Spielstärke daran als zu
 schwach erweist. Das gehört gemessen, sobald Selbstspiel läuft, und hängt
 damit an derselben offenen Frage wie die Gewichte.
+
+## Offen aus Phase 6 — das Ende der Partie
+
+**Die Vorhersage des Spielendes eichen.** ❓ Seit dem 2026-09-22 schreibt
+`-logSearch` vor jeder Suche, wie viele Felder die Mitspielerinnen nach dem
+Modell belegt haben (`ENDE belegt …`). Am Tisch lässt sich das nachzählen.
+Liegen die echten Zahlen einige Partien lang im genannten Band, wird
+`-forecastEnd` zur Voreinstellung. Liegen sie daneben, sind zuerst die
+Stapelwerte in `EndForecast.stacking` zu prüfen. Siehe `06-durchstich.md`,
+*Wann die anderen fertig sind*.
+
+**Freie Felder nach der Partie erfragen.** ❓ Eine Eingabe ohne Zeitdruck: je
+Mitspielerin die freien Felder am Ende. Über einige Partien macht das aus
+den geratenen Stapelwerten gemessene, ohne die Eingabe während des Spiels
+zu verlängern.
+
+**Freie Felder im Endspiel erfragen.** ❓ Erst, wenn die Vorhersage ein Ende
+in etwa zwei Runden für möglich hält: „Wie viele Felder hat die vollste
+Mitspielerin noch frei?" Eine Beobachtung statt einer Grenze — sie setzt die
+belegten Felder und schärft die Vorhersage für den Rest. Nur, falls die
+Protokolle zeigen, dass die letzte Runde zu oft falsch getroffen wird.
+
+**Die Karten der Mitspielerinnen einrechnen.** ❓ Die dritte Schicht des
+Modells. Wer Baum 3, Berg 3 oder Gebäude sammelt, stapelt mehr; wer Wasser,
+Feld, Baum 1 oder Berg 1 hält, legt flach und greift zu Blau und Gelb.
+Zurückgestellt, weil sie die meisten geratenen Werte trägt und die
+Landschaftswertung alle Spielerinnen ohnehin zum Stapeln zieht.

@@ -983,6 +983,74 @@ vergleichen Punktarten miteinander und bleiben, wie sie sind.
 Gemessen mit `tools/messe-verzweigung.sh`: 293 und 290 µs je Zug bei sechs
 belegten Feldern, vorher 306 und 304. Kein Aufschlag.
 
+### Wann die anderen fertig sind: eine Vorhersage, zunächst nur protokolliert
+
+Die Endmeldung ist kein verlässliches Korrektiv, siehe oben: Als
+Startspielerin kommt sie für Harmony immer zu spät. Eine Vorhersage lohnt
+also, und sie kostet keine Eingabe. Jeder fremde Zug leert ein Auslagefeld,
+und der Verlauf weiß, was darauf lag. Unbekannt ist nur, wie viel davon auf
+einen Stapel ging statt auf ein freies Feld.
+
+`EndForecast` führt je Mitspielerin eine Verteilung über ihren Spielplan:
+belegte Felder und offene Unterlagen je Art. Das Modell ruht auf zwei
+Schichten:
+
+1. **Ohne Unterlage kein Stapel.** Blau und Gelb belegen immer ein Feld. Grün
+   spart eines nur auf einem braunen Stapel, Braun nur auf einem einzelnen
+   Braun, Grau nur auf Grau, Rot auf einem einzelnen Braun, Grau oder Rot.
+   Diese Schicht braucht keine geschätzten Werte. Innerhalb eines Zuges
+   kommen die Unterlagen zuerst: Wer Braun und Grün nimmt, baut den Baum im
+   selben Zug.
+2. **Ob gestapelt wird, wenn es geht,** hängt an der Farbe und ist aus der
+   Wertung geschätzt: Rot und Grün 0,85 (allein zählen sie 0 oder 1), Grau
+   0,6, Braun auf Braun 0,35.
+
+Was eine Mitspielerin künftig nimmt, folgt ihrer bisherigen Farbmischung,
+dazu der Beutel als Vorwissen im Umfang eines Zuges. **Dass nichts gemeldet
+wurde, ist selbst eine Auskunft:** Ein Spielplan, den das Modell schon für
+voll hält, ist es nicht, und dieser Teil der Verteilung fällt weg. Die
+Spielpläne gelten als voneinander unabhängig; wer zuerst voll ist, beendet die
+Partie, und die Runde wird zu Ende gespielt.
+
+In die Bewertung geht die Vorhersage als **Verteilung über Harmonys
+Restzüge** ein, nicht als eine Zahl. Die Chance eines Anwärters ist der
+Erwartungswert über diese Verteilung. Das Steinbudget rechnet vorsichtig mit
+der Zahl, die sie mit drei zu vier Chancen erreicht, denn Steine zu
+versprechen, die nie kommen, kostet Punkte; zu wenige zu versprechen kostet
+nur Gelegenheiten. Ein gemeldetes Ende schlägt jede Vorhersage.
+
+**`weights.outlook` wird damit nicht hergeleitet, sondern entlastet.** Die
+Konstante stand für zweierlei: dass eine Aussicht einen späteren Zug kostet,
+und dass die Partie vorher enden kann. Den zweiten Teil trägt jetzt die
+Verteilung. Ein fertiger Anwärter, der nur noch den Würfel braucht,
+verspricht damit P(noch ein eigener Zug) · 0,85 seines Zuwachses. Der Anreiz,
+den Würfel sofort zu legen, wächst also, je unsicherer das Ende ist. Die 0,85
+selbst bleibt für den ersten Teil stehen.
+
+**Geschaltet ist sie noch nicht.** Ohne Startparameter rechnet Harmony wie
+bisher, und `-logSearch` schreibt vor jeder Suche eine Zeile, etwa so (die
+Zahlen sind ein Beispiel für die Form):
+
+```
+ENDE belegt Anke 14.2±1.3, Bernd 11.0±0.9 — Restzüge sicher 5, vorhergesagt 3: 22 %, 4: 41 %, 5: 37 % — nur protokolliert
+```
+
+Mit `-forecastEnd` steuert sie. Umgelegt werden sollte der Schalter erst,
+wenn einige Partien gezeigt haben, dass die belegten Felder am Tisch in dem
+Band liegen, das die Zeile nennt. Die Stapelwerte sind der größte geratene
+Posten.
+
+Gerechnet wird die Vorhersage einmal je Suche, abseits der Oberfläche, in
+einem Zahlenfeld statt in Dictionaries: Deren Reihenfolge unterscheidet sich
+von Instanz zu Instanz, und die Summen hätten in der letzten Stelle
+geschwankt. Im Release dauert sie wenige Millisekunden.
+
+Die dritte Schicht aus der Überlegung — die Karten der Mitspielerinnen, die
+Turmbauerinnen von Flachbauerinnen unterscheiden — ist **nicht gebaut**. Sie
+hat die meisten geratenen Werte und kommt erst, wenn die Protokolle zeigen,
+dass die ersten beiden Schichten nicht genügen. Vorgemerkt in
+`ideen-vorgemerkt.md`, zusammen mit der Abfrage der freien Felder.
+
 ## Offene Punkte
 
 1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird

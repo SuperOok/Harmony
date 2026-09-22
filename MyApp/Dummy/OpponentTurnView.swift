@@ -109,6 +109,11 @@ struct OpponentTurnView: View {
     /// Gerät, wo weder das Messprogramm läuft noch jemand mitliest.
     private let logsSearch = ProcessInfo.processInfo.arguments.contains("-logSearch")
 
+    /// Lässt die Vorhersage des Spielendes in die Bewertung ein. Ohne den
+    /// Parameter wird sie nur mit `-logSearch` geschrieben, damit sie sich
+    /// erst am Tisch bewähren kann, bevor sie Züge verändert.
+    private let usesForecast = ProcessInfo.processInfo.arguments.contains("-forecastEnd")
+
     private var pendingMove: HarmonyMove? {
         guard isHarmony else { return nil }
         if sampleOnly { return state.sideB ? nil : Sample.harmonyMove }
@@ -134,6 +139,13 @@ struct OpponentTurnView: View {
             engineFailed = true
             return
         }
+        // Was die anderen genommen haben, hier; die Vorhersage daraus mit
+        // der Suche zusammen abseits der Oberfläche — im Debug-Bau dauert
+        // sie merklich.
+        let takes = events.takes(from: startState)
+        let names = state.seating
+        let usesForecast = usesForecast
+        let logsSearch = logsSearch
         engineFailed = false
         computed = nil
         thinkingTook = nil
@@ -148,9 +160,19 @@ struct OpponentTurnView: View {
 
         thinker = Task {
             let work = Task.detached(priority: .userInitiated) {
-                HarmonyEngine.Search.best(from: position,
-                                          cancelled: { monitor.isStopped },
-                                          progress: { monitor.report($0) })
+                var position = position
+                let forecast = EndForecast.forecast(taken: takes, side: position.side,
+                                                    players: position.players,
+                                                    turnsPlayed: position.turnsPlayed,
+                                                    bag: position.bag)
+                if usesForecast { position.endForecast = forecast.outcomes }
+                if logsSearch {
+                    print(Self.forecastLine(forecast, position, names: names,
+                                            steering: usesForecast))
+                }
+                return HarmonyEngine.Search.best(from: position,
+                                                 cancelled: { monitor.isStopped },
+                                                 progress: { monitor.report($0) })
             }
             // Stopping means "that is enough", not "forget it": the search
             // returns the best turn it had reached. The flag goes to the
@@ -184,6 +206,26 @@ struct OpponentTurnView: View {
                              thinkingComplete ? "vollständig" : "abgebrochen"))
             }
         }
+    }
+
+    /// Eine Zeile für das Protokoll: was die Vorhersage über die fremden
+    /// Spielpläne annimmt und was daraus für Harmonys Restzüge folgt. Am
+    /// Tisch lässt sie sich gegen die echten Spielpläne halten.
+    nonisolated private static func forecastLine(_ forecast: EndForecast,
+                                                 _ position: EngineState,
+                                                 names: [String], steering: Bool) -> String {
+        let boards = forecast.taken.map { entry in
+            String(format: "%@ %.1f±%.1f", names[entry.seat], entry.mean, entry.spread)
+        }
+        var withForecast = position
+        withForecast.endForecast = forecast.outcomes
+        let spread = withForecast.turnsLeftSpread.enumerated()
+            .filter { $0.element >= 0.005 }
+            .map { String(format: "%d: %.0f %%", $0.offset, $0.element * 100) }
+        return "ENDE belegt \(boards.joined(separator: ", "))"
+            + " — Restzüge sicher \(position.ownTurnsLeft),"
+            + " vorhergesagt \(spread.joined(separator: ", "))"
+            + (steering ? " — steuert" : " — nur protokolliert")
     }
 
     private var isComplete: Bool {

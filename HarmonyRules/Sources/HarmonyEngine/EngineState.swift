@@ -112,6 +112,10 @@ public struct EngineState: Sendable {
     /// reporting that a foreign board is down to two free spaces. The round
     /// being played out is already in the number.
     public var endsAfter: Int?
+    /// How the others' boards might end the game, if a forecast is to be
+    /// used — see `EndForecast`. Empty means none: the known triggers alone
+    /// then decide, as they did before there was a forecast.
+    public var endForecast: [EndOutcome]
 
     public init(side: BoardSide = .a,
                 stacks: [Int: [Stone]] = [:],
@@ -124,7 +128,8 @@ public struct EngineState: Sendable {
                 turnsPlayed: Int = 0,
                 players: Int = 3,
                 seat: Int = 0,
-                endsAfter: Int? = nil) {
+                endsAfter: Int? = nil,
+                endForecast: [EndOutcome] = []) {
         self.side = side
         self.stacks = stacks
         self.cubes = cubes
@@ -137,6 +142,7 @@ public struct EngineState: Sendable {
         self.players = players
         self.seat = seat
         self.endsAfter = endsAfter
+        self.endForecast = endForecast
     }
 }
 
@@ -200,6 +206,52 @@ extension EngineState {
         let left = min(ownTurnsInTheBag, ownTurnsUntilFull)
         guard let endsAfter else { return left }
         return min(left, max(0, ownTurns(before: endsAfter) - ownTurnsPlayed))
+    }
+
+    /// Her remaining turns as a spread, for a forecast end: each foreign end
+    /// the forecast holds possible, cut down further by the known triggers,
+    /// and the rest at `ownTurnsLeft`. Without a forecast, that alone.
+    ///
+    /// Handed to `body` rather than returned: `chance(ofBuilding:)` asks
+    /// this millions of times per search, and an array per question would
+    /// cost more than the answer. `chances[t]` is the chance of exactly `t`
+    /// turns, for `t` up to `ownTurnsLeft`.
+    func withTurnsLeft<Result>(_ body: (UnsafeBufferPointer<Double>) -> Result) -> Result {
+        let certain = ownTurnsLeft
+        return withUnsafeTemporaryAllocation(of: Double.self, capacity: certain + 1) { chances in
+            chances.initialize(repeating: 0)
+            var rest = 1.0
+            if endsAfter == nil {
+                for outcome in endForecast {
+                    let turns = min(certain,
+                                    max(0, ownTurns(before: outcome.endsAfter) - ownTurnsPlayed))
+                    chances[turns] += outcome.chance
+                    rest -= outcome.chance
+                }
+            }
+            chances[certain] += max(0, rest)
+            return body(UnsafeBufferPointer(chances))
+        }
+    }
+
+    /// `withTurnsLeft` as an array, for the log and for tests. Not for the
+    /// search, which asks too often to allocate.
+    public var turnsLeftSpread: [Double] { withTurnsLeft { Array($0) } }
+
+    /// The turns the stone budget is reckoned in: with a forecast, the
+    /// count she reaches with three chances in four — cautious, because
+    /// promising stones that never come costs points, and promising too few
+    /// costs only chances.
+    public var ownTurnsBudgeted: Int {
+        guard !endForecast.isEmpty, endsAfter == nil else { return ownTurnsLeft }
+        return withTurnsLeft { chances in
+            var below = 0.0
+            for turns in chances.indices {
+                below += chances[turns]
+                if below >= 0.25 { return turns }
+            }
+            return chances.count - 1
+        }
     }
 
     /// How many of the game's first `limit` turns are hers — those at
