@@ -1045,6 +1045,13 @@ einem Zahlenfeld statt in Dictionaries: Deren Reihenfolge unterscheidet sich
 von Instanz zu Instanz, und die Summen hätten in der letzten Stelle
 geschwankt. Im Release dauert sie wenige Millisekunden.
 
+**Steuert sie, kostet die Bewertung rund zehn Prozent mehr:** 320 statt
+293 µs je Zug bei sechs belegten Feldern, 194 statt 176 µs bei zwölf,
+gemessen mit `tools/messe-verzweigung.sh` und einer Vorhersage über drei
+mögliche Restzahlen. Die Chance wird dann je Restzahl einmal gerechnet statt
+einmal insgesamt. Auf dem Gerät hochgerechnet wären aus den 24 Sekunden des
+teuersten Falls etwa 26 geworden — nachgemessen ist das nicht.
+
 Die dritte Schicht aus der Überlegung — die Karten der Mitspielerinnen, die
 Turmbauerinnen von Flachbauerinnen unterscheiden — ist **nicht gebaut**. Sie
 hat die meisten geratenen Werte und kommt erst, wenn die Protokolle zeigen,
