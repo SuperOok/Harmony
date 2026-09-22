@@ -150,7 +150,12 @@ struct NextTurn: Sendable {
         // What a fresh triple holds, as sets with their probability. Drawn
         // with replacement from the bag's shares — one draw more or less
         // hardly moves a bag of dozens.
-        var triples: [Int: Double] = [:]
+        //
+        // Indexed by code rather than kept in a dictionary: a dictionary
+        // hands its entries out in an order that differs from one instance
+        // to the next, and the sum below would differ in its last digit —
+        // enough for the same position to weigh differently twice.
+        var triples = [Double](repeating: 0, count: 1 << 12)
         if bag.count > 0 {
             let share = Stone.allCases.map { bag.chance(of: $0) }
             for a in 0..<6 where share[a] > 0 {
@@ -158,7 +163,7 @@ struct NextTurn: Sendable {
                     for c in 0..<6 where share[c] > 0 {
                         var counts = [0, 0, 0, 0, 0, 0]
                         counts[a] += 1; counts[b] += 1; counts[c] += 1
-                        triples[Self.code(counts), default: 0] += share[a] * share[b] * share[c]
+                        triples[Self.code(counts)] += share[a] * share[b] * share[c]
                     }
                 }
             }
@@ -174,16 +179,18 @@ struct NextTurn: Sendable {
             ? max(0, 5 - Double(known.count) * survives)
             : 0
 
+        let sets = Self.allSets()
+        let threes = sets.filter { $0.reduce(0, +) == 3 }
         var table = [Double](repeating: 0, count: 1 << 12)
-        for needed in Self.allSets() {
+        for needed in sets {
             let code = Self.code(needed)
             var noneKnown = 1.0
             for space in known where Self.holds(space, needed) {
                 noneKnown *= 1 - survives
             }
             var inFresh = 0.0
-            for (triple, chance) in triples where Self.holds(Self.counts(triple), needed) {
-                inFresh += chance
+            for triple in threes where Self.holds(triple, needed) {
+                inFresh += triples[Self.code(triple)]
             }
             table[code] = 1 - noneKnown * pow(1 - inFresh, fresh)
         }
@@ -204,10 +211,6 @@ struct NextTurn: Sendable {
 
     static func code(_ counts: [Int]) -> Int {
         counts.indices.reduce(0) { $0 | counts[$1] << (2 * $1) }
-    }
-
-    static func counts(_ code: Int) -> [Int] {
-        (0..<6).map { (code >> (2 * $0)) & 3 }
     }
 
     static func holds(_ space: [Int], _ needed: [Int]) -> Bool {
