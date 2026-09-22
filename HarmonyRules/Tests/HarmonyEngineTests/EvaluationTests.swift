@@ -416,6 +416,84 @@ struct EvaluationTests {
         #expect(Evaluator.chance(ofBuilding: [.stone: 4], state: roomy) > 0)
     }
 
+    // MARK: - Der nächste Zug aus der Auslage
+
+    /// Harmony with exactly one turn of her own left, the board far from
+    /// full, and this display lying.
+    private func lastTurn(_ display: [[Stone]], players: Int = 3) -> EngineState {
+        // Startplatz: Zu zweit sind die Züge 0, 2 … 34 ihre, zu dritt 0, 3
+        // … 33, zu viert 0, 4 … 32 — jeweils der letzte steht noch aus.
+        let played = [2: 34, 3: 33, 4: 32][players]!
+        var last = state()
+        last.display = display
+        last.players = players
+        last.turnsPlayed = played
+        return last
+    }
+
+    @Test("Im letzten Zug zählt, was zusammen auf einem Feld liegt")
+    func onTheLastTurnWhatCountsIsWhatLiesTogether() {
+        // Grün und Rot gebraucht. Liegen beide auf einem Feld, kann sie es
+        // nehmen; liegen sie auf zweien, hilft das nicht — die Formel über
+        // die Farbanteile sah beide Male dasselbe.
+        let together = lastTurn([[.leaves, .brick, .water], [.stone, .stone, .field],
+                                  [.water, .water, .field], [.wood, .stone, .field]])
+        let apart = lastTurn([[.leaves, .water, .water], [.brick, .stone, .field],
+                              [.water, .stone, .field], [.wood, .stone, .field]])
+        #expect(together.ownTurnsLeft == 1)
+        let need: [Stone: Int] = [.leaves: 1, .brick: 1]
+        let near = Evaluator.chance(ofBuilding: need, state: together)
+        let far = Evaluator.chance(ofBuilding: need, state: apart)
+        // Getrennt bleibt nur die Hoffnung auf ein frisches Feld: rund ein
+        // Viertel. Zusammen kommt dazu, dass das Feld zu 64 % liegen bleibt.
+        #expect(near > 0.6)
+        #expect(far < 0.3)
+        #expect(near > far * 2.5)
+    }
+
+    @Test("Wer zu zweit spielt, findet die Auslage eher wieder als zu viert")
+    func twoPlayersFindTheDisplayAgainMoreOftenThanFour() {
+        // Zwischen zwei eigenen Zügen nehmen die anderen je ein Feld. Zu
+        // zweit ist das eines, zu viert sind es drei.
+        let display: [[Stone]] = [[.stone, .stone, .water], [.field, .field, .water],
+                                  [.leaves, .wood, .water], [.brick, .field, .water]]
+        let need: [Stone: Int] = [.stone: 2]
+        let two = Evaluator.chance(ofBuilding: need, state: lastTurn(display, players: 2))
+        let four = Evaluator.chance(ofBuilding: need, state: lastTurn(display, players: 4))
+        #expect(two > four)
+        #expect(two >= NextTurn.survival(players: 2))
+        #expect(abs(NextTurn.survival(players: 3) - 0.64) < 1e-12)
+    }
+
+    @Test("Mehr Zeit ist nie schlechter als weniger")
+    func moreTimeIsNeverWorseThanLess() {
+        // Mit zwei Zügen gilt die Formel über die Farbanteile, aber nie
+        // unter dem, was der nächste Zug allein schon bietet. Sonst würde
+        // ein Zug belohnt, der das Brett füllt und ihr damit Zeit nimmt.
+        let display: [[Stone]] = [[.leaves, .brick, .stone], [.water, .water, .field],
+                                  [.water, .field, .field], [.wood, .water, .field]]
+        let one = lastTurn(display)
+        var two = one
+        two.turnsPlayed -= 3
+        #expect(two.ownTurnsLeft == 2)
+        for need: [Stone: Int] in [[.leaves: 1, .brick: 1, .stone: 1], [.brick: 1],
+                                   [.water: 2], [.leaves: 2, .brick: 1]] {
+            #expect(Evaluator.chance(ofBuilding: need, state: two)
+                    >= Evaluator.chance(ofBuilding: need, state: one), "\(need)")
+        }
+    }
+
+    @Test("Die Tabelle des nächsten Zuges kennt alle Mengen bis drei Steine")
+    func thenextTurnTableKnowsEverySetUpToThreeStones() {
+        // Sechs Farben: 6 einzelne, 21 Paare, 56 Dreier.
+        #expect(NextTurn.allSets().count == 83)
+        let next = NextTurn(spaces: [], bag: BagKnowledge(drawn: [:]), players: 3)
+        #expect(next.chance(of: [.water: 4]) == nil)
+        // Ohne Auslage fünf frische Felder: ein einzelner Stein einer Farbe
+        // mit rund einem Fünftel Anteil findet sich fast sicher.
+        #expect((next.chance(of: [.water: 1]) ?? 0) > 0.9)
+    }
+
     // MARK: - Determinismus
 
     @Test("Zweimal dieselbe Stellung gibt zweimal denselben Wert")

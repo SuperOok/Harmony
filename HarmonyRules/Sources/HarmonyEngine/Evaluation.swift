@@ -77,8 +77,16 @@ public struct Weights: Sendable {
 /// enumerating them puts an empty board at thirteen million leaves.
 public struct Availability: Sendable {
     public let perColour: [Stone: Double]
+    /// The chance that her **next** turn finds a space holding a given set
+    /// of up to three stones — see `NextTurn`. `nil` where nothing is known
+    /// about the spaces, and then the chance falls back to the colour
+    /// shares alone.
+    let nextTurn: NextTurn?
 
-    public init(perColour: [Stone: Double]) { self.perColour = perColour }
+    public init(perColour: [Stone: Double]) {
+        self.perColour = perColour
+        nextTurn = nil
+    }
 
     /// What lies there now, counted.
     public init(counting display: [[Stone]]) {
@@ -87,9 +95,154 @@ public struct Availability: Sendable {
             for stone in space { counts[stone, default: 0] += 1 }
         }
         perColour = counts
+        nextTurn = nil
+    }
+
+    /// Colour shares and spaces together: `perColour` as given, and the
+    /// next turn worked out from the spaces that stay, the bag and the
+    /// number of players.
+    public init(perColour: [Stone: Double], spaces: [[Stone]], state: EngineState) {
+        self.perColour = perColour
+        nextTurn = NextTurn(spaces: spaces, bag: state.bag, players: state.players)
+    }
+
+    /// The display of this position, as it lies.
+    public init(of state: EngineState) {
+        let counted = Availability(counting: state.display)
+        self.init(perColour: counted.perColour, spaces: state.display, state: state)
     }
 
     public var total: Double { perColour.values.reduce(0, +) }
+}
+
+/// What her next turn can take, set by set.
+///
+/// `1 - (1 - p)^(3t)` treats a turn as three stones drawn at random from
+/// everything there is. For many turns that is fair; for **one** it is off
+/// in both directions. She does not draw, she chooses one of five spaces —
+/// if the stones she needs lie together in one of them, the chance is far
+/// higher. And whatever she needs in that one turn has to lie **together**,
+/// in one space: a green stone here and a red one there is no help, and the
+/// formula counts them anyway.
+///
+/// So the next turn is worked out from the spaces. Those lying now survive
+/// until she is on again with a chance that depends on how many others
+/// choose before her; what replaces them is a fresh triple from the bag.
+/// Worked out once per display, for every set of up to three stones — 83
+/// of them — so that the evaluation only looks one up.
+struct NextTurn: Sendable {
+    /// Indexed by `code`: two bits per colour.
+    private let table: [Double]
+
+    /// How likely a space lying now is still there when she is on again.
+    ///
+    /// **An assumption, not a measurement:** each of the others takes one of
+    /// the five spaces, all equally likely. Two players leave it with 0.8,
+    /// three with 0.64, four with 0.51. The others choose rather than draw,
+    /// so a space holding what is scarce goes sooner than this says.
+    static func survival(players: Int) -> Double {
+        pow(0.8, Double(max(players - 1, 0)))
+    }
+
+    init(spaces: [[Stone]], bag: BagKnowledge, players: Int) {
+        let survives = Self.survival(players: players)
+
+        // What a fresh triple holds, as sets with their probability. Drawn
+        // with replacement from the bag's shares — one draw more or less
+        // hardly moves a bag of dozens.
+        var triples: [Int: Double] = [:]
+        if bag.count > 0 {
+            let share = Stone.allCases.map { bag.chance(of: $0) }
+            for a in 0..<6 where share[a] > 0 {
+                for b in 0..<6 where share[b] > 0 {
+                    for c in 0..<6 where share[c] > 0 {
+                        var counts = [0, 0, 0, 0, 0, 0]
+                        counts[a] += 1; counts[b] += 1; counts[c] += 1
+                        triples[Self.code(counts), default: 0] += share[a] * share[b] * share[c]
+                    }
+                }
+            }
+        }
+        let known = spaces.map { space -> [Int] in
+            var counts = [0, 0, 0, 0, 0, 0]
+            for stone in space { counts[stone.slot] += 1 }
+            return counts
+        }
+        // Five spaces when she is on: the ones lying now that survive, the
+        // rest fresh. An empty bag refills nothing.
+        let fresh = bag.count >= 3
+            ? max(0, 5 - Double(known.count) * survives)
+            : 0
+
+        var table = [Double](repeating: 0, count: 1 << 12)
+        for needed in Self.allSets() {
+            let code = Self.code(needed)
+            var noneKnown = 1.0
+            for space in known where Self.holds(space, needed) {
+                noneKnown *= 1 - survives
+            }
+            var inFresh = 0.0
+            for (triple, chance) in triples where Self.holds(Self.counts(triple), needed) {
+                inFresh += chance
+            }
+            table[code] = 1 - noneKnown * pow(1 - inFresh, fresh)
+        }
+        self.table = table
+    }
+
+    /// The chance for this set, or `nil` if it is more than one turn holds.
+    func chance(of needed: [Stone: Int]) -> Double? {
+        var code = 0
+        var total = 0
+        for (stone, count) in needed {
+            total += count
+            guard total <= 3 else { return nil }
+            code |= count << (2 * stone.slot)
+        }
+        return table[code]
+    }
+
+    static func code(_ counts: [Int]) -> Int {
+        counts.indices.reduce(0) { $0 | counts[$1] << (2 * $1) }
+    }
+
+    static func counts(_ code: Int) -> [Int] {
+        (0..<6).map { (code >> (2 * $0)) & 3 }
+    }
+
+    static func holds(_ space: [Int], _ needed: [Int]) -> Bool {
+        needed.indices.allSatisfy { space[$0] >= needed[$0] }
+    }
+
+    /// Every set of one to three stones.
+    static func allSets() -> [[Int]] {
+        var sets: [[Int]] = []
+        func grow(_ counts: [Int], from colour: Int, left: Int) {
+            if counts.reduce(0, +) > 0 { sets.append(counts) }
+            guard left > 0 else { return }
+            for next in colour..<6 {
+                var more = counts
+                more[next] += 1
+                grow(more, from: next, left: left - 1)
+            }
+        }
+        grow([0, 0, 0, 0, 0, 0], from: 0, left: 3)
+        return sets
+    }
+}
+
+extension Stone {
+    /// A fixed position per colour, for tables indexed by colour.
+    var slot: Int {
+        switch self {
+        case .water: 0
+        case .stone: 1
+        case .wood: 2
+        case .leaves: 3
+        case .field: 4
+        case .brick: 5
+        }
+    }
 }
 
 /// What a whole laying's worth of turns has in common, worked out once.
@@ -174,7 +327,7 @@ public enum Evaluator {
                                availability: Availability? = nil,
                                from stock: Stock? = nil,
                                grown: [Int: [Stone]] = [:]) -> Prepared {
-        let available = availability ?? Availability(counting: state.display)
+        let available = availability ?? Availability(of: state)
         let scoring = BoardScoring(side: state.side, columns: state.side.columns,
                                    stacks: state.stacks)
 
@@ -235,7 +388,7 @@ public enum Evaluator {
                                 weights: Weights = Weights(),
                                 availability: Availability? = nil,
                                 prepared: Prepared? = nil) -> Evaluation {
-        let available = availability ?? Availability(counting: state.display)
+        let available = availability ?? Availability(of: state)
         // Die Brettwertung wird nur noch gebraucht, wenn nichts vorliegt.
         let scoring = prepared == nil
             ? BoardScoring(side: state.side, columns: state.side.columns,
@@ -424,9 +577,17 @@ public enum Evaluator {
     /// else. What it does get right is the direction: scarcer colour, less
     /// time or more stones missing all lower it, and that is what the
     /// ranking rests on. The shape belongs measured once self-play runs.
+    ///
+    /// **Her next turn is worked out from the display** (`NextTurn`), and
+    /// with a single turn left that alone decides — it is where the formula
+    /// is furthest off and where the answer matters most. With more turns
+    /// the formula stands, but never below what the next turn already
+    /// offers: more time is never worse than less. Without that floor, a
+    /// turn that fills the board and so cuts her time to one would be
+    /// rewarded for landing in the kinder model.
     static func chance(ofBuilding needed: [Stone: Int], state: EngineState,
                        available: Availability? = nil) -> Double {
-        let available = available ?? Availability(counting: state.display)
+        let available = available ?? Availability(of: state)
         let turns = state.ownTurnsLeft
         // The turn count is asked **before** the missing stones, and that
         // order is the point. A candidate that stands complete needs nothing
@@ -439,17 +600,20 @@ public enum Evaluator {
         guard total > 0 else { return 1 }
         guard total <= 3 * turns else { return 0 }
 
+        let next = available.nextTurn?.chance(of: needed)
+        if turns == 1, let next { return next }
+
         let bag = state.bag
+        let pool = Double(bag.count) + available.total
         var chance = 1.0
         for (stone, count) in needed {
             let inDisplay = available.perColour[stone] ?? 0
-            let pool = Double(bag.count) + available.total
             let share = pool > 0 ? (Double(bag.remaining(stone)) + inDisplay) / pool : 0
-            guard share > 0 else { return 0 }
+            guard share > 0 else { chance = 0; break }
             let once = 1 - pow(1 - share, Double(3 * turns))
             chance *= pow(once, Double(count))
         }
-        return chance
+        return max(chance, next ?? 0)
     }
 
     // MARK: - (3) Was die Landschaften noch hergeben

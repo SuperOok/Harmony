@@ -943,6 +943,46 @@ Gemessen mit `tools/messe-verzweigung.sh`, je zwei Läufe vorher und nachher:
 306 und 309 µs je Zug gegen 306 und 304 µs bei sechs belegten Feldern. Der
 Unterschied liegt im Rauschen.
 
+### Der nächste Zug wird aus der Auslage gerechnet
+
+Wie stark die Restzeit auf die Anwärter wirkt, zeigt die Formel
+`1 - (1 - p)^(3t)` selbst: Ab etwa vier Zügen ist sie flach, zwischen einem
+und drei Zügen kippt die Rangfolge. Bei t = 5 wiegt ein Anwärter mit einem
+fehlenden Stein 1,3-mal so viel wie einer mit dreien, bei t = 2 das
+Dreifache.
+
+Gerade dort passte die Formel am schlechtesten. Sie behandelt einen Zug als
+drei zufällig gezogene Steine. Harmony zieht aber nicht, sie **wählt** eines
+von fünf Feldern — liegt der Bedarf dort beisammen, ist die Chance weit höher.
+Und was sie in einem Zug braucht, muss **auf einem Feld** liegen: Grün hier
+und Rot dort hilft nicht, die Formel zählte es trotzdem.
+
+`NextTurn` rechnet deshalb den nächsten eigenen Zug aus den Feldern. Ein Feld,
+das jetzt liegt, ist noch da, wenn sie wieder dran ist, mit einer
+Wahrscheinlichkeit, die an der Zahl der anderen hängt: Jede nimmt eines von
+fünf Feldern, also bleibt es zu zweit mit 0,8, zu dritt mit 0,64, zu viert
+mit 0,51. Was ersetzt wird, ist ein frisches Dreierpaket aus dem Beutel. Die
+Tabelle gilt für jede Menge aus bis zu drei Steinen, 83 an der Zahl, und
+wird einmal je Auslagefeld der Suche angelegt; die Bewertung schlägt nur
+nach.
+
+**Mit einem Zug Rest entscheidet die Tabelle allein.** Mit mehr gilt die
+Formel weiter, aber nie unter dem, was der nächste Zug allein schon bietet.
+Ohne diese Untergrenze würde ein Zug belohnt, der das Brett füllt, Harmony
+damit auf einen Zug Rest setzt und so in das freundlichere Modell fällt.
+
+Zwei Annahmen stecken darin und gehören gemessen: dass die anderen gleich
+verteilt wählen — tatsächlich verschwindet ein Feld mit knappen Farben
+schneller —, und dass die frischen Steine mit Zurücklegen gezogen werden,
+was bei einem Beutel von Dutzenden kaum etwas verschiebt.
+
+Das ist die Stelle, an der **Auslage und Spielerzahl** in die Bewertung
+eingehen: als Wahrscheinlichkeit, nicht als Gewicht. Die Gewichte
+vergleichen Punktarten miteinander und bleiben, wie sie sind.
+
+Gemessen mit `tools/messe-verzweigung.sh`: 293 und 290 µs je Zug bei sechs
+belegten Feldern, vorher 306 und 304. Kein Aufschlag.
+
 ## Offene Punkte
 
 1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird

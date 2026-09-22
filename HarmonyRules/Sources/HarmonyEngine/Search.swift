@@ -329,6 +329,10 @@ public enum Search {
     /// `docs/06-durchstich.md` names that as an assumption rather than a
     /// fact.
     ///
+    /// The spaces that stay are handed on as well, not only their colours:
+    /// her next turn chooses among spaces, and `NextTurn` needs to know
+    /// which stones lie **together**.
+    ///
     /// The second chance source, the card that moves up when one is taken, is
     /// left out for a plainer reason: the evaluation looks at the cards in
     /// hand, never at the open ones, so which card appears changes nothing it
@@ -344,7 +348,8 @@ public enum Search {
                 counts[stone, default: 0] += 3 * bag.chance(of: stone)
             }
         }
-        return Availability(perColour: counts)
+        let staying = state.display.indices.filter { $0 != taken }.map { state.display[$0] }
+        return Availability(perColour: counts, spaces: staying, state: state)
     }
 }
 
