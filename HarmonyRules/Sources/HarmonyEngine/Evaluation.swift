@@ -486,58 +486,158 @@ public enum Evaluator {
             }
         }
 
-        terms.append(contentsOf: buildingTerm(state, weights: weights, available: available))
+        terms.append(contentsOf: dormantTerms(state, weights: weights, available: available))
         return terms
     }
 
-    /// What the buildings that do not score yet could still be worth.
+    // MARK: - (3b) Landschaften, die noch schlafen
+
+    /// A landscape lying on the board that earns nothing yet, and what it
+    /// would take to wake it.
+    struct Dormant: Sendable {
+        /// What it pays once the neighbours are there.
+        let gain: Int
+        /// Which stones have to arrive, and on how many spaces. Each one
+        /// needs a free neighbouring space of its own.
+        let needed: [Stone: Int]
+        /// How many neighbouring spaces are still free to take them.
+        let free: Int
+
+        /// Enough room for what is missing. Where there is not, no sequence
+        /// of draws can ever make this landscape score.
+        var isPossible: Bool { needed.values.reduce(0, +) <= free }
+    }
+
+    /// Whether this space holds a landscape that does not score yet, and
+    /// what it is waiting for.
     ///
-    /// A building pays five for three differently coloured neighbours and
-    /// nothing at all below that, so it is worth exactly what the colours
-    /// that can still reach it are worth. Without this the evaluation knew
-    /// **no difference at all** between a building in the middle and one in
-    /// a corner — both score zero the turn they are laid, and neither
-    /// promised anything. Family (4) then decided, and it prefers the edge,
-    /// where a stone spoils the fewest candidates. So the evaluation drove
-    /// the building into the corner, where four spaces on either side have
-    /// two neighbours and three colours can never stand.
+    /// **Three of the six scoring sources have a dormant phase**, and they
+    /// share one shape: some stones have to land on free neighbouring
+    /// spaces, after which the landscape pays its full points. Only which
+    /// stones and what it pays differ.
     ///
-    /// Which colours are still missing is decided by supply: the largest
-    /// stocks first, because those are the ones she will actually see. The
-    /// neighbours already standing are taken as fixed, although a stack can
-    /// be built over — an understatement, and the cheap direction.
-    static func buildingTerm(_ state: EngineState, weights: Weights,
+    /// | Landschaft | zahlt | wartet auf |
+    /// | --- | --- | --- |
+    /// | Berg ohne Bergnachbarn | 1/3/7 nach Höhe | einen grauen Stein daneben |
+    /// | einzelner gelber Stein | 5 | einen gelben Stein daneben |
+    /// | Gebäude ohne drei Farben | 5 | die fehlenden Farben ringsum |
+    ///
+    /// The other three do not belong here. The river and the islands have
+    /// their own outlook above, and a tree pays from the first green stone
+    /// and grows by stacking rather than by neighbours — which is possible
+    /// on every space and so tells no two apart.
+    ///
+    /// Neighbours already standing count as fixed. A stack can be built
+    /// over, so this understates — the cheap direction.
+    static func dormant(at cell: Int, on state: EngineState,
+                        supply: (Stone) -> Double) -> Dormant? {
+        guard let stack = state.stacks[cell], let landscape = stack.landscape else { return nil }
+        let ring = state.board.neighbours(cell)
+        let free = ring.count { state.stacks[$0] == nil }
+
+        switch landscape {
+        case .mountain:
+            guard !ring.contains(where: { (state.stacks[$0] ?? []).landscape == .mountain })
+            else { return nil }
+            // A lone grey stone is a mountain of height one, so one stone
+            // on one free space is the whole requirement. It wakes the
+            // neighbour too, which this does not count — the new mountain
+            // brings its own points with it.
+            return Dormant(gain: BoardScoring.heightPoints(stack.count),
+                           needed: [.stone: 1], free: free)
+
+        case .field:
+            // A group of two or more already scores, and a group of one is
+            // a space without a yellow neighbour — so asking the ring is
+            // the same question as asking the group, and cheaper.
+            guard !ring.contains(where: { (state.stacks[$0] ?? []).landscape == .field })
+            else { return nil }
+            return Dormant(gain: 5, needed: [.field: 1], free: free)
+
+        case .building:
+            let colours = Set(ring.compactMap { state.stacks[$0]?.last })
+            guard colours.count < 3 else { return nil }
+            // Which colours are missing is decided by supply — the largest
+            // stocks first, since those are the ones she will see.
+            let wanted = Stone.allCases
+                .filter { !colours.contains($0) }
+                .sorted { supply($0) > supply($1) }
+                .prefix(3 - colours.count)
+            return Dormant(gain: 5,
+                           needed: Dictionary(uniqueKeysWithValues: wanted.map { ($0, 1) }),
+                           free: free)
+
+        case .tree, .water:
+            return nil
+        }
+    }
+
+    /// What the sleeping landscapes promise, one term per kind.
+    ///
+    /// Before this the evaluation promised them nothing, and that is not a
+    /// small omission: scoring zero today and nothing in prospect, every
+    /// space for them was worth the same, so family (4) decided — and it
+    /// prefers the edge, where a stone spoils the fewest candidates. The
+    /// dormant landscapes were driven into the corners, where the
+    /// neighbours they wait for cannot exist. Measured before the term was
+    /// built, a lone mountain in the middle and one in a corner came out
+    /// equal to three decimals, and so did a lone yellow stone.
+    ///
+    /// One term per kind rather than one for all three: the reasoning names
+    /// the largest contributions, and "Berge" says something there that a
+    /// collective name would not.
+    static func dormantTerms(_ state: EngineState, weights: Weights,
                              available: Availability) -> [Term] {
         let supply: (Stone) -> Double = {
             Double(state.bag.remaining($0)) + (available.perColour[$0] ?? 0)
         }
-        var worth = 0.0
-        var open = 0
-        var hopeless = 0
+        var worth: [Landscape: Double] = [:]
+        var asleep: [Landscape: Int] = [:]
+        var hopeless: [Landscape: Int] = [:]
 
-        for (cell, stack) in state.stacks where stack.landscape == .building {
-            let ring = state.board.neighbours(cell)
-            let colours = Set(ring.compactMap { state.stacks[$0]?.last })
-            guard colours.count < 3 else { continue }
-            open += 1
-            let needed = 3 - colours.count
-            let free = ring.count { state.stacks[$0] == nil }
-            guard free >= needed else { hopeless += 1; continue }
-            let wanted = Stone.allCases
-                .filter { !colours.contains($0) }
-                .sorted { supply($0) > supply($1) }
-                .prefix(needed)
-            let odds = chance(ofBuilding: Dictionary(uniqueKeysWithValues: wanted.map { ($0, 1) }),
-                              state: state, available: available)
-            worth += 5 * odds
+        // Over the board's spaces rather than over the stacks: a dictionary
+        // hands them out in no fixed order, and summing doubles in a
+        // different order each time would make the same position weigh
+        // differently.
+        for cell in state.board.cells {
+            guard let landscape = state.stacks[cell]?.landscape,
+                  let dormant = dormant(at: cell, on: state, supply: supply) else { continue }
+            asleep[landscape, default: 0] += 1
+            guard dormant.isPossible else {
+                hopeless[landscape, default: 0] += 1
+                continue
+            }
+            worth[landscape, default: 0] += Double(dormant.gain)
+                * chance(ofBuilding: dormant.needed, state: state, available: available)
         }
 
-        guard open > 0 else { return [] }
-        var detail = "\(open) Gebäude ohne drei Farben"
-        if hopeless > 0 { detail += ", \(hopeless) davon ohne Aussicht" }
-        return [Term(name: "Gebäude",
-                     points: worth * weights.landscape * weights.outlook,
-                     detail: detail)]
+        return [Landscape.mountain, .field, .building].compactMap { landscape in
+            guard let count = asleep[landscape] else { return nil }
+            var detail = "\(count) \(waitingFor(landscape, count))"
+            if let blind = hopeless[landscape] { detail += ", \(blind) davon ohne Aussicht" }
+            return Term(name: name(of: landscape),
+                        points: (worth[landscape] ?? 0) * weights.landscape * weights.outlook,
+                        detail: detail)
+        }
+    }
+
+    static func name(of landscape: Landscape) -> String {
+        switch landscape {
+        case .mountain: "Berge"
+        case .field: "Felder"
+        case .building: "Gebäude"
+        case .tree: "Bäume"
+        case .water: "Wasser"
+        }
+    }
+
+    static func waitingFor(_ landscape: Landscape, _ count: Int) -> String {
+        switch landscape {
+        case .mountain: "Berg\(count == 1 ? "" : "e") ohne Bergnachbarn"
+        case .field: "einzelne\(count == 1 ? "r" : "") gelbe\(count == 1 ? "r" : "") Stein\(count == 1 ? "" : "e")"
+        case .building: "Gebäude ohne drei Farben"
+        case .tree, .water: ""
+        }
     }
 
     // MARK: - (4) Wie viel noch offen ist

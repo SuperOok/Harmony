@@ -230,7 +230,7 @@ könnte.
 | --- | --- | --- |
 | Punkte jetzt | die Endwertung | `BoardScoring.breakdown()` und die Kartenleitern |
 | Aussicht aus Anwärtern | die mittlere Partie | Anwärter × Wahrscheinlichkeit |
-| Aussicht aus Landschaften | die **frühe** Partie | Fluss auf Seite A, Inseln auf Seite B, Gebäude auf beiden |
+| Aussicht aus Landschaften | die **frühe** Partie | Fluss auf Seite A, Inseln auf Seite B, schlafende Landschaften auf beiden |
 | Optionenvielfalt | den ersten Zug | wie viele Anwärter den Zug überleben |
 
 **Anwärter werden ausgewählt, nicht addiert.** Je Karte der beste Anwärter,
@@ -261,7 +261,7 @@ ist daran die Richtung — knappere Farbe, weniger Zeit oder mehr fehlende
 Steine senken den Wert —, und darauf ruht die Reihenfolge. Die Form gehört
 gemessen, sobald Selbstspiel läuft.
 
-### Zwei Lücken, am Tisch gefunden
+### Zwei Lücken, am Tisch gefunden — und eine dritte beim Nachzählen
 
 **Aufgefallen beim Spielen am 2026-09-22**, behoben am selben Tag. Beide
 waren keine Rechenfehler, sondern Dinge, nach denen die Bewertung gar nicht
@@ -282,13 +282,60 @@ Dort ist es beweisbar wertlos. Auf beiden Planseiten haben vier Felder nur
 passen nicht auf zwei Felder. Auf Seite A kommen zwei Felder mit drei
 Nachbarn dazu, auf Seite B vier.
 
-`Evaluator.buildingTerm` schließt die Lücke: je Gebäude ohne die drei Farben
-5 Punkte mal der Aussicht, die fehlenden Farben auf seinen **freien**
-Nachbarn unterzubringen. Reichen die freien Nachbarn zahlenmäßig nicht, ist
-der Beitrag 0 und das Gebäude in der Begründung als „ohne Aussicht"
-ausgewiesen. Welche Farben gesucht werden, entscheidet der Vorrat: die
-größten Bestände zuerst, weil Harmony die am ehesten zu sehen bekommt. Schon
-gewertete Gebäude bleiben außen vor, sonst stünden ihre 5 Punkte zweimal da.
+**Die Lücke war größer als der eine Fall.** Auf Nachfrage, ob die Aussicht
+für alle Punktquellen vollständig sei, kam heraus: Sie fehlte für **drei**
+von sechs. Das Gebäude war nur der auffälligste, weil bei ihm die Ecke
+beweisbar wertlos ist.
+
+| Quelle | Punkte jetzt | Aussicht vorher |
+| --- | --- | --- |
+| Fluss (Seite A) | ✅ | ✅ |
+| Inseln (Seite B) | ✅ | ✅ |
+| Gebäude | ✅ | ❌ |
+| Bergnachbarschaft | ✅ | ❌ |
+| Feldgruppe ab zwei | ✅ | ❌ |
+| Baumhöhe | ✅ | ❌ |
+
+Gemessen vor dem Umbau, gleiche Stellung, nur der Ort wechselt: ein einsamer
+Berg in der Mitte und einer in der Ecke kamen auf **drei Nachkommastellen
+gleich** heraus, ein einzelner gelber Stein ebenso.
+
+Die drei fehlenden Fälle haben **eine Form**: Eine Landschaft liegt auf dem
+Brett, zählt 0, und wacht auf, sobald die richtigen Steine auf *freie*
+Nachbarfelder kommen. Nur worauf sie warten und was sie zahlen, ist
+verschieden — `Evaluator.dormant` beantwortet das je Feld, `dormantTerms`
+gibt je Art einen Term aus.
+
+| Landschaft | zahlt | wartet auf |
+| --- | --- | --- |
+| Berg ohne Bergnachbarn | 1/3/7 nach Höhe | einen grauen Stein daneben |
+| einzelner gelber Stein | 5 | einen gelben Stein daneben |
+| Gebäude ohne drei Farben | 5 | die fehlenden Farben ringsum |
+
+Reichen die freien Nachbarn zahlenmäßig nicht, ist der Beitrag 0 und die
+Begründung weist den Fall als „ohne Aussicht" aus. Welche Farben ein Gebäude
+sucht, entscheidet der Vorrat: die größten Bestände zuerst, weil Harmony die
+am ehesten zu sehen bekommt. Was schon zählt, bleibt außen vor, sonst stünden
+dieselben Punkte zweimal da.
+
+**Die Baumhöhe gehört nicht dazu.** Ein Baum zahlt ab dem ersten grünen Stein
+und wächst durch Stapeln, nicht durch Nachbarn — und Stapeln geht auf jedem
+Feld, unterscheidet die Lagen also nicht. Die Aussicht auf das Höherbauen
+(die Staffel 1/3/7 ist superlinear) fehlt weiterhin und ist eine eigene
+Frage.
+
+**Für Berg und Feld ist die Ecke nicht schlecht**, und die Bewertung sagt das
+jetzt richtig: Zwei freie Nachbarn reichen für den einen fehlenden Stein, also
+steht die Ecke dem Zentrum gleich. Bestraft wird nicht die Lage, sondern das
+**Zubauen** — in dem Zug, der den letzten freien Nachbarn nimmt, fällt der
+Term auf 0. Vorhersagen muss die Bewertung das nicht; sie sieht den Verlust,
+wenn er eintritt.
+
+**Die Rechenzeit trägt es.** Gemessen im Release auf einem Brett mit zwölf
+Steinen: `dormantTerms` kostet 6 µs, ein ganzes `prepare` 857 µs — **0,7
+Prozent**. Der Term läuft einmal je Legung, nicht je Zug, und geht über die
+Felder des Bretts statt über das Stapel-Dictionary, damit die Summe
+unabhängig von der Aufzählungsreihenfolge gleich bleibt.
 
 **Harmony merkte nicht, dass die Partie zu Ende geht.** `ownTurnsLeft` zählte
 nur den Beutel: 35 Züge, geteilt durch die Sitzordnung. Der zweite Auslöser —

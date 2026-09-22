@@ -32,9 +32,8 @@ public enum Stone: String, CaseIterable, Identifiable, Sendable {
 ///
 /// In the dummy this derivation still lives here; its place is the engine
 /// module, where it will exist exactly once.
-public enum Landscape: Sendable {
+public enum Landscape: Sendable, Hashable, CaseIterable {
     case water, field, tree, mountain, building
-
 }
 
 extension Array where Element == Stone {

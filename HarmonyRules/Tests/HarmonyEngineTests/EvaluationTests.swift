@@ -201,7 +201,53 @@ struct EvaluationTests {
         #expect(!b.terms.contains { $0.name == "Fluss" })
     }
 
-    // MARK: - Gebäude
+    // MARK: - Schlafende Landschaften
+
+    @Test("Ein einsamer Berg verspricht seine Höhenpunkte, ein Paar verspricht nichts mehr")
+    func alonelyMountainPromisesItsHeightAndAPairPromisesNothingMore() {
+        // Ein Berg ohne Bergnachbarn zählt 0 und ist doch nicht nichts
+        // wert: ein grauer Stein daneben weckt ihn. Die Höhenstaffel geht
+        // mit ein, also verspricht ein hoher Berg mehr als ein flacher.
+        let low = Evaluator.evaluate(state(stacks: [33: [.stone]]))
+        let high = Evaluator.evaluate(state(stacks: [33: [.stone, .stone, .stone]]))
+        #expect((low.terms.first { $0.name == "Berge" }?.points ?? 0) > 0)
+        #expect(high.terms.first { $0.name == "Berge" }!.points
+                > low.terms.first { $0.name == "Berge" }!.points * 6)
+
+        // Zwei nebeneinander zählen bereits — ihre Punkte stehen in
+        // „Landschaften", und eine Aussicht daneben wäre dieselben zweimal.
+        let pair = Evaluator.evaluate(state(stacks: [33: [.stone], 32: [.stone]]))
+        #expect(pair.pointsNow == 2)
+        #expect(!pair.terms.contains { $0.name == "Berge" })
+    }
+
+    @Test("Ein einzelner gelber Stein verspricht die fünf Punkte seiner künftigen Gruppe")
+    func aloneYellowStonePromisesTheFivePointsOfItsFutureGroup() {
+        let single = Evaluator.evaluate(state(stacks: [33: [.field]]))
+        #expect(single.pointsNow == 0)
+        #expect((single.terms.first { $0.name == "Felder" }?.points ?? 0) > 0)
+
+        let group = Evaluator.evaluate(state(stacks: [33: [.field], 32: [.field]]))
+        #expect(group.pointsNow == 5)
+        #expect(!group.terms.contains { $0.name == "Felder" })
+    }
+
+    @Test("Der letzte freie Nachbar zuzubauen kostet die ganze Aussicht")
+    func buildingOverTheLastFreeNeighbourCostsTheWholeOutlook() {
+        // Für Berg und Feld ist die Ecke **nicht** aussichtslos — zwei
+        // freie Nachbarn reichen für den einen fehlenden Stein. Bestraft
+        // wird darum nicht die Lage, sondern das Zubauen selbst, und zwar
+        // in dem Zug, der es tut. 1.1 grenzt an 1.2 und 2.1.
+        let open = Evaluator.evaluate(state(stacks: [11: [.stone]]))
+        let half = Evaluator.evaluate(state(stacks: [11: [.stone], 12: [.water]]))
+        let shut = Evaluator.evaluate(state(stacks: [11: [.stone], 12: [.water],
+                                                     21: [.water]]))
+        #expect((open.terms.first { $0.name == "Berge" }?.points ?? 0) > 0)
+        #expect((half.terms.first { $0.name == "Berge" }?.points ?? 0) > 0)
+        #expect(shut.terms.first { $0.name == "Berge" }?.points == 0)
+        #expect(shut.terms.first { $0.name == "Berge" }?.detail?
+            .contains("ohne Aussicht") == true)
+    }
 
     @Test("Ein Gebäude in der Ecke verspricht nichts, eines in der Mitte schon")
     func abuildingInTheCornerPromisesNothingAndOneInTheMiddleDoes() {
