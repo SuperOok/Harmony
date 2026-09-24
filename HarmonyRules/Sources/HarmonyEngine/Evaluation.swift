@@ -66,6 +66,31 @@ public struct Weights: Sendable {
     /// not capture.
     public var outlook = 0.85
 
+    /// What a free card space is worth, **the last free one first**: the
+    /// first entry is the space that closes the hand when taken, the
+    /// fourth the one taken out of an empty hand.
+    ///
+    /// Without it, a held card promises something and an open one nothing,
+    /// so taking any card beats taking none and the four spaces fill in the
+    /// first four turns — whatever lies open. But a card cannot be thrown
+    /// away; a weak one blocks its space until its last cube. Graded rather
+    /// than flat, because the first card taken leaves three spaces for
+    /// better ones and costs almost nothing, while the last one closes the
+    /// hand. A flat price would leave her empty-handed whenever the display
+    /// holds nothing above it.
+    ///
+    /// **Measured, not guessed** — the only weight here that is. Self-play
+    /// against random opponents, 250 paired games over both board sides and
+    /// two to four players: +3.4 ± 0.7 points against no price. Seven gains
+    /// less, fourteen is erratic, twenty loses. `docs/06-durchstich.md`,
+    /// *Der Preis eines Kartenplatzes*, has the rounds.
+    public var freeSlots: [Double] = [10, 6, 2.5, 0]
+    /// Own turns left from which a free space keeps its full worth. Below,
+    /// it shrinks in proportion, and with no turn left it is worth nothing:
+    /// a card taken later needs time to be built, and at the end there is
+    /// none. So the end game takes cards again without a rule of its own.
+    public var freeSlotsFullFrom = 6
+
     public init() {}
 }
 
@@ -428,7 +453,30 @@ public enum Evaluator {
                               detail: "\(live) Anwärter leben noch"))
         }
 
+        // (5) Freie Kartenplätze
+        if let slots = freeSlotTerm(state, weights: weights) {
+            terms.append(slots)
+        }
+
         return Evaluation(terms: terms, pointsNow: landscapeNow + cardsNow)
+    }
+
+    /// What the free card spaces are worth: the graded worths of as many
+    /// spaces as are free, scaled down as the time to use them runs out.
+    /// `nil` while the weights give free spaces no worth at all, so that the
+    /// reasoning does not list a term that is always zero.
+    static func freeSlotTerm(_ state: EngineState, weights: Weights) -> Term? {
+        guard weights.freeSlots.contains(where: { $0 != 0 }) else { return nil }
+        let free = max(0, 4 - state.unfinishedCards.count)
+        let full = weights.freeSlots.prefix(free).reduce(0, +)
+        // Counted in the cautious turns the stone budget uses too: a space
+        // kept free for a card that would come too late is worth nothing.
+        let turns = state.ownTurnsBudgeted
+        let time = weights.freeSlotsFullFrom > 0
+            ? min(1, Double(turns) / Double(weights.freeSlotsFullFrom))
+            : 1
+        return Term(name: "Freie Kartenplätze", points: full * time,
+                    detail: "\(free) frei, \(turns) Züge Rest")
     }
 
     /// Every way this card could still lie — from the laying's stock if it
