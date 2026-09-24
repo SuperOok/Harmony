@@ -30,5 +30,9 @@ let package = Package(
         // not "is this right", and `docs/04-architektur.md` asks for the
         // number rather than for a bound.
         .executableTarget(name: "HarmonyMeasure", dependencies: ["HarmonyEngine"]),
+        // Plays Harmony against random opponents, to measure the weights
+        // the evaluation can only guess. Not a test either: it answers
+        // "which is better", and a whole run takes hours, not seconds.
+        .executableTarget(name: "HarmonySelfPlay", dependencies: ["HarmonyEngine"]),
     ]
 )

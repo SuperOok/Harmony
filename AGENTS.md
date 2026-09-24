@@ -17,8 +17,23 @@ siehe `docs/`.
 **Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 175 Regelfällen (`tools/tests.sh`, gut eine
-Sekunde) und fünf Oberflächenfällen (`tools/uitests.sh`).
+Weglegen. Geprüft wird mit 182 Regelfällen (`tools/tests.sh`, gut zwei
+Sekunden) und fünf Oberflächenfällen (`tools/uitests.sh`).
+
+**Seit dem 2026-09-23 läuft Selbstspiel** (`HarmonySelfPlay`): Harmony gegen
+würfelnde Mitspielerinnen, Varianten der Gewichte gepaart auf denselben
+Partien verglichen. Als Erstes gemessen und eingebaut ist ein **Preis für
+freie Kartenplätze** — vorher nahm Harmony in den ersten vier Zügen jede
+Karte, weil Nehmen in der Bewertung nichts kostete. Mit Preis
+`[10, 6, 2,5, 0]` holt sie +3,4 ± 0,7 Punkte je Partie (250 Paare, beide
+Seiten, zwei bis vier Spielerinnen); Seite B allein ist unentschieden.
+Einzelheiten in `docs/06-durchstich.md` unter *Der Preis eines
+Kartenplatzes*. Eine Runde von 400 Partien dauert auf dem Mac gut zwei
+Stunden:
+
+```bash
+cd HarmonyRules && swift run -c release HarmonySelfPlay --games 40 --take 0.45 --variants ohne,standard -v
+```
 
 **Gespielt zu werden findet Lücken, die kein Prüffall findet.** Am
 2026-09-22 drei Stück, alle in `docs/06-durchstich.md` unter *Zwei Lücken,
@@ -92,6 +107,7 @@ HarmonyRules/          Swift Package, zwei Bibliotheken samt Tests
   Sources/HarmonyEngine  das Verfahren: Zustand, Züge, Bewertung, Suche,
                          Vorhersage des Spielendes
   Sources/HarmonyMeasure zählt den Zugraum
+  Sources/HarmonySelfPlay spielt gegen Zufallsgegnerinnen, vergleicht Gewichte
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
 MyApp/                 der Rest des Quellcodes
   MyApp.swift          @main, WindowGroup

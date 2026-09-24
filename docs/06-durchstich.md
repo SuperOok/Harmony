@@ -1071,6 +1071,135 @@ hat die meisten geratenen Werte und kommt erst, wenn die Protokolle zeigen,
 dass die ersten beiden Schichten nicht genügen. Vorgemerkt in
 `ideen-vorgemerkt.md`, zusammen mit der Abfrage der freien Felder.
 
+## Der Preis eines Kartenplatzes
+
+Aufgefallen am Tisch, gebaut und gemessen in der Nacht zum 2026-09-23:
+Harmony nahm in den ersten vier Zügen **jedes Mal** eine Tierkarte, auch
+eine, die zu nichts passte.
+
+**Das war keine Laune der Suche, sondern die Bewertung.** Eine Handkarte
+bringt ihre Aussicht und zählt bei den offenen Möglichkeiten mit; eine
+offene Karte, die liegen bleibt, zählt nichts. Nehmen kostete also nie
+etwas, und solange ein Platz frei war, schlug jede Karte mit einer Aussicht
+über null das Liegenlassen. Vier Plätze, vier Züge. Die Karten wurden
+untereinander verglichen, nie gegen die Möglichkeit, den Platz frei zu
+halten — und das ist der Teil, der in Harmonies zählt: Karten lassen sich
+nicht abwerfen, eine schwache blockiert ihren Platz bis zum letzten Würfel.
+
+### Gestaffelt, und mit der Zeit fallend
+
+Ein fünfter Bewertungsposten, **Freie Kartenplätze** (`Weights.freeSlots`):
+Jeder freie Platz ist etwas wert, und eine Karte wird nur genommen, wenn
+ihre Aussicht den Platz aufwiegt, den sie belegt.
+
+- **Gestaffelt, nicht flach.** Die erste Karte aus leerer Hand lässt drei
+  Plätze für bessere und kostet nichts; die Karte, die die Hand schließt,
+  kostet am meisten. Ein flacher Preis ließe Harmony leer dastehen, sobald
+  die Auslage nichts darüber bietet. Die Stufen sind `[W, 0,6 W, 0,25 W, 0]`,
+  der letzte freie Platz zuerst.
+- **Mit der Zeit fallend.** Ab `freeSlotsFullFrom` = 6 eigenen Restzügen
+  (vorsichtig gezählt, wie das Steinbudget) sinkt der Wert anteilig, bei
+  null Restzügen ist er null. Eine später genommene Karte braucht Zeit, und
+  am Ende ist keine mehr da. Das Spielende nimmt damit wieder Karten, ohne
+  eigene Regel.
+- **Er belohnt auch das Abschließen.** Wer den letzten Würfel einer Karte
+  legt, bekommt ihren Platz zurück. Das war nicht das Ziel, zeigt sich aber
+  in den Messungen: Mit Preis nimmt Harmony nicht weniger Karten, sondern
+  mehr, weil sie öfter abschließt und nachnimmt.
+
+Sechs Prüffälle in `CardSlotTests`: Ohne Preis wird eine schwache Karte
+genommen, mit Preis bleibt sie liegen, wenn sie die Hand schlösse; aus
+leerer Hand wird auch mit Preis genommen; am Ende ist ein Platz nichts
+wert; die Staffel stimmt; und der gemessene Preis gilt von selbst.
+
+### Selbstspiel gegen Zufallsgegnerinnen
+
+`HarmonySelfPlay` spielt Harmony gegen Mitspielerinnen, die würfeln statt
+entscheiden. Für diese Frage genügt das: Die anderen berühren Harmony nur
+über drei Dinge, und jedes davon ist ein Zufallszug.
+
+| berührt Harmony über | im Selbstspiel |
+| --- | --- |
+| die Steinauslage | ein zufälliges Feld, nachgefüllt aus dem gemischten Beutel |
+| die Kartenauslage | mit Wahrscheinlichkeit `p` eine zufällige Karte, höchstens vier unfertige; je Zug schließt jede mit 12 % ab |
+| das Ende der Partie | ein Zähler belegter Felder, gestapelt mit den Anteilen aus `EndForecast.stacking`; bei zwei freien meldet sie wie am Tisch |
+
+Harmony selbst spielt mit der vollen Suche und der Vorhersage des
+Spielendes, wie in der App. Die Partien laufen zu acht nebeneinander, je
+eine auf einem Kern: 150 bis 170 Sekunden je Partie auf Seite A, 260 auf
+Seite B, rund 170 Partien je Stunde auf einem M2.
+
+**Verglichen wird gepaart.** Beutel, Kartenstapel und Gegnerinnen ziehen
+aus drei getrennten Zufallsströmen, sodass jede Variante dieselben Steine
+in derselben Reihenfolge sieht, gleichgültig, was Harmony nimmt. Gemessen
+wird die eigene Punktzahl, nicht die Siegquote: In Harmonies berühren sich
+die Spielerinnen nur über die Auslage, und Sieg oder Niederlage streuten
+viel stärker. Wo zwei Varianten gleich spielen, ist der Unterschied genau
+null; das macht den Vergleich schärfer als die Punktzahlen allein, deren
+Standardfehler bei 1,5 bis 2 Punkten liegt.
+
+### Vier Runden, rund 1.400 Partien
+
+Δ ist der gepaarte Unterschied zu „ohne Preis", mit Standardfehler. `stufe:W`
+heißt `W` für den letzten freien Platz; `stufe:10:10` lässt den Preis schon
+ab zehn Restzügen fallen, `flach:W` ist jeder Platz `W`.
+
+| Runde | Rahmen | Partien je Variante | Variante: Δ |
+| --- | --- | --- | --- |
+| 1 | Seite A, 3 Spielerinnen, p = 0,3 | 40 | stufe:2 +1,5 ± 0,6 · stufe:4 +0,8 ± 1,0 · stufe:7 +3,2 ± 2,0 · flach:3 +1,1 ± 0,9 |
+| 1 | Seite A, 3 Spielerinnen, p = 0,6 | 40 | stufe:2 +0,5 ± 0,6 · stufe:4 −0,1 ± 1,0 · stufe:7 +2,0 ± 1,7 · flach:3 +0,6 ± 0,6 |
+| 2 | Seite A, 3 Spielerinnen, p = 0,45 | 70 | stufe:7 +1,5 ± 1,2 · **stufe:10 +2,8 ± 1,3** · stufe:14 +3,6 ± 1,7 · stufe:10:10 +2,9 ± 1,6 · flach:7 +0,5 ± 1,7 |
+| 3 | Seite A, 3 Spielerinnen, p = 0,45 | 60 | **stufe:10 +5,3 ± 1,4** · stufe:14 +0,6 ± 1,7 · stufe:20 −1,2 ± 1,7 |
+| 3 | Seite B, 3 Spielerinnen, p = 0,45 | 40 | **stufe:10 +0,9 ± 2,3** · stufe:14 −1,0 ± 2,3 |
+| 4 | Seite A, 4 Spielerinnen, p = 0,45 | 40 | **stufe:10 +3,3 ± 1,6** · stufe:14 +3,4 ± 1,7 |
+| 4 | Seite A, 2 Spielerinnen, p = 0,45 | 40 | **stufe:10 +3,2 ± 1,6** · stufe:14 +4,0 ± 1,9 |
+
+Jede Runde auf frischen Partien. Über alle 250 Vergleichspartien mit
+`stufe:10`, nach Standardfehler gewichtet: **+3,4 ± 0,7 Punkte** bei einer
+Partie um 92. `stufe:10` ist seither der Standard: `[10, 6, 2,5, 0]`.
+
+Was sich in den Partien ändert:
+
+- **Die vierte Karte kommt später**, im Mittel im sechsten eigenen Zug statt
+  im vierten. Die erste bleibt im ersten: Aus leerer Hand kostet der Platz
+  nichts.
+- **Harmony nimmt mehr Karten**, 5,0 bis 5,5 statt 4,5 bis 5,0 je Partie,
+  und holt mit ihnen 3 bis 5 Punkte mehr. Die Landschaft gibt dafür bis zu
+  zwei ab.
+- **Zu teuer ist schlechter als gar kein Preis.** `stufe:20` und der flache
+  Preis zögern zu lange: Mit `flach:7` nimmt Harmony die erste Karte erst im
+  zweiten Zug, mit `stufe:20` die vierte im achten.
+
+**Die Zahl der Spielerinnen ändert wenig.** Bei vier wechselt die Auslage
+schneller, was das Warten belohnt, dafür hat Harmony weniger Züge, was es
+bestraft. Beides scheint sich aufzuheben: Zwei, drei und vier Spielerinnen
+ergeben innerhalb der Messgenauigkeit denselben Gewinn. Ebenso die
+Kartenrate der Gegnerinnen: 0,3 und 0,6 ordnen die Varianten gleich.
+
+### Was die Messung nicht sagt
+
+- **Seite B ist unentschieden.** +0,9 ± 2,3 schließt einen Schaden nicht
+  aus, einen Gewinn wie auf Seite A aber auch nicht. Eine Partie dauert dort
+  länger, und 40 Paare reichen nicht.
+- **Zufallsgegnerinnen sind zu freundlich.** Echte nehmen bevorzugt die
+  guten Karten — genau die, auf die Harmony wartet. Am Tisch lohnt sich
+  Warten also wahrscheinlich etwas weniger als hier.
+- **Das Optimum ist grob.** Zwischen 7 und 14 liegt ein flaches Plateau,
+  14 streut von Runde zu Runde stark. Die Staffel selbst und die sechs
+  Restzüge sind nicht variiert worden, außer im einen Lauf `stufe:10:10`.
+- **Der Posten wirkt über die Restzeit auch aufs Brett.** Weil sein Wert mit
+  den Restzügen fällt, und diese vom Füllen des eigenen Plans abhängen,
+  belohnt er gegen Ende ein wenig das Stapeln. Das ist in der Messung
+  enthalten, aber nicht gewollt.
+- **In der Begründung steht er oft oben.** Früh in der Partie ist er mit bis
+  zu 18,5 der größte Posten und erscheint unter den drei, die „Harmony ist
+  am Zug" nennt, auch wenn er in allen Zügen fast gleich ist. Ob das am
+  Tisch stört, ist dort zu sehen.
+
+Das Werkzeug taugt für die übrigen geratenen Gewichte genauso — der Abschlag
+0,85, die Vielfalt 0,05, die Stapelanteile der Vorhersage. Aufruf und
+Varianten stehen am Kopf von `Sources/HarmonySelfPlay/main.swift`.
+
 ## Offene Punkte
 
 1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird
@@ -1084,6 +1213,8 @@ dass die ersten beiden Schichten nicht genügen. Vorgemerkt in
 3. **Die Gewichtung der Bewertungsterme ist ungemessen.** Die vier Familien —
    Punkte jetzt, Aussicht aus Anwärtern, Aussicht aus Landschaften,
    Optionenvielfalt — greifen zu verschiedenen Zeiten der Partie. Womit sie
-   gegeneinander zu verrechnen sind, gehört gemessen, sobald Selbstspiel
-   läuft. Phase 3 nimmt v1 auf dem Durchlauf ab, nicht auf der Spielstärke;
-   geraten wird deshalb vorerst.
+   gegeneinander zu verrechnen sind, gehört gemessen. Das Selbstspiel läuft
+   seit dem 2026-09-23 (`HarmonySelfPlay`, siehe *Der Preis eines
+   Kartenplatzes*); gemessen ist damit bisher nur der Platzpreis. Phase 3
+   nimmt v1 auf dem Durchlauf ab, nicht auf der Spielstärke; die übrigen
+   Gewichte bleiben vorerst geraten.
