@@ -23,7 +23,7 @@ struct Variant: Sendable {
 
     /// How the graded price falls off: the last free space in full, the
     /// first taken out of an empty hand for nothing.
-    static let grading: [Double] = [1, 0.6, 0.25, 0]
+    static let grading = EngineSettings.cardSpaceGrading
 
     init?(_ text: String) {
         let parts = text.split(separator: ":")

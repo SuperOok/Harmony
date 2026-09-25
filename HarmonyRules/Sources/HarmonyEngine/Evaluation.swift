@@ -48,7 +48,7 @@ public struct Evaluation: Sendable {
 /// **Guessed, not measured.** They belong measured once self-play runs; see
 /// the open points in `docs/06-durchstich.md`. They sit in one place so that
 /// measuring them later changes one thing.
-public struct Weights: Sendable {
+public struct Weights: Sendable, Equatable, Codable {
     public var pointsNow = 1.0
     public var candidates = 1.0
     public var landscape = 1.0
