@@ -109,9 +109,13 @@ HarmonyRules/          Swift Package, zwei Bibliotheken samt Tests
   Sources/HarmonyMeasure zählt den Zugraum
   Sources/HarmonySelfPlay spielt gegen Zufallsgegnerinnen, vergleicht Gewichte
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
+Harmony-Info.plist     Ergänzung zum erzeugten Info.plist: Farbe des
+                       Startbildschirms (`LaunchBackground`), weil Xcode
+                       dafür keinen Build-Schlüssel kennt
 MyApp/                 der Rest des Quellcodes
   MyApp.swift          @main, WindowGroup
   ContentView.swift    Wurzel-View
+  SplashView.swift     Startanimation: das Icon setzt sich zusammen
   Dummy/               Klickdummy aus Phase 5, keine Engine
     SampleData.swift   Attrappendaten, dazu die Farben der Steine
     BoardView.swift    Sechseckgitter, Zelldarstellung
@@ -294,6 +298,9 @@ Tisch liegt kein Mac.
   xcrun devicectl device process launch --device <UDID> --console \
     --terminate-existing de.superook.Harmony -- -logSearch
   ```
+
+  Die **Startanimation** läuft nur beim Start von Hand; jeder dieser
+  Prüfeinstiege überspringt sie, damit die Oberflächentests nicht warten.
 
   **Ohne Startparameter beginnt eine Partie leer** — leerer Spielplan,
   keine Karten in Harmonys Hand — und füllt sich über die Züge. Die
