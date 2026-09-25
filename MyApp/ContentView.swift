@@ -43,8 +43,29 @@ struct ContentView: View {
     private let isTestEntry = ["-harmonyTurn", "-endScore", "-endScoreB"]
         .contains { ProcessInfo.processInfo.arguments.contains($0) }
 
+    /// The start screen comes first, after the splash, with a game left
+    /// open or without. The test hooks skip it, as they skip the splash.
+    @State private var showsStart = Launch.showsStartScreen
+
+    /// The game left open, in a line for the start screen.
+    private var savedSummary: String? {
+        guard let startState else { return nil }
+        let others = startState.seating.filter { $0 != "Harmony" }
+        let with = others.isEmpty ? "" : " · mit " + others.formatted(.list(type: .and))
+        return "Zug \(restored.turnCount + 1)\(with)"
+    }
+
     var body: some View {
-        if let startState {
+        if showsStart {
+            StartView(saved: savedSummary,
+                      onContinue: { showsStart = false },
+                      onNewGame: {
+                          GameStore.discard()
+                          restored = []
+                          startState = nil
+                          showsStart = false
+                      })
+        } else if let startState {
             OpponentTurnView(startState: startState,
                              restored: restored,
                              finished: finished,

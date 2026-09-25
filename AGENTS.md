@@ -17,8 +17,19 @@ siehe `docs/`.
 **Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 182 Regelfällen (`tools/tests.sh`, gut zwei
-Sekunden) und fünf Oberflächenfällen (`tools/uitests.sh`).
+Weglegen. Geprüft wird mit 188 Regelfällen (`tools/tests.sh`, gut zwei
+Sekunden) und acht Oberflächenfällen (`tools/uitests.sh`).
+
+**Seit dem 2026-09-25 beginnt die App mit einem Start-Bildschirm** nach der
+Startanimation: Partie fortsetzen oder neu beginnen, dazu *Spielstärke* und
+*Über Harmony* mit Versionsnummer. Unter *Spielstärke* lassen sich alle
+Stellschrauben der Engine einstellen, die eine Frage am Tisch beantworten —
+Vorhersage des Spielendes, Bedenkzeit, Kartenplatz-Preis und die vier
+geschätzten Gewichte (`EngineSettings` im Engine-Paket, gespeichert in
+`UserDefaults`, je Suche frisch gelesen). Bewusst nicht einstellbar sind
+`Weights.pointsNow` als Maßstab der übrigen und die Annahmen über das Spiel
+selbst, etwa die Stapelanteile der Vorhersage; Begründung am Kopf von
+`EngineSettings.swift`.
 
 **Seit dem 2026-09-23 läuft Selbstspiel** (`HarmonySelfPlay`): Harmony gegen
 würfelnde Mitspielerinnen, Varianten der Gewichte gepaart auf denselben
@@ -105,7 +116,7 @@ HarmonyRules/          Swift Package, zwei Bibliotheken samt Tests
   Sources/HarmonyRules   die Regeln: Steine, Geometrie, Karten, Lebensräume
     Resources/animals.json  die 32 Tierkarten, Quelle der Wahrheit
   Sources/HarmonyEngine  das Verfahren: Zustand, Züge, Bewertung, Suche,
-                         Vorhersage des Spielendes
+                         Vorhersage des Spielendes, Einstellungen
   Sources/HarmonyMeasure zählt den Zugraum
   Sources/HarmonySelfPlay spielt gegen Zufallsgegnerinnen, vergleicht Gewichte
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
@@ -116,6 +127,9 @@ MyApp/                 der Rest des Quellcodes
   MyApp.swift          @main, WindowGroup
   ContentView.swift    Wurzel-View
   SplashView.swift     Startanimation: das Icon setzt sich zusammen
+  IconFlower.swift     die Blüte des Icons, für Animation und Start
+  Launch.swift         Startparameter und gespeicherte Einstellungen
+  Start/               Start-Bildschirm, Spielstärke, Über Harmony
   Dummy/               Klickdummy aus Phase 5, keine Engine
     SampleData.swift   Attrappendaten, dazu die Farben der Steine
     BoardView.swift    Sechseckgitter, Zelldarstellung
@@ -271,7 +285,7 @@ Tisch liegt kein Mac.
 - Die Notationsbuchstaben bleiben deutsch begründet — `S` für Stein, `H` für
   Holz, `Z` für Ziegel —, weil abgelegte Kartendaten und Protokolle sie
   benutzen. Siehe `docs/pruefverfahren.md`.
-- Acht Startparameter: `-forgetGame` verwirft einen gespeicherten Stand
+- Neun Startparameter: `-forgetGame` verwirft einen gespeicherten Stand
   beim Start, was die Persistenztests brauchen; `-harmonyTurn` öffnet direkt auf Harmonys
   Bildschirm, mit einer Attrappenstellung mitten in der Partie;
   `-sampleMove` hält zusätzlich die Engine heraus und zeigt den
@@ -282,7 +296,9 @@ Tisch liegt kein Mac.
   jeder Suche eine Zeile mit Zeit, Zugzahl, Notation und Vollständigkeit auf
   die Standardausgabe, dazu eine Zeile `ENDE` mit der Vorhersage, wann die
   fremden Spielpläne voll sind; `-noForecastEnd` nimmt diese Vorhersage
-  aus der Bewertung, die sonst mit ihr rechnet.
+  aus der Bewertung, die sonst mit ihr rechnet — gleich, was unter
+  *Spielstärke* eingestellt ist; `-showStart` zeigt den Start-Bildschirm
+  auch neben den übrigen Prüfeinstiegen.
 
   **`-logSearch` ist der einzige Weg an die Rechenzeit auf dem Gerät** — dort
   läuft kein Messprogramm und liest niemand mit. Ein Spielstand lässt sich
@@ -299,8 +315,10 @@ Tisch liegt kein Mac.
     --terminate-existing de.superook.Harmony -- -logSearch
   ```
 
-  Die **Startanimation** läuft nur beim Start von Hand; jeder dieser
-  Prüfeinstiege überspringt sie, damit die Oberflächentests nicht warten.
+  Die **Startanimation und der Start-Bildschirm** kommen nur beim Start
+  von Hand; jeder dieser Prüfeinstiege überspringt beide, damit die
+  Oberflächentests nicht warten. `-showStart` holt den Start-Bildschirm
+  zurück, für dessen eigene Tests.
 
   **Ohne Startparameter beginnt eine Partie leer** — leerer Spielplan,
   keine Karten in Harmonys Hand — und füllt sich über die Züge. Die

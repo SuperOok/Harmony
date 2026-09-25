@@ -4,9 +4,7 @@ import SwiftUI
     /// The splash is for a start by hand. The test hooks skip it: they open
     /// on a prepared screen, and two seconds of flowers in front of it would
     /// only make the interface tests wait.
-    @State private var showsSplash = !["-harmonyTurn", "-sampleMove", "-forgetGame",
-                                        "-endScore", "-endScoreB", "-longCards"]
-        .contains { ProcessInfo.processInfo.arguments.contains($0) }
+    @State private var showsSplash = !Launch.skipsIntro
 
     var body: some Scene {
         WindowGroup {

@@ -112,11 +112,6 @@ struct OpponentTurnView: View {
     /// Gerät, wo weder das Messprogramm läuft noch jemand mitliest.
     private let logsSearch = ProcessInfo.processInfo.arguments.contains("-logSearch")
 
-    /// Die Vorhersage des Spielendes steuert die Bewertung, seit dem
-    /// 2026-09-22 als Voreinstellung — sonst sagte die Zeile über dem Brett
-    /// etwas anderes, als die Zugwahl annimmt. `-noForecastEnd` schaltet sie
-    /// ab, für den Vergleich mit den sicheren Auslösern allein.
-    private let usesForecast = !ProcessInfo.processInfo.arguments.contains("-noForecastEnd")
 
     private var pendingMove: HarmonyMove? {
         guard isHarmony else { return nil }
@@ -149,7 +144,11 @@ struct OpponentTurnView: View {
         // sie merklich.
         let takes = events.takes(from: startState)
         let names = state.seating
-        let usesForecast = usesForecast
+        // Die Einstellungen aus „Spielstärke“, je Suche frisch gelesen:
+        // Eine Änderung gilt ab dem nächsten Zug. Die Vorhersage steuert,
+        // solange sie nicht abgeschaltet ist — dort oder mit `-noForecastEnd`.
+        let settings = SettingsStore.current
+        let usesForecast = settings.forecastEnd
         let logsSearch = logsSearch
         engineFailed = false
         computed = nil
@@ -183,9 +182,19 @@ struct OpponentTurnView: View {
                                             steering: usesForecast))
                 }
                 return HarmonyEngine.Search.best(from: position,
+                                                 weights: settings.weights,
                                                  cancelled: { monitor.isStopped },
                                                  progress: { monitor.report($0) })
             }
+            // Die Bedenkzeit: danach genügt es, wie beim Abkürzen von Hand.
+            // Die Suche gibt dann den besten Zug zurück, den sie bis dahin hat.
+            let clock = settings.thinkingLimit.map { limit in
+                Task.detached {
+                    try? await Task.sleep(for: .seconds(limit))
+                    if !Task.isCancelled { monitor.stop() }
+                }
+            }
+            defer { clock?.cancel() }
             // Stopping means "that is enough", not "forget it": the search
             // returns the best turn it had reached. The flag goes to the
             // monitor, not to the task: the search works on several cores
@@ -212,10 +221,11 @@ struct OpponentTurnView: View {
             // der App selbst erfahren. `xcrun devicectl device process
             // launch --console` nimmt diese Zeile auf.
             if logsSearch {
-                print(String(format: "SUCHE %.1f s, %d Züge, %@, %@",
+                print(String(format: "SUCHE %.1f s, %d Züge, %@, %@%@",
                              thinkingTook ?? 0, thinkingWeighed,
                              computed?.notation ?? "—",
-                             thinkingComplete ? "vollständig" : "abgebrochen"))
+                             thinkingComplete ? "vollständig" : "abgebrochen",
+                             settings.isStandard ? "" : ", Spielstärke angepasst"))
             }
         }
     }
