@@ -47,6 +47,12 @@ struct ContentView: View {
     /// open or without. The test hooks skip it, as they skip the splash.
     @State private var showsStart = Launch.showsStartScreen
 
+    /// The splash is for a start by hand, and for a new game begun from the
+    /// transcript. The test hooks skip it: they open on a prepared screen,
+    /// and two seconds of flowers in front of it would only make the
+    /// interface tests wait.
+    @State private var showsSplash = !Launch.skipsIntro
+
     /// The game left open, in a line for the start screen.
     private var savedSummary: String? {
         guard let startState else { return nil }
@@ -56,6 +62,18 @@ struct ContentView: View {
     }
 
     var body: some View {
+        ZStack {
+            // Underneath from the start, so that the screen is laid out by
+            // the time the splash fades.
+            screen
+            if showsSplash {
+                SplashView { showsSplash = false }
+                    .zIndex(1)
+            }
+        }
+    }
+
+    @ViewBuilder private var screen: some View {
         if showsStart {
             StartView(saved: savedSummary,
                       onContinue: { showsStart = false },
@@ -74,9 +92,15 @@ struct ContentView: View {
                                  GameStore.save(start: startState, events: events)
                              },
                              onNewGame: {
+                                 // Back to the beginning, as if the app had
+                                 // just been opened: the splash, then the
+                                 // start screen, where the strength can be
+                                 // set before the next game is laid out.
                                  GameStore.discard()
                                  restored = []
                                  self.startState = nil
+                                 showsStart = true
+                                 showsSplash = !Launch.skipsIntro
                              })
         } else {
             SetupView {

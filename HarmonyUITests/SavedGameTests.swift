@@ -52,6 +52,14 @@ final class SavedGameTests: XCTestCase {
         XCTAssertTrue(discard.waitForExistence(timeout: 5))
         discard.tap()
 
+        // Zurück auf den Start-Bildschirm, wo sich vor der nächsten Partie
+        // die Spielstärke einstellen lässt — nichts mehr fortzusetzen.
+        let newGame = app.buttons["start-new-game"]
+        XCTAssertTrue(newGame.waitForExistence(timeout: 10),
+                      "Eine verworfene Partie führt zum Start-Bildschirm.")
+        XCTAssertFalse(app.buttons["start-continue"].exists,
+                       "Die verworfene Partie lässt sich nicht fortsetzen.")
+        newGame.tap()
         XCTAssertTrue(app.buttons["choose-players"].waitForExistence(timeout: 10),
                       "Ohne diesen Weg käme man aus der letzten Partie nie heraus.")
     }

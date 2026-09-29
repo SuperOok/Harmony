@@ -348,7 +348,9 @@ Tisch liegt kein Mac.
   Ereignis geschrieben. Die Prüfeinstiege schreiben **nicht** — sonst käme
   die Attrappenstellung beim nächsten echten Start zurück und sähe aus wie
   eine gespielte Partie. Verworfen wird sie über *Neue Partie* im
-  Verlauf.
+  Verlauf; danach kommen wie beim Öffnen der App Startanimation und
+  Start-Bildschirm, damit sich die Spielstärke vor der nächsten Partie
+  einstellen lässt.
 
 ## Hinweise zum Repository
 

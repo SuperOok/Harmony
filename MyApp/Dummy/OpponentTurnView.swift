@@ -1019,7 +1019,7 @@ struct OpponentTurnView: View {
                     }
                     .accessibilityIdentifier("new-game")
 
-                    Text("Verwirft den gespeicherten Stand und fragt den Aufbau neu ab.")
+                    Text("Verwirft den gespeicherten Stand und kehrt zum Start zurück.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)

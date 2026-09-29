@@ -1,22 +1,11 @@
 import SwiftUI
 
 @main struct MyApp: App {
-    /// The splash is for a start by hand. The test hooks skip it: they open
-    /// on a prepared screen, and two seconds of flowers in front of it would
-    /// only make the interface tests wait.
-    @State private var showsSplash = !Launch.skipsIntro
-
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                // Underneath from the start, so that the game is loaded and
-                // laid out by the time the splash fades.
-                ContentView()
-                if showsSplash {
-                    SplashView { showsSplash = false }
-                        .zIndex(1)
-                }
-            }
+            // The splash lives in `ContentView`, which shows it again when a
+            // new game is begun from the transcript.
+            ContentView()
             // The table is usually dimly lit and the dark appearance is
             // what gets used anyway. Until Phase 5 settles it with a
             // reason, this is simply the default.
