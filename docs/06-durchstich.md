@@ -1200,6 +1200,86 @@ Das Werkzeug taugt für die übrigen geratenen Gewichte genauso — der Abschlag
 0,85, die Vielfalt 0,05, die Stapelanteile der Vorhersage. Aufruf und
 Varianten stehen am Kopf von `Sources/HarmonySelfPlay/main.swift`.
 
+## Engines gegeneinander
+
+Gebaut am 2026-09-27. Das Selbstspiel gegen würfelnde Mitspielerinnen ließ
+eine Frage offen, die es selbst benannt hat: Zufallsgegnerinnen nehmen
+zufällige Karten, echte nehmen die guten — genau die, auf die Harmony mit
+dem Kartenplatz-Preis wartet. `HarmonyMatch` setzt deshalb an jeden Platz
+eine Engine, zwei bis vier, jede mit eigenen `EngineSettings`.
+
+**Jede Engine weiß nur, was Harmony am Tisch wüsste.** Der Tisch
+(`HarmonyTable`) kennt alles — jeden Spielplan, den Beutel und den Stapel
+in Ziehreihenfolge —, gibt jeder Engine aber nur ihren eigenen Plan, die
+gemeinsame Auslage, den gezählten Beutel und die Steine, die die anderen
+genommen haben. Daraus rechnet sie wie in der App ihre Vorhersage des
+Spielendes. Das Ende eines fremden Plans erfährt sie erst, wenn es
+ausgelöst ist.
+
+**Jede Austeilung in allen Sitzordnungen.** Beutel und Stapel kommen aus
+getrennten Zufallsströmen; dieselbe Austeilung wird einmal je Drehung der
+Plätze gespielt, sodass jede Einstellung jeden Platz gleich oft einnimmt
+und dort dieselben Steine sieht. Verglichen wird je Austeilung, über alle
+Drehungen gemittelt — fällt eine Drehung aus, zählt die Austeilung nicht,
+weil sonst eine Einstellung öfter auf dem besseren Platz säße.
+
+**Bedenkzeit in Sekunden, standardmäßig unbegrenzt**, wie in der App. Eine
+begrenzte macht die Läufe nicht wiederholbar, weil die Suche je nach Last
+unterschiedlich weit kommt; unbegrenzt ist jede Partie aus ihrem Startwert
+reproduzierbar.
+
+### Der Schiedsrichter
+
+Die Engines erzeugen ihre Züge selbst und ließen sich bisher nur an sich
+selbst prüfen. Ein Fehler im Zuggenerator sähe aus wie eine starke
+Spielerin. `Referee` prüft deshalb jeden Zug, bevor er etwas verändert,
+und fragt dafür die Regeln direkt, wo es geht:
+
+- das Auslagefeld gibt es, und gelegt werden genau seine drei Steine;
+- jedes Feld liegt auf dem Plan, trägt keinen Würfel, und jeder Stapel ist
+  so baubar;
+- die Karte liegt offen, und eine fünfte unfertige nur, wenn im selben Zug
+  eine fertig wird;
+- jeder Würfel gehört zu einer Karte in ihrer Hand, die noch einen frei
+  hat, und sein Lebensraum steht.
+
+Nach jedem Zug prüft er den ganzen Tisch: **die volle Steinbilanz** aus
+`pruefverfahren.md` — 120 Steine auf allen Plänen, in Auslage und Beutel —,
+32 Karten, jede einmal, Würfelzahl und Stapel jeder Spielerin, drei Steine
+je Zug. Harmony selbst kann das nie, weil sie die fremden Pläne nicht
+sieht. Eine beanstandete Partie wird gemeldet und nicht gezählt.
+
+**Eine Stelle ist nicht unabhängig:** Steht ein Lebensraum am Ende des
+Zuges nicht mehr, weil er im Zug vollständig war und danach überbaut wurde,
+antwortet `Habitat.passed` — dieselbe Funktion, die der Generator benutzt.
+
+22 Prüffälle in `RefereeTests`: vierzehn verbotene Züge werden abgewiesen,
+jeder Zug, den die Engine in einer Stellung mit Würfeln und Kartennahme
+erzeugt, geht durch, ein abgewiesener Zug ändert nichts, und die Bilanz
+merkt einen verlorenen Stein und eine doppelte Karte.
+
+### Erste Messung: der Kartenplatz-Preis gegen echte Konkurrenz
+
+`standard` gegen `ohne-kartenplatz`, zu zweit, Seite A, 40 Austeilungen in
+beiden Sitzordnungen, 80 Partien in 98 Minuten auf einem M2:
+
+| Einstellung | Punkte | Landschaft | Karten | genommen | Siege |
+| --- | --- | --- | --- | --- | --- |
+| standard | 89,4 | 52,3 | 37,1 | 4,8 | 54 % |
+| ohne Kartenplatz-Preis | 85,8 | 52,0 | 33,8 | 4,5 | 46 % |
+
+Je Austeilung gepaart: **+3,5 ± 1,1 Punkte** für den Preis. Das ist
+derselbe Gewinn, den das Selbstspiel gegen Zufallsgegnerinnen gemessen hat
+(+3,4 ± 0,7) — die Sorge, echte Gegnerinnen nähmen die abgewarteten Karten
+weg und der Preis verpuffe, bestätigt sich zu zweit nicht. Er kommt wie
+dort fast ganz aus den Tierkarten.
+
+Der Platz macht zu zweit kaum etwas aus: 87,2 Punkte als Startspielerin,
+88,0 als zweite. Der Schiedsrichter hat keine der 80 Partien beanstandet.
+
+Eine Partie zu zweit dauert auf einem Kern gut sieben Minuten, rund 30
+Sekunden je Zug, und acht laufen nebeneinander: gut 50 Partien je Stunde.
+
 ## Offene Punkte
 
 1. **Das Wahrscheinlichkeitsmodell ist geraten.** Jeder fehlende Stein wird

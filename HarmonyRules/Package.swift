@@ -14,6 +14,7 @@ let package = Package(
     products: [
         .library(name: "HarmonyRules", targets: ["HarmonyRules"]),
         .library(name: "HarmonyEngine", targets: ["HarmonyEngine"]),
+        .library(name: "HarmonyTable", targets: ["HarmonyTable"]),
     ],
     targets: [
         // The card data travels with the rules, not with the app: the
@@ -26,6 +27,11 @@ let package = Package(
         .target(name: "HarmonyEngine", dependencies: ["HarmonyRules"]),
         .testTarget(name: "HarmonyRulesTests", dependencies: ["HarmonyRules"]),
         .testTarget(name: "HarmonyEngineTests", dependencies: ["HarmonyEngine"]),
+        // The whole table with a referee, for engines playing each other.
+        // Not the app's business — the app knows only Harmony's side — but
+        // a library rather than part of a tool, so the referee is tested.
+        .target(name: "HarmonyTable", dependencies: ["HarmonyEngine"]),
+        .testTarget(name: "HarmonyTableTests", dependencies: ["HarmonyTable"]),
         // Counts the move space. Not a test — it answers "how big is this",
         // not "is this right", and `docs/04-architektur.md` asks for the
         // number rather than for a bound.
@@ -34,5 +40,8 @@ let package = Package(
         // the evaluation can only guess. Not a test either: it answers
         // "which is better", and a whole run takes hours, not seconds.
         .executableTarget(name: "HarmonySelfPlay", dependencies: ["HarmonyEngine"]),
+        // Two to four engines with different settings against each other,
+        // seats rotated, every turn past the referee.
+        .executableTarget(name: "HarmonyMatch", dependencies: ["HarmonyTable"]),
     ]
 )

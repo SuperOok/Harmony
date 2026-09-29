@@ -17,7 +17,7 @@ siehe `docs/`.
 **Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 188 Regelfällen (`tools/tests.sh`, gut zwei
+Weglegen. Geprüft wird mit 210 Regelfällen (`tools/tests.sh`, gut drei
 Sekunden) und acht Oberflächenfällen (`tools/uitests.sh`).
 
 **Seit dem 2026-09-25 beginnt die App mit einem Start-Bildschirm** nach der
@@ -44,6 +44,21 @@ Stunden:
 
 ```bash
 cd HarmonyRules && swift run -c release HarmonySelfPlay --games 40 --take 0.45 --variants ohne,standard -v
+```
+
+**Seit dem 2026-09-27 spielen auch Engines gegeneinander** (`HarmonyMatch`):
+zwei bis vier, jede mit eigenen `EngineSettings`, jede nur mit dem Wissen,
+das Harmony am Tisch hätte. Jede Austeilung wird in allen Sitzordnungen
+gespielt, und ein **Schiedsrichter** (`HarmonyTable/Referee.swift`) prüft
+jeden Zug gegen den ganzen Tisch — Auslagefeld, Steine, Stapel, Karte,
+Kartenlimit, Würfel und Lebensraum — und nach jedem Zug die volle
+Steinbilanz. Eine beanstandete Partie wird gemeldet, nicht gezählt. Eine
+Partie zu zweit dauert auf einem Kern gut sieben Minuten; acht laufen
+nebeneinander. Erste Messung: Der Kartenplatz-Preis hält auch gegen eine
+echte Engine, +3,5 ± 1,1 Punkte zu zweit (80 Partien, nichts beanstandet).
+
+```bash
+cd HarmonyRules && swift run -c release HarmonyMatch --plaetze standard,ohne-kartenplatz --partien 40 -v
 ```
 
 **Gespielt zu werden findet Lücken, die kein Prüffall findet.** Am
@@ -119,6 +134,9 @@ HarmonyRules/          Swift Package, zwei Bibliotheken samt Tests
                          Vorhersage des Spielendes, Einstellungen
   Sources/HarmonyMeasure zählt den Zugraum
   Sources/HarmonySelfPlay spielt gegen Zufallsgegnerinnen, vergleicht Gewichte
+  Sources/HarmonyTable   der ganze Tisch samt Schiedsrichter, für Engines
+                         gegeneinander
+  Sources/HarmonyMatch   2 bis 4 Engines mit verschiedenen Einstellungen
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
 Harmony-Info.plist     Ergänzung zum erzeugten Info.plist: Farbe des
                        Startbildschirms (`LaunchBackground`), weil Xcode
