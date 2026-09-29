@@ -7,14 +7,14 @@ Die Partie läuft am echten Tisch mit echtem Material; die App verwaltet nur
 das Wissen eines einzelnen Spielers und schlägt dessen Züge vor. Sie ist
 keine Digitalfassung des Spiels. Siehe `docs/` für Produktkern und Konzept.
 
-Der Code ist zweierlei. `MyApp/` ist der **Klickdummy** aus Phase 5:
-Ansichten über Attrappendaten, ohne Engine. `HarmonyRules/` ist der
-Anfang des **Regelmoduls** — Wertung, Landschaften, zulässige Stapel,
-Steinbilanz —, entstanden, weil der Dummy diese Regeln zum Anzeigen
-braucht und sie dort prüfbar liegen. Die Konzeptarbeit ist weiter,
-siehe `docs/`.
+Der Code ist zweierlei. `MyApp/` ist die App: hervorgegangen aus dem
+**Klickdummy** aus Phase 5, dessen Ansichten unter `MyApp/Dummy/` noch
+so heißen, und seit Phase 6 mit der Engine verbunden. `HarmonyRules/` ist
+ein Swift Package mit den **Regeln**, der **Engine**, dem **Tisch** für
+Engines gegeneinander und den Mess- und Simulationswerkzeugen — ohne
+Xcode-Projekt prüfbar.
 
-**Wo es steht:** Stand 2026-09-22. Der Durchstich aus Phase 6
+**Wo es steht:** Stand 2026-09-29. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
 Weglegen. Geprüft wird mit 210 Regelfällen (`tools/tests.sh`, gut drei
@@ -127,7 +127,8 @@ Zahlen oben gelten nur für den Release-Bau.
 ```
 Harmony.xcodeproj      zwei Targets, „Harmony“ und „HarmonyUITests“,
                        dazu ein geteiltes Schema „Harmony“
-HarmonyRules/          Swift Package, zwei Bibliotheken samt Tests
+HarmonyRules/          Swift Package: drei Bibliotheken samt Tests, drei
+                       Werkzeuge
   Sources/HarmonyRules   die Regeln: Steine, Geometrie, Karten, Lebensräume
     Resources/animals.json  die 32 Tierkarten, Quelle der Wahrheit
   Sources/HarmonyEngine  das Verfahren: Zustand, Züge, Bewertung, Suche,
@@ -148,7 +149,10 @@ MyApp/                 der Rest des Quellcodes
   IconFlower.swift     die Blüte des Icons, für Animation und Start
   Launch.swift         Startparameter und gespeicherte Einstellungen
   Start/               Start-Bildschirm, Spielstärke, Über Harmony
-  Dummy/               Klickdummy aus Phase 5, keine Engine
+  Dummy/               die Spielansichten, entstanden als Klickdummy in
+                       Phase 5, heute mit Engine
+    EngineBridge.swift übersetzt zwischen Ansichten und Engine
+    GameStore.swift    der gespeicherte Spielstand
     SampleData.swift   Attrappendaten, dazu die Farben der Steine
     BoardView.swift    Sechseckgitter, Zelldarstellung
     OpponentTurnView.swift  Erfassung fremder Züge
@@ -213,7 +217,7 @@ gebauten `Harmony.app` endet dann auf `Release-iphoneos/`.
 ### Tests
 
 Die Regeln liegen im Swift Package `HarmonyRules/` und werden dort
-geprüft — ohne Xcode-Projekt, ohne Simulator, in unter einer Sekunde:
+geprüft — ohne Xcode-Projekt, ohne Simulator, in gut drei Sekunden:
 
 ```bash
 tools/tests.sh
@@ -224,8 +228,11 @@ tools/tests.sh
 genauso: `cd HarmonyRules && swift test`.
 
 Die Oberfläche wird getrennt geprüft — Stockwerk 3, angelegt am
-2026-09-20. Diese Tests brauchen einen Simulator und ungefähr eine Minute,
-gehören also nicht in denselben Lauf wie die Regeltests:
+2026-09-20. Diese Tests brauchen einen Simulator und ungefähr vier Minuten,
+gehören also nicht in denselben Lauf wie die Regeltests. Läuft nebenher
+die Live-Ansicht des Simulators in der Claude-App, werden sie so langsam,
+dass einzelne Fälle an Zeitüberschreitungen scheitern; ein solcher Fall
+besteht einzeln (`-only-testing:`) meist, und das ist dann kein Codefehler:
 
 ```bash
 tools/uitests.sh

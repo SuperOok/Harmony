@@ -243,8 +243,9 @@ zerstörte Anwärter für die Bewertung unsichtbar.
 Dazu kommt, dass je Karte nur der **beste** Anwärter zählt — Reserve schlägt
 sich nur über „Offene Möglichkeiten" mit 0,05 je Anwärter nieder. Beides ist
 Absicht, beides wäre zu ändern, wenn sich die Spielstärke daran als zu
-schwach erweist. Das gehört gemessen, sobald Selbstspiel läuft, und hängt
-damit an derselben offenen Frage wie die Gewichte.
+schwach erweist. Das gehört gemessen — das Selbstspiel dafür läuft seit dem
+2026-09-23, gemessen ist es noch nicht — und hängt damit an derselben
+offenen Frage wie die Gewichte.
 
 ## Offen aus Phase 6 — das Ende der Partie
 

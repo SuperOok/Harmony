@@ -78,14 +78,23 @@ zurückgezeichnet, bevor ihr Sollwert festgeschrieben wird. Ein
 Missverständnis über die Stellung sieht sonst genauso aus wie ein Fehler in
 der Wertung.
 
-## Stockwerk 2 — Ganze Partien (vertagt)
+## Stockwerk 2 — Ganze Partien (teilweise)
 
 Eine vollständige Partie, kopflos durchgespielt, ohne Oberfläche.
 
-**Vertagt, weil es nichts zu prüfen gibt, solange keine Engine existiert.**
-Der Aufbau wird hier trotzdem festgelegt, aus einem Grund: Sein
-Fixture-Format braucht Stockwerk 3 ebenfalls, und zwei Formate für
-denselben Zweck wären einer zu viel.
+**Seit dem 2026-09-27 teilweise gebaut**, als Werkzeug statt als
+Testlauf: `HarmonyMatch` spielt ganze Partien zwischen Engines, und der
+Schiedsrichter in `HarmonyTable/Referee.swift` prüft dabei nach jedem Zug
+die Invarianten unten, soweit sie mit einem Haken versehen sind. Eine
+Partie dauert Minuten, gehört also nicht in `tools/tests.sh`; der
+Schiedsrichter selbst ist dort mit 22 Fällen geprüft. Was fehlt: die
+unabhängige Nachrechnung der Endpunktzahl — der Tisch wertet mit derselben
+`BoardScoring` wie die App — und die Momentaufnahme. Einzelheiten in
+`06-durchstich.md` unter *Engines gegeneinander*.
+
+Der Aufbau wurde vorab festgelegt, weil sein Fixture-Format Stockwerk 3
+ebenfalls braucht und zwei Formate für denselben Zweck einer zu viel
+wären.
 
 ### Invarianten
 
@@ -93,14 +102,21 @@ Bedingungen, die in **jeder** Partie gelten, unabhängig davon, wie gut
 Harmony spielt. Sie überleben jede Änderung der Bewertungsfunktion und sind
 damit das eigentliche Regressionsnetz.
 
-- Jeder Zug nimmt genau 3 Steine und legt genau 3 Steine.
-- Kein Stapel verletzt die Stapelregeln, keine Höhe über 3.
-- Kein Tierwürfel liegt auf einem Muster, das nicht exakt passt.
-- Nie mehr als 4 unabgeschlossene Tierkarten gleichzeitig.
-- Aus dem Beutel werden nie mehr als 120 Steine gezogen.
+- ✅ Jeder Zug nimmt genau 3 Steine und legt genau 3 Steine.
+- ✅ Kein Stapel verletzt die Stapelregeln, keine Höhe über 3.
+- ✅ Kein Tierwürfel liegt auf einem Muster, das nicht exakt passt — mit
+  einer Ausnahme, die nicht unabhängig geprüft ist: ein Muster, das im Zug
+  stand und im selben Zug überbaut wurde, siehe `Referee.patternStands`.
+- ✅ Nie mehr als 4 unabgeschlossene Tierkarten gleichzeitig.
+- ✅ Aus dem Beutel werden nie mehr als 120 Steine gezogen — geprüft als
+  volle Bilanz: 120 Steine auf allen Plänen, in Auslage und Beutel, und 32
+  Karten, jede genau einmal.
 - Die Partie endet, und zwar durch einen der beiden Auslöser.
 - Alle Spieler hatten am Ende gleich viele Züge.
 - Die Endpunktzahl stimmt mit einer **unabhängigen** Nachrechnung überein.
+
+Die zwei ohne Haken ergeben sich im Tisch aus der Bauweise — er zählt die
+Runde zu Ende —, werden aber nicht eigens geprüft.
 
 Der letzte Punkt hat eine Falle: Die Wertungsfunktion gegen sich selbst zu
 prüfen ist zirkulär. Unabhängig ist die Nachrechnung nur, wenn sie aus
@@ -134,8 +150,9 @@ Diese Tests prüfen **den Eingabeweg, nie die Spiellogik**. Die gehört ins
 Fundament, wo sie tausendmal schneller läuft.
 
 Angelegt am 2026-09-20 als Target `HarmonyUITests`, ausgeführt mit
-`tools/uitests.sh`. Drei Fälle, ungefähr eine Minute auf dem Bezugsgerät —
-gegenüber unter einer Sekunde für die inzwischen 129 Fälle in Stockwerk 1.
+`tools/uitests.sh`. Anfangs drei Fälle und eine Minute auf dem
+Bezugsgerät, seit dem 2026-09-25 acht und ungefähr vier Minuten — gegenüber
+gut drei Sekunden für die inzwischen 210 Fälle in Stockwerk 1.
 Die Pyramide
 ist damit keine Behauptung mehr, sondern gemessen, und die beiden Läufe
 bleiben deshalb getrennt.
@@ -521,8 +538,8 @@ Kein Beschluss, nur eine Reihenfolge, die aus dem Obigen folgt:
    Steinbilanz. Damit gab es zu prüfen, bevor Phase 6 begann.
 2. ✅ **Stockwerk 1 läuft**, seit 2026-09-20. Der regelreine Code liegt im
    Swift Package `HarmonyRules/`, die Tests daneben; `tools/tests.sh`
-   führt sie aus. Anfangs 28 Fälle, mit der Engine aus Phase 6 sind es
-   129 — weiterhin unter einer Sekunde. Die Auflage aus
+   führt sie aus. Anfangs 28 Fälle, mit der Engine aus Phase 6 129,
+   am 2026-09-27 210 in gut drei Sekunden. Die Auflage aus
    Phase 4 — Engine als eigenes Modul — ist damit eingelöst, und sie war
    keine Formalie: Erst dadurch laufen die Tests ohne Host-App und ohne
    Simulator.
@@ -531,8 +548,10 @@ Kein Beschluss, nur eine Reihenfolge, die aus dem Obigen folgt:
    Kartennahme, 8 mit — und prüft daneben, dass der Zähler auf dem Schirm
    dasselbe zählt wie der Test. Die Bezeichner lagen bereits durchgängig
    in den Views; gebraucht wurde keine einzige neue.
-4. **Als Nächstes** Phase 6, der Durchstich. Stockwerk 2 folgt, sobald
-   eine Partie durchläuft.
+4. ✅ **Phase 6, der Durchstich**, trägt seit dem 2026-09-20 und läuft auf
+   dem Gerät.
+5. **Stockwerk 2 teilweise**, seit 2026-09-27, siehe oben: Invarianten
+   ja, unabhängige Nachrechnung und Momentaufnahme noch nicht.
 
 Das Anlegen von Targets ändert `project.pbxproj` und ist keine
 Nebenbei-Änderung, siehe `CLAUDE.md`. Für Stockwerk 1 entfiel das: Ein

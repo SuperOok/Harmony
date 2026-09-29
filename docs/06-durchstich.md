@@ -259,7 +259,8 @@ Zügen mindestens einmal zu sehen, `1 - (1 - p)^(3t)`. Das überschätzt, weil
 die Steine zusammen gebraucht werden und die Auslage allen gehört. Richtig
 ist daran die Richtung — knappere Farbe, weniger Zeit oder mehr fehlende
 Steine senken den Wert —, und darauf ruht die Reihenfolge. Die Form gehört
-gemessen, sobald Selbstspiel läuft.
+gemessen; das Selbstspiel dafür läuft seit dem 2026-09-23, gemessen ist sie
+noch nicht.
 
 ### Zwei Lücken, am Tisch gefunden — und eine dritte beim Nachzählen
 
@@ -1183,7 +1184,10 @@ Kartenrate der Gegnerinnen: 0,3 und 0,6 ordnen die Varianten gleich.
   länger, und 40 Paare reichen nicht.
 - **Zufallsgegnerinnen sind zu freundlich.** Echte nehmen bevorzugt die
   guten Karten — genau die, auf die Harmony wartet. Am Tisch lohnt sich
-  Warten also wahrscheinlich etwas weniger als hier.
+  Warten also wahrscheinlich etwas weniger als hier. *Nachtrag
+  2026-09-27:* Zu zweit gegen eine echte Engine hält der Preis, +3,5 ± 1,1,
+  siehe *Engines gegeneinander*. Zu dritt und zu viert ist das nicht
+  gemessen.
 - **Das Optimum ist grob.** Zwischen 7 und 14 liegt ein flaches Plateau,
   14 streut von Runde zu Runde stark. Die Staffel selbst und die sechs
   Restzüge sind nicht variiert worden, außer im einen Lauf `stufe:10:10`.
@@ -1295,6 +1299,7 @@ Sekunden je Zug, und acht laufen nebeneinander: gut 50 Partien je Stunde.
    Optionenvielfalt — greifen zu verschiedenen Zeiten der Partie. Womit sie
    gegeneinander zu verrechnen sind, gehört gemessen. Das Selbstspiel läuft
    seit dem 2026-09-23 (`HarmonySelfPlay`, siehe *Der Preis eines
-   Kartenplatzes*); gemessen ist damit bisher nur der Platzpreis. Phase 3
+   Kartenplatzes*), Engines gegeneinander seit dem 2026-09-27
+   (`HarmonyMatch`); gemessen ist damit bisher nur der Platzpreis. Phase 3
    nimmt v1 auf dem Durchlauf ab, nicht auf der Spielstärke; die übrigen
    Gewichte bleiben vorerst geraten.

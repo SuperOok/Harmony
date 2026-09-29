@@ -43,11 +43,12 @@ public struct Evaluation: Sendable {
     }
 }
 
-/// How the four families are weighed against each other.
+/// How the families of the evaluation are weighed against each other.
 ///
-/// **Guessed, not measured.** They belong measured once self-play runs; see
-/// the open points in `docs/06-durchstich.md`. They sit in one place so that
-/// measuring them later changes one thing.
+/// **Guessed, not measured**, all but the card-space price. `HarmonySelfPlay`
+/// and `HarmonyMatch` can measure them; see the open points in
+/// `docs/06-durchstich.md`. They sit in one place so that measuring them
+/// changes one thing.
 public struct Weights: Sendable, Equatable, Codable {
     public var pointsNow = 1.0
     public var candidates = 1.0
@@ -627,7 +628,7 @@ public enum Evaluator {
     /// stones are needed together and the display is shared with everyone
     /// else. What it does get right is the direction: scarcer colour, less
     /// time or more stones missing all lower it, and that is what the
-    /// ranking rests on. The shape belongs measured once self-play runs.
+    /// ranking rests on. The shape belongs measured; the self-play tools can.
     ///
     /// **Her next turn is worked out from the display** (`NextTurn`), and
     /// with a single turn left that alone decides — it is where the formula
