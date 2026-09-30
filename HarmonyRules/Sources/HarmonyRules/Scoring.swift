@@ -2,13 +2,15 @@ import Foundation
 
 public enum BoardSide: Sendable { case a, b }
 
-/// Which cells currently earn points.
+/// Which cells currently earn points, and how many points the board is worth.
 ///
-/// **Provisional.** This is rule computation and belongs in the engine
-/// module, not in the interface — `04-architektur.md` places it there
-/// exactly once, checked per `pruefverfahren.md`, storey one. It sits here
-/// because the dummy cannot show what it is meant to show without it. At
-/// the walking skeleton it moves and is deleted here, not copied.
+/// Rule computation, and so in the rules package rather than the interface —
+/// `04-architektur.md` places it there exactly once, checked per
+/// `pruefverfahren.md`, storey one. The engine and the app both ask it.
+///
+/// Two statements of the same rules: `scoringCells()` says which spaces
+/// score, `breakdown()` adds them up line by line. `ScoringConsistencyTests`
+/// holds the two together.
 public struct BoardScoring {
     public let side: BoardSide
     public let columns: [Int]
@@ -145,19 +147,6 @@ public struct BoardScoring {
         return best
     }
 
-    /// Empty spaces where a blue stone would cut one island in two.
-    ///
-    /// The island scoring of side B counts regions of everything that is not
-    /// water, empty spaces included, five points each. So the outlook is not
-    /// "more water" but "water in the right place".
-    public func cuttingCells(water: Set<Int>, free: Set<Int>) -> [Int] {
-        let islandsNow = regions(in: Set(allCells).subtracting(water)).count
-        return free.sorted().filter { cell in
-            let cut = Set(allCells).subtracting(water).subtracting([cell])
-            return regions(in: cut).count > islandsNow
-        }
-    }
-
     /// Every cell that currently earns points.
     public func scoringCells() -> Set<Int> {
         var result: Set<Int> = []
@@ -241,8 +230,7 @@ public func cellName(_ cell: Int) -> String { "\(cell / 10).\(cell % 10)" }
 /// which a total alone cannot be. Every line therefore names the spaces it
 /// is about, and lines worth nothing are kept — they are the ones someone
 /// goes looking for.
-public struct ScoreLine: Identifiable, Sendable {
-    public let id = UUID()
+public struct ScoreLine: Sendable {
     public let label: String
     public let points: Int
 
@@ -252,8 +240,7 @@ public struct ScoreLine: Identifiable, Sendable {
     }
 }
 
-public struct ScoreGroup: Identifiable, Sendable {
-    public let id = UUID()
+public struct ScoreGroup: Sendable {
     public let title: String
     public let lines: [ScoreLine]
     /// Read under the group when the rule is easier to check than to recall.

@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import HarmonyRules
+import HarmonyEngine
 
 // Dummy data for the Phase 5 click-through prototype.
 // No engine and no rule checking — only as much state as the input path needs.
@@ -39,8 +40,7 @@ extension Landscape {
 /// One of the five spaces on the shared board. It carries three stones and
 /// has no identity of its own: the spaces bear no marking and sit in a
 /// circle, so a space is named by what lies on it.
-struct DisplayField: Identifiable {
-    let id = UUID()
+struct DisplayField {
     var stones: [Stone]
 
     /// A space is unordered. One fixed order applies to both writing it
@@ -77,51 +77,13 @@ enum Sample {
         cards.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
-    static let allCards = [
-        "Eisvogel",
-        "Hase",
-        "Eichhörnchen",
-        "Erdmännchen",
-        "Biene",
-        "Pinguin",
-        "Affe",
-        "Lachs",
-        "Frosch",
-        "Panther",
-        "Papagei",
-        "Schwein",
-        "Koala",
-        "Pfau",
-        "Lama",
-        "Wüstenfuchs",
-        "Eisfuchs",
-        "Waschbär",
-        "Echse",
-        "Igel",
-        "Maus",
-        "Rabe",
-        "Fledermaus",
-        "Krokodil",
-        "Rochen",
-        "Adler",
-        "Bär",
-        "Ente",
-        "Otter",
-        "Flamingo",
-        "Wolf",
-        "Marienkäfer"
-    ]
+    /// The thirty-two animals, by name — read from the card data, the only
+    /// place they are kept. The pickers sort them themselves.
+    static let allCards = AnimalCards.all.map(\.name)
 
     /// Two humans and Harmony — the leading case from Phase 2.
-    static let turnOrder = ["Anke", "Bernd", "Harmony"]
+    static let turnOrder = ["Anke", "Bernd", GameState.harmonyName]
 
-    /// Harmony's cards at the end of the sample game. Four of them, which
-    /// is the limit the rules put on unfinished cards.
-    ///
-    /// The ladders are copied from `tierkarten.md`; Phase 6 reads them from
-    /// there instead. The Biene is taken but has no cube on it — a card
-    /// left unfinished scores nothing and costs nothing, and the screen
-    /// should show that case.
     /// A real card by name. The ladders used to be copied into the sample
     /// data; since Phase 6 they come out of `animals.json`, which is the
     /// only place they are maintained. An unknown name is a mistake in the
@@ -133,6 +95,10 @@ enum Sample {
         return found
     }
 
+    /// Harmony's cards at the end of the sample game. Four of them, which
+    /// is the limit the rules put on unfinished cards. The Biene is taken
+    /// but has no cube on it — a card left unfinished scores nothing and
+    /// costs nothing, and the screen should show that case.
     static let harmonyCards = [
         card("Fledermaus"), card("Lachs"), card("Koala"), card("Biene"),
     ]
@@ -258,26 +224,45 @@ enum Sample {
     )
 }
 
+/// What kind of number a term carries — see `Term.Kind` in the engine. Kept
+/// as its own type here because it is written to disk with the game.
+enum TermKind: String, Codable {
+    /// Points that count if the game ended now.
+    case points
+    /// Not points but prospect: what the move sets up for a later turn.
+    /// Kept apart because a prospect is not a score, and mixing the two
+    /// would make the reason claim more than it can.
+    case prospect
+    /// A bonus or a price that steers the choice and is neither.
+    case steering
+
+    init(_ kind: Term.Kind) {
+        switch kind {
+        case .points: self = .points
+        case .prospect: self = .prospect
+        case .steering: self = .steering
+        }
+    }
+}
+
 /// One named contribution to the score. Named, because the reason shows the
 /// largest of them and a nameless summand cannot be shown.
 struct ScoreTerm {
     let name: String
+    /// What the engine counted: points for a score, the weighted expectation
+    /// for a prospect.
     let points: Int
-    /// Not points but prospect: what the move sets up for a later turn.
-    /// Kept apart because a prospect is not a score, and mixing the two
-    /// would make the reason claim more than it can.
-    var prospect = false
+    var kind: TermKind = .points
+    /// For a prospect: what it would bring, before the probability and the
+    /// weights. `points` is not this — it is what came of it.
+    var gain: Int? = nil
     /// How likely the prospect is met in time. The figure comes from the
     /// bag and the deck, both of which Harmony knows exactly, and it is the
     /// chance layer of the expectimax search seen from the other side. A
     /// prospect without its probability would be an arbitrary number.
     var probability: Double? = nil
 
-    /// Expected value: what the prospect is worth once weighted.
-    var expected: Int {
-        guard let probability else { return points }
-        return Int((Double(points) * probability).rounded())
-    }
+    var prospect: Bool { kind == .prospect }
 }
 
 /// Why this move and not the next best one. Phase 2 asks both questions:
@@ -338,10 +323,6 @@ struct HarmonyMove {
     var refill: [Stone] = []
     /// The card that moved up, if one was taken.
     var cardDrawn: String? = nil
-
-    var takenField: String {
-        DisplayField(stones: placements.map(\.stone)).notation
-    }
 
     /// Everything still to be entered before the turn can be recorded.
     func isComplete(bagEmpty: Bool) -> Bool {

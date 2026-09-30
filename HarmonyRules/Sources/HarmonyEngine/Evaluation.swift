@@ -11,15 +11,39 @@ import HarmonyRules
 
 /// One named contribution.
 public struct Term: Sendable, Hashable {
+    /// What kind of number `points` is. The reasoning shown to the caretaker
+    /// has to keep them apart, and it must not have to guess from the name.
+    public enum Kind: Sendable, Hashable {
+        /// Points that count if the game ended now.
+        case points
+        /// An expectation: what lies ahead, weighed by how likely it is to
+        /// come about in time. Not points, and not to be added to them.
+        case prospect
+        /// A bonus or price that steers the choice and is neither of the
+        /// above: open options, free card spaces.
+        case steering
+    }
+
     public let name: String
     public let points: Double
+    public let kind: Kind
+    /// For a prospect: what it would bring, before the probability and the
+    /// weights. `points` is what came of it after them.
+    public let gain: Double?
+    /// For a prospect: how likely it comes about in the turns left. `nil`
+    /// where the term sums up several prospects with a chance each.
+    public let chance: Double?
     /// Where the number comes from, for the reasoning. An outlook says its
     /// probability here, because a bare expected value looks invented.
     public let detail: String?
 
-    public init(name: String, points: Double, detail: String? = nil) {
+    public init(name: String, points: Double, kind: Kind, gain: Double? = nil,
+                chance: Double? = nil, detail: String? = nil) {
         self.name = name
         self.points = points
+        self.kind = kind
+        self.gain = gain
+        self.chance = chance
         self.detail = detail
     }
 }
@@ -36,10 +60,9 @@ public struct Evaluation: Sendable {
 
     /// The largest contributions, for the reasoning.
     public func largest(_ count: Int = 3) -> [Term] {
-        terms.filter { $0.points != 0 }
+        let named = terms.filter { $0.points != 0 }
             .sorted { abs($0.points) > abs($1.points) }
-            .prefix(count)
-            .map { $0 }
+        return Array(named.prefix(count))
     }
 }
 
@@ -108,11 +131,6 @@ public struct Availability: Sendable {
     /// about the spaces, and then the chance falls back to the colour
     /// shares alone.
     let nextTurn: NextTurn?
-
-    public init(perColour: [Stone: Double]) {
-        self.perColour = perColour
-        nextTurn = nil
-    }
 
     /// What lies there now, counted.
     public init(counting display: [[Stone]]) {
@@ -360,23 +378,17 @@ public enum Evaluator {
         let scoring = BoardScoring(side: state.side, columns: state.side.columns,
                                    stacks: state.stacks)
 
+        // Grown from the stock where it is for this position, searched anew
+        // where it is not — or where it holds nothing for this card.
+        let usable = stock.flatMap { $0.cubes == state.cubeCells ? $0 : nil }
         var habitats: [String: [Habitat]] = [:]
-        if let stock, stock.cubes == state.cubeCells {
-            for card in cardsInPlay(of: state) {
-                guard habitats[card.name] == nil else { continue }
-                guard let before = stock.habitats[card.name] else {
-                    habitats[card.name] = Habitat.all(of: card, on: state.stacks,
-                                                      cubes: state.cubeCells,
-                                                      board: state.board)
-                    continue
-                }
+        for card in cardsInPlay(of: state) {
+            guard habitats[card.name] == nil else { continue }
+            if let before = usable?.habitats[card.name] {
                 habitats[card.name] = before.compactMap {
                     $0.after(grown, cubes: state.cubeCells)
                 }
-            }
-        } else {
-            for card in cardsInPlay(of: state) {
-                guard habitats[card.name] == nil else { continue }
+            } else {
                 habitats[card.name] = Habitat.all(of: card, on: state.stacks,
                                                   cubes: state.cubeCells, board: state.board)
             }
@@ -429,8 +441,10 @@ public enum Evaluator {
         let landscapeNow = prepared?.landscapeNow
             ?? scoring!.breakdown().reduce(0) { $0 + $1.points }
         let cardsNow = state.hand.reduce(0) { $0 + $1.score }
-        terms.append(Term(name: "Landschaften", points: Double(landscapeNow) * weights.pointsNow))
-        terms.append(Term(name: "Tierkarten", points: Double(cardsNow) * weights.pointsNow))
+        terms.append(Term(name: "Landschaften", points: Double(landscapeNow) * weights.pointsNow,
+                          kind: .points))
+        terms.append(Term(name: "Tierkarten", points: Double(cardsNow) * weights.pointsNow,
+                          kind: .points))
 
         // (2) Aussicht aus Anwärtern und (3) aus Landschaften — die
         // Anwärter und die schlafenden Landschaften aus einem Steinbudget.
@@ -451,6 +465,7 @@ public enum Evaluator {
             let live = liveCandidateCount(state, prepared: prepared)
             terms.append(Term(name: "Offene Möglichkeiten",
                               points: Double(live) * weights.variety,
+                              kind: .steering,
                               detail: "\(live) Anwärter leben noch"))
         }
 
@@ -468,7 +483,7 @@ public enum Evaluator {
     /// reasoning does not list a term that is always zero.
     static func freeSlotTerm(_ state: EngineState, weights: Weights) -> Term? {
         guard weights.freeSlots.contains(where: { $0 != 0 }) else { return nil }
-        let free = max(0, 4 - state.unfinishedCards.count)
+        let free = max(0, EngineState.cardLimit - state.unfinishedCards.count)
         let full = weights.freeSlots.prefix(free).reduce(0, +)
         // Counted in the cautious turns the stone budget uses too: a space
         // kept free for a card that would come too late is worth nothing.
@@ -476,7 +491,7 @@ public enum Evaluator {
         let time = weights.freeSlotsFullFrom > 0
             ? min(1, Double(turns) / Double(weights.freeSlotsFullFrom))
             : 1
-        return Term(name: "Freie Kartenplätze", points: full * time,
+        return Term(name: "Freie Kartenplätze", points: full * time, kind: .steering,
                     detail: "\(free) frei, \(turns) Züge Rest")
     }
 
@@ -558,6 +573,8 @@ public enum Evaluator {
             Promise(term: Term(name: "Aussicht \(prospect.card)",
                                points: prospect.worth * factor * weights.candidates
                                    * weights.outlook,
+                               kind: .prospect, gain: Double(prospect.gain),
+                               chance: prospect.chance,
                                detail: prospect.detail),
                     stones: prospect.habitat.missingStoneCount)
         }
@@ -579,7 +596,7 @@ public enum Evaluator {
         let gain: Int
         let chance: Double
         var worth: Double { Double(gain) * chance }
-            var detail: String {
+        var detail: String {
             "\(gain) Punkte × \(Int((chance * 100).rounded())) %"
         }
     }
@@ -718,6 +735,7 @@ public enum Evaluator {
                 terms.append(Term(name: "Fluss",
                                   points: Double(gain) * chance * weights.landscape
                                       * weights.outlook,
+                                  kind: .prospect, gain: Double(gain), chance: chance,
                                   detail: "Länge \(now) → \(reachable.length), "
                                       + "\(reachable.missing) blaue Steine"))
             }
@@ -732,6 +750,7 @@ public enum Evaluator {
                                     available: available)
                 terms.append(Term(name: "Inseln",
                                   points: 5 * chance * weights.landscape * weights.outlook,
+                                  kind: .prospect, gain: 5, chance: chance,
                                   detail: "\(cut.cost) blaue Steine um "
                                       + "\(cellName(cut.cell)) ergäben eine Insel"))
             }
@@ -971,6 +990,7 @@ public enum Evaluator {
             if let short = unaffordable[landscape] { detail += ", für \(short) fehlt die Zeit" }
             return Term(name: name(of: landscape),
                         points: (worth[landscape] ?? 0) * weights.landscape * weights.outlook,
+                        kind: .prospect,
                         detail: detail)
         }
     }

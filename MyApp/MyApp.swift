@@ -7,8 +7,7 @@ import SwiftUI
             // new game is begun from the transcript.
             ContentView()
             // The table is usually dimly lit and the dark appearance is
-            // what gets used anyway. Until Phase 5 settles it with a
-            // reason, this is simply the default.
+            // what gets used anyway, so it is the only one there is.
             .preferredColorScheme(.dark)
         }
     }

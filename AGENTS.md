@@ -8,8 +8,8 @@ das Wissen eines einzelnen Spielers und schlägt dessen Züge vor. Sie ist
 keine Digitalfassung des Spiels. Siehe `docs/` für Produktkern und Konzept.
 
 Der Code ist zweierlei. `MyApp/` ist die App: hervorgegangen aus dem
-**Klickdummy** aus Phase 5, dessen Ansichten unter `MyApp/Dummy/` noch
-so heißen, und seit Phase 6 mit der Engine verbunden. `HarmonyRules/` ist
+**Klickdummy** aus Phase 5, dessen Ansichten unter `MyApp/Game/` liegen
+(bis zum 2026-09-29 `Dummy/`), und seit Phase 6 mit der Engine verbunden. `HarmonyRules/` ist
 ein Swift Package mit den **Regeln**, der **Engine**, dem **Tisch** für
 Engines gegeneinander und den Mess- und Simulationswerkzeugen — ohne
 Xcode-Projekt prüfbar.
@@ -17,8 +17,20 @@ Xcode-Projekt prüfbar.
 **Wo es steht:** Stand 2026-09-29. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 210 Regelfällen (`tools/tests.sh`, gut drei
-Sekunden) und acht Oberflächenfällen (`tools/uitests.sh`).
+Weglegen. Geprüft wird mit 221 Regelfällen (`tools/tests.sh`, gut drei
+Sekunden), 35 App-Fällen für Brücke, Verlauf, Spielstand, Sitzung und
+Begründung (`tools/apptests.sh`) und acht Oberflächenfällen
+(`tools/uitests.sh`).
+
+**Durchgesehen am 2026-09-29.** Zwei Fehler in der Brücke zur Engine, die
+kein Prüffall fand, weil die App-Schicht keine Fälle hatte: Die Beutelzählung
+nahm als Startauslage die Attrappe statt der eingegebenen und ließ die
+Nachfüllung nach Harmonys eigenem Zug aus; und bei leerem Beutel blieb das
+genommene Auslagefeld mit seinen Steinen stehen, sodass die Engine mit
+Steinen rechnete, die niemand nehmen kann. Dazu die Begründung: Sie hielt
+Erwartungswerte für Punkte und rechnete Aussichten doppelt herunter, weil
+`Term` seine Art nicht kannte. Jetzt trägt `Term.kind` die Art, `gain` und
+`chance` als Zahlen.
 
 **Seit dem 2026-09-25 beginnt die App mit einem Start-Bildschirm** nach der
 Startanimation: Partie fortsetzen oder neu beginnen, dazu *Spielstärke* und
@@ -125,8 +137,8 @@ Zahlen oben gelten nur für den Release-Bau.
 ## Aufbau
 
 ```
-Harmony.xcodeproj      zwei Targets, „Harmony“ und „HarmonyUITests“,
-                       dazu ein geteiltes Schema „Harmony“
+Harmony.xcodeproj      drei Targets, „Harmony“, „HarmonyTests“ und
+                       „HarmonyUITests“, dazu ein geteiltes Schema „Harmony“
 HarmonyRules/          Swift Package: drei Bibliotheken samt Tests, drei
                        Werkzeuge
   Sources/HarmonyRules   die Regeln: Steine, Geometrie, Karten, Lebensräume
@@ -138,6 +150,8 @@ HarmonyRules/          Swift Package: drei Bibliotheken samt Tests, drei
   Sources/HarmonyTable   der ganze Tisch samt Schiedsrichter, für Engines
                          gegeneinander
   Sources/HarmonyMatch   2 bis 4 Engines mit verschiedenen Einstellungen
+HarmonyTests/          App-Tests (im Simulator, mit der App als Host): Brücke
+                       zur Engine, Verlauf, Spielstand, Sitzung, Begründung
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
 Harmony-Info.plist     Ergänzung zum erzeugten Info.plist: Farbe des
                        Startbildschirms (`LaunchBackground`), weil Xcode
@@ -149,14 +163,25 @@ MyApp/                 der Rest des Quellcodes
   IconFlower.swift     die Blüte des Icons, für Animation und Start
   Launch.swift         Startparameter und gespeicherte Einstellungen
   Start/               Start-Bildschirm, Spielstärke, Über Harmony
-  Dummy/               die Spielansichten, entstanden als Klickdummy in
+  Game/                die Spielansichten, entstanden als Klickdummy in
                        Phase 5, heute mit Engine
     EngineBridge.swift übersetzt zwischen Ansichten und Engine
-    GameStore.swift    der gespeicherte Spielstand
+    GameStore.swift    der gespeicherte Spielstand, beim Laden nachgespielt
+    GameLog.swift      Ereignisse, Stellung daraus, Spielende
+    GameSession.swift  die laufende Partie: Ereignisse und was daraus folgt
+    HarmonySearch.swift die Suche nach Harmonys Zug, wie der Bildschirm sie sieht
     SampleData.swift   Attrappendaten, dazu die Farben der Steine
     BoardView.swift    Sechseckgitter, Zelldarstellung
-    OpponentTurnView.swift  Erfassung fremder Züge
+    OpponentTurnView.swift  der Bildschirm der Partie, verteilt auf:
+    RecordTurnView.swift    Erfassung fremder Züge
+    HarmonyTurnView.swift   Harmonys Zug als Anweisung
+    HarmonyReportSheet.swift  was der Tisch nach ihrem Zug meldet
+    GameOverView.swift      Endwertung
+    HistorySheet.swift      Verlauf, Zurücknehmen, Neue Partie
+    RationaleSheet.swift    Begründung eines Zuges
+    RefillEntry.swift       Eingabe der Nachfüllung
     CorrectionView.swift    Berichtigung von Harmonys Tableau
+    Components.swift        gemeinsame Bausteine
   Assets.xcassets/
 docs/                  Konzeptdokumente; nummeriert nach Phasen, dazu
                        phasenübergreifende wie `pruefverfahren.md`
@@ -166,7 +191,7 @@ tools/                 Prüfwerkzeuge: Kartendaten (Python), Regeltests
                        App-Icon zeichnen (app-icon.swift)
 ```
 
-`MyApp/` und `HarmonyUITests/` sind **synchronisierte Gruppen**
+`MyApp/`, `HarmonyTests/` und `HarmonyUITests/` sind **synchronisierte Gruppen**
 (`PBXFileSystemSynchronizedRootGroup`). Neue Dateien darin landen ohne
 Eingriff in `project.pbxproj` im jeweiligen Target — anders als die
 Warnung oben zum Umbenennen vermuten lässt.
@@ -227,8 +252,20 @@ tools/tests.sh
 `swift test`, das Skript taugt also für eine Automatik. Direkt geht es
 genauso: `cd HarmonyRules && swift test`.
 
+Die App-Schicht — Brücke, Verlauf, Spielstand, Sitzung, Begründung — hat
+eigene Fälle im Ziel `HarmonyTests`. Sie laufen im Simulator, aber ohne
+Bedienung und in Sekunden:
+
+```bash
+tools/apptests.sh
+```
+
+Die Spielstand-Fälle arbeiten auf einer Datei für sich; die der laufenden App
+bleibt unberührt.
+
 Die Oberfläche wird getrennt geprüft — Stockwerk 3, angelegt am
-2026-09-20. Diese Tests brauchen einen Simulator und ungefähr vier Minuten,
+2026-09-20. `tools/uitests.sh` führt das ganze Schema aus, also auch die
+App-Fälle. Diese Tests brauchen einen Simulator und ungefähr vier Minuten,
 gehören also nicht in denselben Lauf wie die Regeltests. Läuft nebenher
 die Live-Ansicht des Simulators in der Claude-App, werden sie so langsam,
 dass einzelne Fälle an Zeitüberschreitungen scheitern; ein solcher Fall
@@ -296,9 +333,9 @@ Tisch liegt kein Mac.
   bestimmte API dazu zwingt. Plattformeigene Aufrufe wie
   `navigationBarTitleDisplayMode` sind seit dem Wegfall von macOS
   unbedenklich.
-- `ContentView.swift` enthält einen `#Preview`- und einen
-  `#Playground`-Block. Previews funktionsfähig halten; sie sind die
-  schnellste Rückmeldung in diesem Projekt.
+- `ContentView.swift` enthält einen `#Preview`-Block. Previews
+  funktionsfähig halten; sie sind die schnellste Rückmeldung in diesem
+  Projekt.
 - Das Deployment-Target ist bewusst aktuell, neuere Plattform-APIs dürfen
   also ohne Verfügbarkeitsprüfung verwendet werden.
 - **Sprachen:** Bezeichner, Kommentare und Commit-Nachrichten auf Englisch.

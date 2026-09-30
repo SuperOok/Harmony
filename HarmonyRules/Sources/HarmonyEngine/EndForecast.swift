@@ -60,7 +60,7 @@ extension EndForecast {
                                 side: BoardSide, players: Int,
                                 turnsPlayed: Int, bag: BagKnowledge) -> EndForecast {
         let size = side.board.cells.count
-        let lastTurn = roundOut(EngineState.turnsInTheBag + 1, players)
+        let lastTurn = EngineState.roundOut(EngineState.turnsInTheBag + 1, players: players)
         let bagShare = Stone.allCases.map { bag.chance(of: $0) }
 
         // For every opponent: the chance that her board has triggered the
@@ -110,18 +110,13 @@ extension EndForecast {
             let stillNone = full.reduce(1.0) { $0 * (1 - $1[turn]) }
             let now = noneYet - stillNone
             if now > 1e-9 {
-                outcomes.append(EndOutcome(endsAfter: roundOut(turn + 1, players),
+                outcomes.append(EndOutcome(endsAfter: EngineState.roundOut(turn + 1, players: players),
                                            chance: now, seat: turn % players))
             }
             noneYet = stillNone
         }
 
         return EndForecast(outcomes: outcomes, taken: summary)
-    }
-
-    static func roundOut(_ turns: Int, _ players: Int) -> Int {
-        guard players > 0 else { return turns }
-        return (turns + players - 1) / players * players
     }
 }
 

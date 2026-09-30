@@ -144,10 +144,9 @@ struct Job: Sendable {
     let game: Int
 }
 
-var jobs: [Job] = []
-for take in options.take {
-    for game in 0..<options.games {
-        for variant in options.variants { jobs.append(Job(take: take, variant: variant, game: game)) }
+let jobs: [Job] = options.take.flatMap { take in
+    (0..<options.games).flatMap { game in
+        options.variants.map { Job(take: take, variant: $0, game: game) }
     }
 }
 

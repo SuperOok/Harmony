@@ -1,12 +1,7 @@
 import Foundation
 import HarmonyRules
+import HarmonyEngine
 
-/// What happened, in order.
-///
-/// Phase 4 stores the sequence and derives the position by replaying it.
-/// Three requirements then coincide: the undo from Störfall A is dropping
-/// the last event, surviving a move to the background is writing the file,
-/// and the same file is a ready-made test case.
 /// One recorded turn of another player. A struct rather than a pile of
 /// associated values, because it keeps growing.
 struct OpponentTurn {
@@ -62,6 +57,12 @@ struct BoardCorrection {
     }
 }
 
+/// What happened, in order.
+///
+/// Phase 4 stores the sequence and derives the position by replaying it.
+/// Three requirements then coincide: the undo from Störfall A is dropping
+/// the last event, surviving a move to the background is writing the file,
+/// and the same file is a ready-made test case.
 enum GameEvent {
     case opponentTurn(OpponentTurn)
     /// Harmony's move is stored **as an event**, not as an instruction to
@@ -79,6 +80,10 @@ enum GameEvent {
 }
 
 struct GameState {
+    /// Harmony's name in the seating. She is found by it, so nobody else may
+    /// carry it — the setup keeps it out of the list of players.
+    static let harmonyName = "Harmony"
+
     var display: [DisplayField]
     var openCards: [String]
     var seenCards: Set<String>
@@ -92,10 +97,16 @@ struct GameState {
     var seating: [String]
     var sideB: Bool
 
+    /// What a position has to be to be shown at all: someone to move, a seat
+    /// that exists, and a display of at most five spaces.
+    var isConsistent: Bool {
+        seating.indices.contains(seatIndex) && display.count <= EngineState.displaySpaces
+    }
+
     var currentPlayer: String { seating[seatIndex] }
     /// Side A has 23 spaces, side B has 25 — the game ends two later there.
-    var boardSize: Int { sideB ? 25 : 23 }
-    var isHarmonysTurn: Bool { currentPlayer == "Harmony" }
+    var boardSize: Int { (sideB ? BoardSide.b : .a).board.cells.count }
+    var isHarmonysTurn: Bool { currentPlayer == Self.harmonyName }
 
     static func initial(seat: Int = 0) -> GameState {
         GameState(display: Sample.display,
@@ -130,10 +141,8 @@ struct GameState {
         switch event {
         case let .opponentTurn(turn):
             // The emptied space takes the stones drawn for it — unless the
-            // bag ran dry, in which case it stays empty.
-            if !turn.refill.isEmpty {
-                display[turn.taken] = DisplayField(stones: turn.refill)
-            }
+            // bag ran dry, in which case it is gone from the display.
+            takeFromDisplay(space: turn.taken, refill: turn.refill)
             if let taken = turn.cardTaken, let drawn = turn.cardDrawn,
                let index = openCards.firstIndex(of: taken) {
                 openCards[index] = drawn
@@ -155,9 +164,7 @@ struct GameState {
                     openCards.remove(at: index)
                 }
             }
-            if !move.refill.isEmpty, move.space < display.count {
-                display[move.space] = DisplayField(stones: move.refill)
-            }
+            takeFromDisplay(space: move.space, refill: move.refill)
         case let .correction(correction):
             for change in correction.changes {
                 harmonyBoard[change.cell] = change.stack.isEmpty ? nil : change.stack
@@ -167,6 +174,33 @@ struct GameState {
             return
         }
         seatIndex = (seatIndex + 1) % seating.count
+    }
+
+    /// The space that was emptied, refilled with what was drawn for it. With
+    /// nothing drawn the bag is dry: the space stays empty, and an empty
+    /// space is not offered again — the engine counts what lies there, and a
+    /// phantom would be weighed as stones nobody can take.
+    private mutating func takeFromDisplay(space: Int, refill: [Stone]) {
+        guard display.indices.contains(space) else { return }
+        if refill.isEmpty {
+            display.remove(at: space)
+        } else {
+            display[space] = DisplayField(stones: refill)
+        }
+    }
+
+    /// Whether the event can be applied to this position: the space it names
+    /// exists and its refill is a whole draw or none. A saved game is
+    /// replayed through this before it is believed.
+    func accepts(_ event: GameEvent) -> Bool {
+        switch event {
+        case let .opponentTurn(turn):
+            return display.indices.contains(turn.taken) && [0, 3].contains(turn.refill.count)
+        case let .harmonyTurn(move):
+            return display.indices.contains(move.space) && [0, 3].contains(move.refill.count)
+        case .correction:
+            return true
+        }
     }
 
     /// How the event reads in the transcript. Needs the state **before**
@@ -193,7 +227,10 @@ struct GameState {
 /// The transcript as shown: one line per event, with what it cost in taps
 /// and, for Harmony's own turns, the reason that can be reopened later.
 struct LogEntry: Identifiable {
-    let id = UUID()
+    /// The position in the transcript. Not a fresh identity per call: the
+    /// entries are worked out again on every look at the screen, and a list
+    /// whose rows change identity each time rebuilds all of them.
+    let id: Int
     let line: String
     /// `nil` for what is not a turn. A correction costs taps as well, but
     /// they do not belong in the tap budget: that one measures the regular
@@ -209,13 +246,13 @@ extension Array where Element == GameEvent {
         for event in self {
             switch event {
             case let .opponentTurn(turn):
-                result.append(LogEntry(line: state.line(for: event),
+                result.append(LogEntry(id: result.count, line: state.line(for: event),
                                        taps: turn.taps, rationale: nil))
             case let .harmonyTurn(move):
-                result.append(LogEntry(line: state.line(for: event),
+                result.append(LogEntry(id: result.count, line: state.line(for: event),
                                        taps: 1, rationale: move.rationale))
             case .correction:
-                result.append(LogEntry(line: state.line(for: event),
+                result.append(LogEntry(id: result.count, line: state.line(for: event),
                                        taps: nil, rationale: nil))
             }
             state.apply(event)
@@ -253,7 +290,8 @@ extension Array where Element == GameEvent {
     /// three follow per turn. Harmony knows this without being told —
     /// every refill passes through the input anyway.
     static func stonesLeftInBag(afterTurns turns: Int) -> Int {
-        120 - 15 - 3 * turns
+        BagKnowledge.total.values.reduce(0, +) - EngineState.setupStones
+            - EngineState.stonesPerTurn * turns
     }
 
     func endStatus(from start: GameState) -> EndStatus {
@@ -267,7 +305,7 @@ extension Array where Element == GameEvent {
             if event.isTurn { turns += 1 }
             var reason: String?
 
-            if Self.stonesLeftInBag(afterTurns: turns) < 3 {
+            if Self.stonesLeftInBag(afterTurns: turns) < EngineState.stonesPerTurn {
                 reason = "Der Beutel ist leer."
             }
             let free = state.boardSize - state.harmonyBoard.count
@@ -282,7 +320,7 @@ extension Array where Element == GameEvent {
                 status.reason = reason
                 // The round is played out: on to the next multiple of the
                 // number of seats.
-                status.endsAfter = ((turns + seats - 1) / seats) * seats
+                status.endsAfter = EngineState.roundOut(turns, players: seats)
             }
         }
 

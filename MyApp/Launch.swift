@@ -14,7 +14,7 @@ enum Launch {
     /// `-showStart` brings the start screen back, for the test of it.
     static var skipsIntro: Bool {
         ["-harmonyTurn", "-sampleMove", "-forgetGame", "-endScore", "-endScoreB",
-         "-longCards", "-showStart"].contains(where: has)
+         "-longCards", "-showStart"].contains { has($0) }
     }
 
     static var showsStartScreen: Bool { has("-showStart") || !skipsIntro }

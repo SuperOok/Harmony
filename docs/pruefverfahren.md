@@ -152,7 +152,7 @@ Fundament, wo sie tausendmal schneller läuft.
 Angelegt am 2026-09-20 als Target `HarmonyUITests`, ausgeführt mit
 `tools/uitests.sh`. Anfangs drei Fälle und eine Minute auf dem
 Bezugsgerät, seit dem 2026-09-25 acht und ungefähr vier Minuten — gegenüber
-gut drei Sekunden für die inzwischen 210 Fälle in Stockwerk 1.
+gut drei Sekunden für die inzwischen 221 Fälle in Stockwerk 1.
 Die Pyramide
 ist damit keine Behauptung mehr, sondern gemessen, und die beiden Läufe
 bleiben deshalb getrennt.

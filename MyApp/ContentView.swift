@@ -1,6 +1,5 @@
 import SwiftUI
 import HarmonyRules
-import Playgrounds
 
 struct ContentView: View {
     /// Nothing is played until the setup has been recorded. The launch
@@ -56,7 +55,7 @@ struct ContentView: View {
     /// The game left open, in a line for the start screen.
     private var savedSummary: String? {
         guard let startState else { return nil }
-        let others = startState.seating.filter { $0 != "Harmony" }
+        let others = startState.seating.filter { $0 != GameState.harmonyName }
         let with = others.isEmpty ? "" : " · mit " + others.formatted(.list(type: .and))
         return "Zug \(restored.turnCount + 1)\(with)"
     }
@@ -114,9 +113,4 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-}
-
-#Playground {
-    let field = DisplayField(stones: [.brick, .wood, .leaves])
-    _ = field.notation
 }

@@ -8,6 +8,10 @@ import Foundation
 /// here rather than in the app, so that what a setting does to the engine
 /// is tested where the engine is.
 ///
+/// **The standard values are `Weights()`'s.** They are read from there, not
+/// copied: what ships as the standard is one number in one place, and the
+/// settings screen and the evaluation cannot come to disagree about it.
+///
 /// **What is left out, and why.** `Weights.pointsNow` is the yardstick the
 /// others are measured against — raising it is the same as lowering all
 /// the rest. The stacking shares of the end forecast, the survival of a
@@ -24,20 +28,20 @@ public struct EngineSettings: Sendable, Equatable, Codable {
     /// because a space is free. Measured: +3.4 points a game.
     public var priceCardSpaces = true
     /// What the last free space is worth; the others follow the grading.
-    public var cardSpacePrice = 10.0
+    public var cardSpacePrice = Weights().freeSlots[0]
     /// Own turns left from which a free space keeps its full worth.
-    public var cardSpaceFullFrom = 6
+    public var cardSpaceFullFrom = Weights().freeSlotsFullFrom
 
     /// Points in prospect against points in hand. Lower is more cautious:
     /// she lays a cube now rather than hoping for a better one.
-    public var outlook = 0.85
+    public var outlook = Weights().outlook
     /// How much the animal cards' prospects count.
     public var cardProspects = 1.0
     /// How much the landscapes' prospects count — rivers, islands, the
     /// sleeping ones.
     public var landscapeProspects = 1.0
     /// A small bonus per candidate still alive, which keeps options open.
-    public var variety = 0.05
+    public var variety = Weights().variety
 
     /// Seconds before the search stops by itself and plays the best turn
     /// found so far. `nil` lets it run until it is done.
@@ -53,7 +57,10 @@ public struct EngineSettings: Sendable, Equatable, Codable {
     /// How the price falls off from the last free space to the first: the
     /// last in full, the one taken out of an empty hand for nothing. The
     /// grading the self-play measured.
-    public static let cardSpaceGrading: [Double] = [1, 0.6, 0.25, 0]
+    public static let cardSpaceGrading: [Double] = {
+        let slots = Weights().freeSlots
+        return slots.map { $0 / slots[0] }
+    }()
 
     /// What the evaluation is to use.
     public var weights: Weights {

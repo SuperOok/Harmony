@@ -4,10 +4,12 @@ import HarmonyEngine
 
 /// What the search is doing, while it does it.
 ///
-/// `docs/06-durchstich.md` measures 110 Sekunden für eine halbe Stellung und
-/// rechnet bis zu 17 Minuten für die frühe Partie hoch. Ein Bildschirm, der
-/// so lange nichts sagt, ist von einem hängenden nicht zu unterscheiden —
-/// und am Tisch legt dann jemand das Gerät weg und spielt etwas Ausgedachtes.
+/// Auf dem Gerät dauert eine Suche Sekunden, im teuersten gemessenen Fall
+/// gut zwanzig (`docs/06-durchstich.md`, *Fünf Abhilfen*) — bei einer
+/// langsameren Einstellung oder einem Debug-Bau ein Vielfaches. Ein
+/// Bildschirm, der so lange nichts sagt, ist von einem hängenden nicht zu
+/// unterscheiden — und am Tisch legt dann jemand das Gerät weg und spielt
+/// etwas Ausgedachtes.
 ///
 /// Gezeigt wird deshalb nur, was die Suche billig über sich weiß
 /// (`SearchProgress`), und dazu der eine Knopf, der dem Warten ein Ende

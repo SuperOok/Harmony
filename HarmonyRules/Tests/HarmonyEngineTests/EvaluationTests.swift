@@ -63,6 +63,51 @@ struct EvaluationTests {
         #expect(outlook?.detail?.contains("%") == true)
     }
 
+    @Test("Jeder Beitrag sagt, welcher Art seine Zahl ist")
+    func everyContributionSaysWhatKindOfNumberItIs() {
+        // Die Begründung darf Punkte und Erwartungen nicht am Namen
+        // unterscheiden müssen — und Erwartungen nicht als Punkte ausgeben.
+        let meerkat = card("Erdmännchen", [11: .field, 12: .mountain1], cube: 12)
+        let evaluation = Evaluator.evaluate(state(
+            stacks: [11: [.field], 33: [.stone]],
+            hand: [HeldCard(card: meerkat)]))
+        func kind(_ name: String) -> Term.Kind? {
+            evaluation.terms.first { $0.name == name }?.kind
+        }
+        #expect(kind("Landschaften") == .points)
+        #expect(kind("Tierkarten") == .points)
+        #expect(kind("Aussicht Erdmännchen") == .prospect)
+        #expect(kind("Fluss") == .prospect)
+        #expect(kind("Berge") == .prospect)
+        #expect(kind("Offene Möglichkeiten") == .steering)
+        #expect(kind("Freie Kartenplätze") == .steering)
+    }
+
+    @Test("Eine Aussicht führt Gewinn und Wahrscheinlichkeit als Zahlen")
+    func anOutlookCarriesGainAndChanceAsNumbers() throws {
+        let meerkat = card("Erdmännchen", [11: .field, 12: .mountain1], cube: 12)
+        let evaluation = Evaluator.evaluate(state(stacks: [11: [.field]],
+                                                  hand: [HeldCard(card: meerkat)]))
+        let term = try #require(evaluation.terms.first { $0.name == "Aussicht Erdmännchen" })
+        let gain = try #require(term.gain)
+        let chance = try #require(term.chance)
+        #expect(gain == 6)
+        #expect(chance > 0 && chance <= 1)
+        // Gewertet wird Gewinn mal Wahrscheinlichkeit mal der Abschlag — nicht
+        // der Gewinn allein und nicht doppelt gewichtet.
+        #expect(abs(term.points - gain * chance * Weights().outlook) < 1e-9)
+        #expect(term.detail == "\(Int(gain)) Punkte × \(Int((chance * 100).rounded())) %")
+    }
+
+    @Test("Die Aussicht der schlafenden Landschaften fasst mehrere zusammen, ohne eine Wahrscheinlichkeit")
+    func sleepingLandscapesSumUpWithoutASingleChance() throws {
+        let evaluation = Evaluator.evaluate(state(stacks: [33: [.stone]]))
+        let term = try #require(evaluation.terms.first { $0.name == "Berge" })
+        #expect(term.kind == .prospect)
+        #expect(term.chance == nil)
+        #expect(term.gain == nil)
+    }
+
     // MARK: - Nähe schlägt Ferne
 
     @Test("Ein Anwärter, dem ein Stein fehlt, wiegt schwerer als einer, dem drei fehlen")

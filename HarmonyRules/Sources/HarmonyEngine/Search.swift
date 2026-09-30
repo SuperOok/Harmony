@@ -22,6 +22,8 @@ public struct Suggestion: Sendable {
     /// The next best turn, and what it is worth.
     public let runnerUp: Move?
     public let runnerUpValue: Double?
+    /// What the next best turn would score if the game ended after it.
+    public let runnerUpPointsNow: Int?
 
     /// How many turns were weighed before this came out.
     public let weighed: Int
@@ -74,6 +76,7 @@ struct Stretch: Sendable {
     var bestPoints = 0
     var secondMove: Move? = nil
     var secondValue = -Double.infinity
+    var secondPoints = 0
     var weighed = 0
     var stopped = false
 
@@ -81,14 +84,11 @@ struct Stretch: Sendable {
     /// the lead, so of two equal turns the earlier one stays.
     mutating func offer(_ move: Move, _ evaluation: Evaluation) {
         let value = evaluation.value
-        if value > bestValue {
-            secondMove = bestMove; secondValue = bestValue
-            bestMove = move; bestValue = value
-            bestTerms = evaluation.largest()
-            bestPoints = evaluation.pointsNow
-        } else if value > secondValue {
-            secondMove = move; secondValue = value
-        }
+        // The terms are sorted only for a turn that leads: this runs for
+        // every turn there is, and nearly all of them lead nowhere.
+        guard value > secondValue else { return }
+        offerValue(move, value, value > bestValue ? evaluation.largest() : [],
+                   evaluation.pointsNow)
     }
 
     /// Take in another stretch's two. Fed in that order, the pair that comes
@@ -100,17 +100,21 @@ struct Stretch: Sendable {
         stopped = stopped || other.stopped
         if let move = other.bestMove { offerValue(move, other.bestValue,
                                                   other.bestTerms, other.bestPoints) }
-        if let move = other.secondMove { offerValue(move, other.secondValue, [], 0) }
+        if let move = other.secondMove { offerValue(move, other.secondValue, [],
+                                                    other.secondPoints) }
     }
 
+    /// Strictly better takes the lead and the old lead becomes second;
+    /// otherwise strictly better than second takes second's place. The one
+    /// rule behind both `offer` and `take`.
     private mutating func offerValue(_ move: Move, _ value: Double,
                                      _ terms: [Term], _ points: Int) {
         if value > bestValue {
-            secondMove = bestMove; secondValue = bestValue
+            secondMove = bestMove; secondValue = bestValue; secondPoints = bestPoints
             bestMove = move; bestValue = value
             bestTerms = terms; bestPoints = points
         } else if value > secondValue {
-            secondMove = move; secondValue = value
+            secondMove = move; secondValue = value; secondPoints = points
         }
     }
 }
@@ -136,11 +140,6 @@ final class Chatter: @unchecked Sendable {
         weighed += count
         if let move, value > bestValue { bestValue = value; bestMove = move }
         return (weighed, bestMove, bestMove == nil ? nil : bestValue)
-    }
-
-    var total: Int {
-        lock.lock(); defer { lock.unlock() }
-        return weighed
     }
 }
 
@@ -265,6 +264,7 @@ public enum Search {
                           pointsNow: overall.bestPoints,
                           terms: overall.bestTerms, runnerUp: overall.secondMove,
                           runnerUpValue: overall.secondMove == nil ? nil : overall.secondValue,
+                          runnerUpPointsNow: overall.secondMove == nil ? nil : overall.secondPoints,
                           weighed: overall.weighed, complete: !overall.stopped)
     }
 
@@ -334,9 +334,9 @@ public enum Search {
     /// which stones lie **together**.
     ///
     /// The second chance source, the card that moves up when one is taken, is
-    /// left out for a plainer reason: the evaluation looks at the cards in
-    /// hand, never at the open ones, so which card appears changes nothing it
-    /// computes.
+    /// left out for a plainer reason: which card appears is not known until
+    /// it does, and the evaluation weighs only the cards in hand and the open
+    /// ones that a turn might take — never one that has yet to be turned up.
     public static func availability(after taken: Int, of state: EngineState) -> Availability {
         var counts: [Stone: Double] = [:]
         for (index, space) in state.display.enumerated() where index != taken {

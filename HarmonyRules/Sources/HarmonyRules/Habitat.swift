@@ -200,6 +200,14 @@ extension Habitat {
         return all
     }
 
+    /// What makes two placements the same one: the same spaces with the same
+    /// requirement and the same cube space.
+    private static func key(_ requirement: [Int: PatternCell], cube: Int) -> String {
+        requirement.keys.sorted()
+            .map { "\($0)\(requirement[$0]!.rawValue)" }
+            .joined() + "T\(cube)"
+    }
+
     /// One position of one orientation, kept if it can still come about.
     private static func append(card: AnimalCard,
                                turned: [(Hex, PatternCell, Bool)],
@@ -233,10 +241,7 @@ extension Habitat {
         // `regeln-basisspiel.md`.
         guard let cube = cubeCell, !cubes.contains(cube) else { return }
 
-        let key = requirement.keys.sorted()
-            .map { "\($0)\(requirement[$0]!.rawValue)" }
-            .joined() + "T\(cube)"
-        guard seen.insert(key).inserted else { return }
+        guard seen.insert(key(requirement, cube: cube)).inserted else { return }
 
         found.append(Habitat(card: card, requirement: requirement,
                              cubeCell: cube, missing: missing))
@@ -317,23 +322,12 @@ extension Habitat {
                 }
 
                 guard possible, let cube = cubeCell, !cubes.contains(cube) else { continue }
-                let key = requirement.keys.sorted()
-                    .map { "\($0)\(requirement[$0]!.rawValue)" }
-                    .joined() + "T\(cube)"
-                guard seen.insert(key).inserted else { continue }
+                guard seen.insert(key(requirement, cube: cube)).inserted else { continue }
                 found.append(Habitat(card: card, requirement: requirement,
                                      cubeCell: cube, missing: [:]))
             }
         }
         return found
-    }
-
-    /// The placements that are finished, where a cube may go now.
-    public static func complete(of card: AnimalCard,
-                                on stacks: [Int: [Stone]],
-                                cubes: Set<Int> = [],
-                                board: Board) -> [Habitat] {
-        all(of: card, on: stacks, cubes: cubes, board: board).filter(\.isComplete)
     }
 }
 

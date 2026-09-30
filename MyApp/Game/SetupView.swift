@@ -1,5 +1,6 @@
 import SwiftUI
 import HarmonyRules
+import HarmonyEngine
 
 /// Szenario 1, in two steps so that neither has to be scrolled: first who
 /// is playing, then what lies on the table.
@@ -23,7 +24,7 @@ struct SetupView: View {
     /// players: who plays and in which order are two questions, and the
     /// second is often settled only after the display is on the table —
     /// once it is clear who starts and who works the device.
-    @State private var seating: [String] = ["Harmony"]
+    @State private var seating: [String] = [GameState.harmonyName]
     @State private var taps = 0
     @State private var sideB = false
     /// Filled in reading order, so no space has to be picked first.
@@ -198,11 +199,11 @@ struct SetupPlayersView: View {
     /// Keeps the order already arranged and puts anyone new in front of
     /// Harmony, so choosing a player does not silently reshuffle the seats.
     private func rebuildSeating() {
-        var order = seating.filter { $0 == "Harmony" || players.contains($0) }
+        var order = seating.filter { $0 == GameState.harmonyName || players.contains($0) }
         for name in players where !order.contains(name) {
             order.insert(name, at: max(order.count - 1, 0))
         }
-        if !order.contains("Harmony") { order.append("Harmony") }
+        if !order.contains(GameState.harmonyName) { order.append(GameState.harmonyName) }
         seating = order
     }
 }
@@ -219,13 +220,17 @@ struct SetupBoardView: View {
 
     @State private var cardPickerOpen = false
 
-    private var isComplete: Bool { stones.count == 15 && cards.count == 5 }
+    private var isComplete: Bool { stones.count == setupStones && cards.count == openCardSlots }
+
+    private let setupStones = EngineState.setupStones
+    private let openCardSlots = EngineState.openCardSlots
 
     /// The five spaces as they are shown: each in the fixed order, so two
     /// equal spaces look equal.
     private var rows: [[Stone]] {
-        (0..<5).map { field in
-            DisplayField(stones: Array(stones.dropFirst(field * 3).prefix(3))).ordered
+        (0..<EngineState.displaySpaces).map { field in
+            DisplayField(stones: Array(stones.dropFirst(field * EngineState.stonesPerSpace)
+                .prefix(EngineState.stonesPerSpace))).ordered
         }
     }
 
@@ -239,10 +244,10 @@ struct SetupBoardView: View {
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("side")
 
-                TitledBlock("Die Auslage — \(stones.count) von 15") {
+                TitledBlock("Die Auslage — \(stones.count) von \(setupStones)") {
                     VStack(alignment: .leading, spacing: 12) {
                         VStack(spacing: 8) {
-                            ForEach(0..<5, id: \.self) { field in
+                            ForEach(0..<EngineState.displaySpaces, id: \.self) { field in
                                 HStack(spacing: 10) {
                                     ForEach(0..<3, id: \.self) { slot in
                                         StoneDot(stone: slot < rows[field].count
@@ -260,13 +265,13 @@ struct SetupBoardView: View {
                             ForEach(Stone.allCases) { stone in
                                 Button {
                                     taps += 1
-                                    if stones.count < 15 { stones.append(stone) }
+                                    if stones.count < setupStones { stones.append(stone) }
                                 } label: {
                                     StoneDot(stone: stone, size: 44)
                                 }
                                 .buttonStyle(.plain)
-                                .disabled(stones.count == 15)
-                                .opacity(stones.count == 15 ? 0.35 : 1)
+                                .disabled(stones.count == setupStones)
+                                .opacity(stones.count == setupStones ? 0.35 : 1)
                                 .accessibilityIdentifier("palette-\(stone.rawValue)")
                                 .accessibilityLabel(stone.name)
                             }
@@ -283,7 +288,7 @@ struct SetupBoardView: View {
                     }
                 }
 
-                TitledBlock("Die offenen Karten — \(cards.count) von 5") {
+                TitledBlock("Die offenen Karten — \(cards.count) von \(openCardSlots)") {
                     VStack(alignment: .leading, spacing: 10) {
                         if cards.isEmpty {
                             Text("Noch keine gewählt.")
@@ -327,9 +332,10 @@ struct SetupBoardView: View {
             .safeAreaInset(edge: .bottom) { footer }
             .sheet(isPresented: $cardPickerOpen) {
                 NamePickerView(
-                    title: cards.count == 5 ? "Fünf gewählt" : "Noch \(5 - cards.count) wählen",
+                    title: cards.count == openCardSlots
+                        ? "Fünf gewählt" : "Noch \(openCardSlots - cards.count) wählen",
                     options: Sample.allCards,
-                    limit: 5,
+                    limit: openCardSlots,
                     chosen: $cards,
                     onTap: { taps += 1 },
                     onComplete: { cardPickerOpen = false })
@@ -341,7 +347,8 @@ struct SetupBoardView: View {
         VStack(spacing: 8) {
             Text(isComplete
                  ? "Vollständig — \(taps) Antipper"
-                 : "Fehlen: \(15 - stones.count) Steine, \(5 - cards.count) Karten")
+                 : "Fehlen: \(setupStones - stones.count) Steine, "
+                   + "\(openCardSlots - cards.count) Karten")
                 .font(.footnote).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -365,8 +372,8 @@ struct SetupBoardView: View {
     /// prototype loads a mid-game tableau so the move demonstration keeps
     /// its meaning.
     private func startState() -> GameState {
-        let fields = stride(from: 0, to: 15, by: 3).map {
-            DisplayField(stones: Array(stones[$0..<($0 + 3)]))
+        let fields = stride(from: 0, to: setupStones, by: EngineState.stonesPerSpace).map {
+            DisplayField(stones: Array(stones[$0..<($0 + EngineState.stonesPerSpace)]))
         }
         return GameState(display: fields,
                          openCards: cards,

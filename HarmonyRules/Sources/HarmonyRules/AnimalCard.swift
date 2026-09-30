@@ -74,9 +74,6 @@ public struct AnimalCard: Sendable, Hashable, Identifiable {
 
     /// The pattern as a form, free of where it sits and which way it faces.
     public var shape: HexShape { HexShape.canonical(of: pattern.keys) }
-
-    /// How many stones the whole pattern costs when built from nothing.
-    public var stoneCount: Int { pattern.values.reduce(0) { $0 + $1.height } }
 }
 
 // MARK: - Reading the resource

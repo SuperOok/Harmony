@@ -147,7 +147,7 @@ public enum Moves {
         // Taking no card, or one of the open ones. A card taken this turn can
         // still receive a cube in the same turn, so it takes part below.
         var options: [AnimalCard?] = [nil]
-        if state.mayTakeACard { options += state.openCards.map { $0 } }
+        if state.mayTakeACard { options += state.openCards.map(Optional.some) }
 
         // What the cards already in hand allow does not depend on which card
         // is taken, so it is worked out once instead of once per option.

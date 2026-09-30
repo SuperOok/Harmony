@@ -86,7 +86,7 @@ public enum Referee {
         }
 
         // A fifth card only if one of the four is finished in the same turn.
-        if move.cardTaken != nil, player.unfinished >= 4 {
+        if move.cardTaken != nil, player.unfinished >= EngineState.cardLimit {
             let finishes = player.hand.contains { held in
                 !held.isFinished
                     && held.cubesPlaced + (laid[held.card.name] ?? 0) >= held.card.points.count
@@ -140,7 +140,7 @@ public enum Referee {
             problems.append("\(names.count) Karten, \(Set(names).count) verschiedene — "
                             + "es sind \(Table.cardCount).")
         }
-        if table.openCards.count > 5 { problems.append("\(table.openCards.count) offene Karten.") }
+        if table.openCards.count > EngineState.openCardSlots { problems.append("\(table.openCards.count) offene Karten.") }
 
         for seat in table.seats {
             for (cell, stack) in seat.stacks where !stack.isLegal {
@@ -153,7 +153,7 @@ public enum Referee {
                 != held.cubesPlaced {
                 problems.append("\(seat.name): \(held.card.name) zählt \(held.cubesPlaced) Würfel.")
             }
-            if seat.unfinished > 4 {
+            if seat.unfinished > EngineState.cardLimit {
                 problems.append("\(seat.name): \(seat.unfinished) unfertige Karten.")
             }
             if seat.takes.count * 3 != seat.stacks.values.reduce(0, { $0 + $1.count }) {

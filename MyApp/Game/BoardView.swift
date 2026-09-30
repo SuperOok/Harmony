@@ -173,7 +173,12 @@ struct BoardView: View {
 extension BoardView {
     static let sideA = BoardSide.a.columns
     static let sideB = BoardSide.b.columns
+}
 
+#if DEBUG
+/// Boards for the previews. Not part of a release build: nothing but
+/// `#Preview` asks for them.
+extension BoardView {
     /// Side A: every cell state once, and every scoring condition once met
     /// and once missed.
     static var sampleCellsA: [Int: Cell] {
@@ -242,3 +247,4 @@ extension BoardView {
     }
     .padding()
 }
+#endif

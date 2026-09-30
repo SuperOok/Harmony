@@ -84,6 +84,32 @@ struct SearchTests {
         #expect(suggestion.move.placements.values.reduce(0) { $0 + $1.count } == 3)
     }
 
+    @Test("Auch der Zweitplatzierte nennt seine Punkte jetzt")
+    func theRunnerUpNamesItsPointsToo() throws {
+        let deck = try AnimalCards.load()
+        let meerkat = deck.first { $0.name == "Erdmännchen" }!
+        let state = position(empty: [12, 13, 14], filled: [11: [.field]],
+                             hand: [HeldCard(card: meerkat)],
+                             display: [[.stone, .water, .water]])
+        let suggestion = try #require(Search.best(from: state))
+        let runnerUp = try #require(suggestion.runnerUp)
+
+        #expect(suggestion.pointsNow == Evaluator.evaluate(state.applying(suggestion.move)).pointsNow)
+        #expect(suggestion.runnerUpPointsNow
+                == Evaluator.evaluate(state.applying(runnerUp)).pointsNow)
+    }
+
+    @Test("Ohne zweiten Zug gibt es auch keine Punkte für ihn")
+    func withoutARunnerUpThereAreNoPointsForIt() throws {
+        // Ein Feld, ein Stein pro Farbe: eine Legung, kein Anwärter, keine Karte.
+        let state = position(empty: [11], display: [[.water]])
+        let suggestion = try #require(Search.best(from: state))
+        #expect(suggestion.weighed == 1)
+        #expect(suggestion.runnerUp == nil)
+        #expect(suggestion.runnerUpPointsNow == nil)
+        #expect(suggestion.runnerUpValue == nil)
+    }
+
     @Test("Zweimal dieselbe Stellung gibt zweimal denselben Zug")
     func thesamePositionTwiceGivesTheSameTurnTwice() {
         // Die Momentaufnahmen aus `pruefverfahren.md` hängen daran.

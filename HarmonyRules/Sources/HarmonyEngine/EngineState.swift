@@ -26,6 +26,18 @@ public struct BagKnowledge: Sendable, Hashable {
 
     public init(drawn: [Stone: Int]) { self.drawn = drawn }
 
+    /// Everything that has left the bag, counted from what was recorded: the
+    /// display as it was laid out at the start and every refill since — the
+    /// others' and her own. A turn that found the bag dry has no refill and
+    /// adds nothing.
+    public static func drawn(setup: [[Stone]], refills: [[Stone]]) -> [Stone: Int] {
+        var drawn: [Stone: Int] = [:]
+        for space in setup + refills {
+            for stone in space { drawn[stone, default: 0] += 1 }
+        }
+        return drawn
+    }
+
     public func remaining(_ stone: Stone) -> Int {
         (Self.total[stone] ?? 0) - (drawn[stone] ?? 0)
     }
@@ -78,6 +90,20 @@ public struct HeldCard: Sendable, Hashable {
 
 /// Everything Harmony holds between two of her turns.
 public struct EngineState: Sendable {
+    /// Spaces on the shared display, `stonesPerSpace` stones each.
+    public static let displaySpaces = 5
+    /// Cards lying open beside it.
+    public static let openCardSlots = 5
+    /// The most unfinished cards a player may hold; a fifth may not be taken
+    /// while they are.
+    public static let cardLimit = 4
+    /// Stones that fill the display at setup, and that are drawn per turn
+    /// after it. Together with `BagKnowledge.total` they make the bag's 35
+    /// turns.
+    public static let stonesPerSpace = 3
+    public static let setupStones = stonesPerSpace * displaySpaces
+    public static let stonesPerTurn = stonesPerSpace
+
     public var side: BoardSide
     /// Her own board: space to stack.
     public var stacks: [Int: [Stone]]
@@ -163,7 +189,7 @@ extension EngineState {
     /// four, and a fifth may not be taken while they are held.
     public var unfinishedCards: [HeldCard] { hand.filter { !$0.isFinished } }
 
-    public var mayTakeACard: Bool { unfinishedCards.count < 4 }
+    public var mayTakeACard: Bool { unfinishedCards.count < Self.cardLimit }
 
     public var freeCells: Int { board.cells.count - stacks.count }
 
@@ -175,11 +201,14 @@ extension EngineState {
     /// from the display — and its refill is the one that fails.
     public static let turnsInTheBag = 35
 
-    public var turnsLeftInGame: Int { max(0, Self.turnsInTheBag - turnsPlayed) }
-
     /// The turn count after which the round is over: whoever triggers the
     /// end, everyone gets the same number of turns.
-    func roundOut(_ turns: Int) -> Int {
+    func roundOut(_ turns: Int) -> Int { Self.roundOut(turns, players: players) }
+
+    /// The turn count rounded up to whole rounds: after the end is set off,
+    /// everyone gets the same number of turns. The one place this is worked
+    /// out — the table, the forecast and the log all ask it.
+    public static func roundOut(_ turns: Int, players: Int) -> Int {
         guard players > 0 else { return turns }
         return (turns + players - 1) / players * players
     }
@@ -288,10 +317,6 @@ extension EngineState {
         guard perTurn > 0 else { return Self.turnsInTheBag }
         return Int((Double(toFill) / perTurn).rounded(.up))
     }
-
-    /// The cards she could still draw or take — everything not already hers
-    /// and not already gone.
-    public var reachableCards: [AnimalCard] { openCards + deck }
 }
 
 // MARK: - Checking itself
@@ -311,7 +336,7 @@ extension EngineState {
             found.append("\(stone.name): \(-bag.remaining(stone)) mehr gezogen als es gibt")
         }
 
-        let expected = 15 + 3 * turnsPlayed
+        let expected = Self.setupStones + Self.stonesPerTurn * turnsPlayed
         let actual = Stone.allCases.reduce(0) { $0 + (drawn[$1] ?? 0) }
         if actual > expected {
             found.append("\(actual) Steine gezogen, höchstens \(expected) möglich")
@@ -340,11 +365,12 @@ extension EngineState {
             }
         }
 
-        if unfinishedCards.count > 4 {
-            found.append("\(unfinishedCards.count) unabgeschlossene Karten, erlaubt sind 4")
+        if unfinishedCards.count > Self.cardLimit {
+            found.append("\(unfinishedCards.count) unabgeschlossene Karten, "
+                         + "erlaubt sind \(Self.cardLimit)")
         }
 
-        if openCards.count > 5 {
+        if openCards.count > Self.openCardSlots {
             found.append("\(openCards.count) offene Karten, es sind fünf")
         }
 

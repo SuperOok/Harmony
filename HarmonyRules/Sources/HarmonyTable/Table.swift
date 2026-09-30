@@ -9,21 +9,6 @@ import HarmonyEngine
 // referee before it touches anything. `docs/06-durchstich.md`, *Engines
 // gegeneinander*, has the reasoning.
 
-/// A small, seedable generator. `SystemRandomNumberGenerator` cannot be
-/// seeded, and a game that cannot be replayed cannot be compared.
-public struct SplitMix64: RandomNumberGenerator, Sendable {
-    private var state: UInt64
-    public init(seed: UInt64) { state = seed }
-
-    public mutating func next() -> UInt64 {
-        state &+= 0x9E37_79B9_7F4A_7C15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-        return z ^ (z >> 31)
-    }
-}
-
 /// One player's side of the table.
 public struct Seat: Sendable {
     public let name: String
@@ -73,9 +58,9 @@ public struct Table: Sendable {
         deck = cards
         deck.shuffle(using: &deckRNG)
         display = []
-        openCards = Array(deck.prefix(5))
-        deck.removeFirst(min(5, deck.count))
-        for _ in 0..<5 { display.append(draw()) }
+        openCards = Array(deck.prefix(EngineState.openCardSlots))
+        deck.removeFirst(min(EngineState.openCardSlots, deck.count))
+        for _ in 0..<EngineState.displaySpaces { display.append(draw()) }
     }
 
     public var players: Int { seats.count }
@@ -88,7 +73,7 @@ public struct Table: Sendable {
 
     public var isOver: Bool { turnsPlayed >= min(lastTurn, endsAfter ?? .max) }
 
-    func roundOut(_ turns: Int) -> Int { (turns + players - 1) / players * players }
+    func roundOut(_ turns: Int) -> Int { EngineState.roundOut(turns, players: players) }
 
     private mutating func draw() -> [Stone] {
         let three = Array(bag.prefix(3))

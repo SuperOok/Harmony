@@ -9,20 +9,7 @@ import HarmonyEngine
 // dice roll rather than a decision. `docs/06-durchstich.md`, *Der Preis eines
 // Kartenplatzes*, gives the reasoning and what it costs.
 
-/// A small, seedable generator. `SystemRandomNumberGenerator` cannot be
-/// seeded, and a game that cannot be replayed cannot be compared.
-struct SplitMix64: RandomNumberGenerator {
-    private var state: UInt64
-    init(seed: UInt64) { state = seed }
-
-    mutating func next() -> UInt64 {
-        state &+= 0x9E37_79B9_7F4A_7C15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-        return z ^ (z >> 31)
-    }
-
+extension SplitMix64 {
     mutating func chance(_ p: Double) -> Bool {
         Double.random(in: 0..<1, using: &self) < p
     }
@@ -107,16 +94,16 @@ struct Game {
         }
 
         var state = EngineState(side: side, players: players, seat: seat)
-        state.display = (0..<5).map { _ in draw() }
-        state.openCards = Array(deck.prefix(5))
-        deck.removeFirst(5)
+        state.display = (0..<EngineState.displaySpaces).map { _ in draw() }
+        state.openCards = Array(deck.prefix(EngineState.openCardSlots))
+        deck.removeFirst(EngineState.openCardSlots)
         state.deck = deck
         state.drawn = drawn
 
         var boards = Array(repeating: OpponentBoard(), count: players)
         var takes: [Int: [[Stone]]] = [:]
         var result = GameResult()
-        let lastTurn = (EngineState.turnsInTheBag + 1 + players - 1) / players * players
+        let lastTurn = EngineState.roundOut(EngineState.turnsInTheBag + 1, players: players)
 
         func refillCard() {
             if !deck.isEmpty { state.openCards.append(deck.removeFirst()) }
@@ -165,7 +152,7 @@ struct Game {
                 refill()
 
                 if state.boardIsFull, state.endsAfter == nil {
-                    state.endsAfter = (state.turnsPlayed + players - 1) / players * players
+                    state.endsAfter = EngineState.roundOut(state.turnsPlayed, players: players)
                 }
             } else {
                 var board = boards[mover]
@@ -177,7 +164,7 @@ struct Game {
                 for _ in 0..<board.unfinished where othersRNG.chance(opponents.finishesCard) {
                     board.unfinished -= 1
                 }
-                if board.unfinished < 4, !state.openCards.isEmpty,
+                if board.unfinished < EngineState.cardLimit, !state.openCards.isEmpty,
                    othersRNG.chance(opponents.takesCard) {
                     let card = Int.random(in: 0..<state.openCards.count, using: &othersRNG)
                     state.openCards.remove(at: card)
@@ -190,7 +177,7 @@ struct Game {
 
                 // The operator's report: this board is down to two spaces.
                 if side.board.cells.count - board.taken <= 2, state.endsAfter == nil {
-                    state.endsAfter = (state.turnsPlayed + players - 1) / players * players
+                    state.endsAfter = EngineState.roundOut(state.turnsPlayed, players: players)
                 }
             }
 

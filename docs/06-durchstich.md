@@ -793,7 +793,7 @@ rechnen alle Kerne an einer Stellung weiter, in der niemand mehr steht.
    das Argument abschwächt, aber die Reihenfolge nicht umdreht: Der teuerste
    Zug dauert weiter fast eine Minute.
 2. **Den Dummy-Zustand ablösen.** Eine **Brücke** steht seit dem 2026-09-20
-   (`MyApp/Dummy/EngineBridge.swift`): Sie übersetzt den Zustand des
+   (`MyApp/Game/EngineBridge.swift`): Sie übersetzt den Zustand des
    Klickdummys in einen `EngineState` und den Vorschlag zurück in einen
    `HarmonyMove`. Damit läuft die Engine auf dem Gerät. Die Ablösung selbst
    — `EngineState` als der **eine** Zustand statt zweier, die eine Brücke
@@ -802,7 +802,7 @@ rechnen alle Kerne an einer Stellung weiter, in der niemand mehr steht.
    Was dabei schon erledigt ist: Eine Partie beginnt leer und füllt sich,
    Harmony nimmt Karten, ihr Zug leert und füllt ein Auslagenfeld, der
    doppelte `AnimalCard` ist weg, und der Verlauf überdauert das Weglegen
-   (`MyApp/Dummy/GameStore.swift`). Dazu zwei Dinge, die bleiben sollten:
+   (`MyApp/Game/GameStore.swift`). Dazu zwei Dinge, die bleiben sollten:
    Die Suche ist ein **Anytime-Verfahren** geworden — bei Abbruch gibt sie
    den besten bis dahin gefundenen Zug und sagt über `complete`, dass es
    nicht der beste ist. Und an der Stelle des Vorschlags steht **nichts**,

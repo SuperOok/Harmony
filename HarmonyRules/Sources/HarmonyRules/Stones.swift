@@ -1,7 +1,9 @@
 import Foundation
 
 // The rule core, lifted out of the Phase 5 dummy. Identifiers and comments
-// are English; there is no user-facing text in here at all.
+// are English. The only German in the package is what ends up on screen or
+// in a log a person reads: `Stone.name`, the lines and notes of the final
+// score, and the referee's objections.
 
 /// A stone is a colour, nothing more. The raw values are the shorthand
 /// letters from `pruefverfahren.md`; they are mnemonics for the German

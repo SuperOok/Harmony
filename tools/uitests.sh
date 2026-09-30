@@ -1,6 +1,8 @@
 #!/bin/zsh
-# Runs the interface tests — storey three from `docs/pruefverfahren.md`.
-# Unlike the rule tests these need a simulator and take about a minute.
+# Runs the whole scheme — the interface tests, storey three from
+# `docs/pruefverfahren.md`, and with them the app tests of `HarmonyTests`.
+# Unlike the rule tests these need a simulator and take about four minutes;
+# `tools/apptests.sh` runs the app tests alone.
 #
 #   tools/uitests.sh              the reference device, an iPhone 15 Pro Max
 #   tools/uitests.sh <UDID>       some other simulator

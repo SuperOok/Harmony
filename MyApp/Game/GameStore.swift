@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import HarmonyRules
 
 // The game on disk. `04-architektur.md` asks for a **sequence of events**,
@@ -18,7 +19,8 @@ struct SavedGame: Codable {
     /// Bumped when the format changes. An older file is then discarded
     /// rather than misread — a game lasts an evening, and `04-architektur.md`
     /// rules out one that spans days.
-    var version = 1
+    static let currentVersion = 1
+    var version = SavedGame.currentVersion
     var start: SavedState
     var events: [SavedEvent]
 }
@@ -77,7 +79,11 @@ struct SavedRationale: Codable {
 struct SavedTerm: Codable {
     var name: String
     var points: Int
+    /// Written as before, for a file read by an older version. `kind` says
+    /// more and wins where it is there.
     var prospect: Bool
+    var kind: TermKind?
+    var gain: Int?
     var probability: Double?
 }
 
@@ -145,7 +151,7 @@ extension SavedState {
                          seatIndex: seatIndex,
                          harmonyBoard: boardOut,
                          harmonyCubes: cubesOut,
-                         harmonyCards: cards.map(Sample.card),
+                         harmonyCards: cards.map { Sample.card($0) },
                          seating: seating,
                          sideB: sideB)
     }
@@ -228,8 +234,8 @@ extension SavedRationale {
         immediate = rationale.immediate
         value = rationale.value
         terms = rationale.terms.map {
-            SavedTerm(name: $0.name, points: $0.points,
-                      prospect: $0.prospect, probability: $0.probability)
+            SavedTerm(name: $0.name, points: $0.points, prospect: $0.prospect,
+                      kind: $0.kind, gain: $0.gain, probability: $0.probability)
         }
         probabilityNote = rationale.probabilityNote
         runnerUp = rationale.runnerUp
@@ -243,7 +249,8 @@ extension SavedRationale {
             immediate: immediate, value: value,
             terms: terms.map {
                 ScoreTerm(name: $0.name, points: $0.points,
-                          prospect: $0.prospect, probability: $0.probability)
+                          kind: $0.kind ?? ($0.prospect ? .prospect : .points),
+                          gain: $0.gain, probability: $0.probability)
             },
             probabilityNote: probabilityNote,
             runnerUp: runnerUp, runnerUpImmediate: runnerUpImmediate,
@@ -259,39 +266,62 @@ extension SavedRationale {
 /// there is nothing to gain from appending and something to lose: a file
 /// written whole is either the old one or the new one.
 enum GameStore {
-    private static var url: URL {
-        let directory = FileManager.default.urls(for: .applicationSupportDirectory,
-                                                 in: .userDomainMask)[0]
-        try? FileManager.default.createDirectory(at: directory,
-                                                 withIntermediateDirectories: true)
-        return directory.appendingPathComponent("spielstand.json")
+    /// Where the game is kept. A parameter of every call, with this as the
+    /// default, so that a test can work on a file of its own instead of the
+    /// one the app left behind.
+    static var defaultURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory,
+                                 in: .userDomainMask)[0]
+            .appendingPathComponent("spielstand.json")
     }
 
-    static func save(start: GameState, events: [GameEvent]) {
-        let saved = SavedGame(start: SavedState(start), events: events.map(SavedEvent.init))
-        guard let data = try? JSONEncoder().encode(saved) else { return }
-        try? data.write(to: url, options: .atomic)
+    private static let log = Logger(subsystem: "de.superook.Harmony", category: "GameStore")
+
+    /// Writes the game. `false` when it could not be written — the game goes
+    /// on, but the next start will not find it, and that is worth a line in
+    /// the log rather than nothing.
+    @discardableResult
+    static func save(start: GameState, events: [GameEvent],
+                     to url: URL = defaultURL) -> Bool {
+        let saved = SavedGame(start: SavedState(start), events: events.map { SavedEvent($0) })
+        do {
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(saved).write(to: url, options: .atomic)
+            return true
+        } catch {
+            log.error("Spielstand nicht geschrieben: \(error.localizedDescription)")
+            return false
+        }
     }
 
     /// The game as it was left, or nothing. Anything unreadable is treated
     /// as nothing: a wrong position is worse than a fresh start, because
     /// nobody at the table could tell where it came from.
-    static func load() -> (start: GameState, events: [GameEvent])? {
+    ///
+    /// The file is **replayed** before it is believed. Names that exist are
+    /// not enough: an event that points at a display space the position does
+    /// not have, or a seat outside the seating, would bring the app down at
+    /// the first look at the screen.
+    static func load(from url: URL = defaultURL) -> (start: GameState, events: [GameEvent])? {
         guard let data = try? Data(contentsOf: url),
               let saved = try? JSONDecoder().decode(SavedGame.self, from: data),
-              saved.version == 1,
-              let start = saved.start.restored
+              saved.version == SavedGame.currentVersion,
+              let start = saved.start.restored,
+              start.isConsistent
         else { return nil }
 
         var events: [GameEvent] = []
+        var state = start
         for saved in saved.events {
-            guard let event = saved.restored else { return nil }
+            guard let event = saved.restored, state.accepts(event) else { return nil }
+            state.apply(event)
             events.append(event)
         }
         return (start, events)
     }
 
-    static func discard() {
+    static func discard(at url: URL = defaultURL) {
         try? FileManager.default.removeItem(at: url)
     }
 }

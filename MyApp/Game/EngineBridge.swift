@@ -20,8 +20,8 @@ extension GameState {
     /// `endsAfter` is the end the log has announced, if any — see
     /// `EndStatus`. It is the only way a foreign full board reaches the
     /// engine.
-    func engineState(events: [GameEvent], endsAfter: Int? = nil,
-                     endForecast: [EndOutcome] = []) -> EngineState? {
+    func engineState(events: [GameEvent], start: GameState,
+                     endsAfter: Int? = nil) -> EngineState? {
         let deck = HarmonyRules.AnimalCards.all
         let byName = Dictionary(uniqueKeysWithValues: deck.map { ($0.name, $0) })
 
@@ -51,27 +51,26 @@ extension GameState {
             display: display.map(\.stones),
             openCards: open,
             deck: deck.filter { !seenCards.contains($0.name) },
-            drawn: stonesDrawn(events: events),
+            drawn: Self.stonesDrawn(start: start, events: events),
             turnsPlayed: events.turnCount,
             players: seating.count,
-            seat: seating.firstIndex(of: "Harmony") ?? 0,
-            endsAfter: endsAfter,
-            endForecast: endForecast)
+            seat: seating.firstIndex(of: Self.harmonyName) ?? 0,
+            endsAfter: endsAfter)
     }
 
-    /// Everything that has left the bag: the fifteen of the setup and three
-    /// per turn since. The setup's stones are the ones the sample display
-    /// started with, the rest come out of the log.
-    private func stonesDrawn(events: [GameEvent]) -> [Stone: Int] {
-        var drawn: [Stone: Int] = [:]
-        for field in Sample.display {
-            for stone in field.stones { drawn[stone, default: 0] += 1 }
+    /// Everything that has left the bag: the display as the game was set up
+    /// and every refill entered since, Harmony's own turns included — she
+    /// empties a space like anyone else, and the table refills it from the
+    /// same bag.
+    static func stonesDrawn(start: GameState, events: [GameEvent]) -> [Stone: Int] {
+        let refills = events.compactMap { event -> [Stone]? in
+            switch event {
+            case let .opponentTurn(turn): turn.refill
+            case let .harmonyTurn(move): move.refill
+            case .correction: nil
+            }
         }
-        for event in events {
-            guard case let .opponentTurn(turn) = event else { continue }
-            for stone in turn.refill { drawn[stone, default: 0] += 1 }
-        }
-        return drawn
+        return BagKnowledge.drawn(setup: start.display.map(\.stones), refills: refills)
     }
 }
 
@@ -91,7 +90,7 @@ extension Array where Element == GameEvent {
             }
             state.apply(event)
         }
-        let harmony = start.seating.firstIndex(of: "Harmony")
+        let harmony = start.seating.firstIndex(of: GameState.harmonyName)
         return start.seating.indices.filter { $0 != harmony }.map { ($0, taken[$0] ?? []) }
     }
 }
@@ -114,17 +113,16 @@ extension Suggestion {
     }
 
     /// Why this move and not the next best one.
-    private var asRationale: MoveRationale {
+    var asRationale: MoveRationale {
         // A prospect is shown apart from a score, so the reason does not
-        // claim more than it can. The engine already keeps them apart: an
-        // outlook carries the probability it was weighted with.
-        let shown = terms.map { term -> ScoreTerm in
-            let isProspect = term.name.hasPrefix("Aussicht")
-                || term.name == "Fluss" || term.name == "Inseln"
-            return ScoreTerm(name: term.name,
-                             points: Int(term.points.rounded()),
-                             prospect: isProspect,
-                             probability: isProspect ? probability(in: term.detail) : nil)
+        // claim more than it can. The engine says what kind of number each
+        // term is, and gives a prospect's gain and probability as numbers.
+        let shown = terms.map { term in
+            ScoreTerm(name: term.name,
+                      points: Int(term.points.rounded()),
+                      kind: TermKind(term.kind),
+                      gain: term.gain.map { Int($0.rounded()) },
+                      probability: term.chance)
         }
 
         return MoveRationale(
@@ -134,21 +132,11 @@ extension Suggestion {
             probabilityNote: "Die Wahrscheinlichkeiten stammen aus dem Beutel, "
                 + "dessen Inhalt Harmony genau kennt.",
             runnerUp: runnerUp.map(notation) ?? "—",
-            runnerUpImmediate: 0,
+            runnerUpImmediate: runnerUpPointsNow ?? 0,
             runnerUpValue: Int((runnerUpValue ?? 0).rounded()),
             gapExplanation: runnerUp == nil
                 ? "Es gab keinen zweiten Zug."
                 : "Verglichen wird der Wert der Stellung, nicht die Punkte.")
-    }
-
-    /// The percentage the engine wrote into the term's detail, back as a
-    /// fraction. Read rather than recomputed, so the screen shows the number
-    /// the search actually used.
-    private func probability(in detail: String?) -> Double? {
-        guard let detail, let percent = detail.split(separator: "×").last else { return nil }
-        let digits = percent.filter(\.isNumber)
-        guard let value = Double(digits), value > 0 else { return nil }
-        return value / 100
     }
 
     private func notation(_ move: Move) -> String { engineNotation(move) }

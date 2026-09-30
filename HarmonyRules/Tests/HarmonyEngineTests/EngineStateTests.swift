@@ -27,6 +27,39 @@ struct EngineStateTests {
         #expect(BagKnowledge(drawn: drawn).count == 105)
     }
 
+    @Test("Gezogen ist die Startauslage und jede Nachfüllung, auch Harmonys eigene")
+    func drawnIsTheSetupAndEveryRefill() {
+        let setup: [[Stone]] = [[.water, .water, .stone], [.wood, .leaves, .field],
+                                [.brick, .brick, .brick], [.stone, .stone, .water],
+                                [.field, .field, .leaves]]
+        let refills: [[Stone]] = [[.wood, .wood, .wood], [.leaves, .water, .brick]]
+        let drawn = BagKnowledge.drawn(setup: setup, refills: refills)
+
+        #expect(drawn.values.reduce(0, +) == 21)
+        #expect(drawn[.water] == 4)      // drei in der Auslage, eines nachgefüllt
+        #expect(drawn[.wood] == 4)
+        #expect(drawn[.brick] == 4)
+        #expect(BagKnowledge(drawn: drawn).count == 99)
+    }
+
+    @Test("Eine andere Startauslage gibt andere Farbanteile im Beutel")
+    func aDifferentSetupGivesDifferentShares() {
+        let blue: [[Stone]] = Array(repeating: [.water, .water, .water], count: 5)
+        let red: [[Stone]] = Array(repeating: [.brick, .brick, .brick], count: 5)
+        let a = BagKnowledge(drawn: BagKnowledge.drawn(setup: blue, refills: []))
+        let b = BagKnowledge(drawn: BagKnowledge.drawn(setup: red, refills: []))
+        #expect(a.remaining(.water) == 8)
+        #expect(b.remaining(.water) == 23)
+        #expect(a.remaining(.brick) == 15)
+        #expect(b.remaining(.brick) == 0)
+    }
+
+    @Test("Ohne Nachfüllung, weil der Beutel leer ist, zählt nichts dazu")
+    func anEmptyRefillAddsNothing() {
+        let setup: [[Stone]] = [[.water, .stone, .wood]]
+        #expect(BagKnowledge.drawn(setup: setup, refills: [[]]).values.reduce(0, +) == 3)
+    }
+
     @Test("Das Beutelwissen ist eine Rechnung, keine Schätzung")
     func whatIsInTheBagIsArithmeticAndNotAGuess() {
         let bag = BagKnowledge(drawn: [.brick: 15])
@@ -92,9 +125,6 @@ struct EngineStateTests {
     func thebagCarriesThirtyFiveTurns() {
         // `regeln-basisspiel.md` rechnet es vor: 105 durch 3.
         #expect(EngineState.turnsInTheBag == 35)
-        #expect(EngineState(turnsPlayed: 0).turnsLeftInGame == 35)
-        #expect(EngineState(turnsPlayed: 35).turnsLeftInGame == 0)
-        #expect(EngineState(turnsPlayed: 40).turnsLeftInGame == 0)
     }
 
     @Test("Von den verbleibenden Zügen gehört Harmony nur jeder soundsovielte")
@@ -272,7 +302,6 @@ struct EngineStateTests {
                                 drawn: [.water: 5, .stone: 5, .wood: 5],
                                 turnsPlayed: 0)
         #expect(state.inconsistencies.isEmpty, "\(state.inconsistencies)")
-        #expect(state.reachableCards.count == 32)
         #expect(state.mayTakeACard)
     }
 }

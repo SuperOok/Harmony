@@ -4,7 +4,7 @@
 //     swift tools/app-icon.swift
 //
 // Writes the plain and the tinted variant into the AppIcon asset set.
-// The colours are those of `Stone.color` in MyApp/Dummy/SampleData.swift.
+// The colours are those of `Stone.color` in MyApp/Game/SampleData.swift.
 
 import CoreGraphics
 import Foundation

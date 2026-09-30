@@ -45,7 +45,7 @@ struct SettingsView: View {
                                        value: settings.cardSpacePrice.formatted(.number))
                     }
                     Stepper(value: $settings.cardSpaceFullFrom, in: 1...12) {
-                        LabeledContent("Voll wert ab",
+                        LabeledContent("Voller Wert ab",
                                        value: "\(settings.cardSpaceFullFrom) Restzügen")
                     }
                 }
@@ -136,7 +136,7 @@ private struct WeightRow: View {
     let standard: Double
     let note: String
 
-    private var digits: Int { step < 0.1 ? 2 : (step < 1 ? (step == 0.05 ? 2 : 1) : 0) }
+    private var digits: Int { step < 0.1 ? 2 : (step < 1 ? 1 : 0) }
 
     private func shown(_ x: Double) -> String {
         x.formatted(.number.precision(.fractionLength(digits)))
