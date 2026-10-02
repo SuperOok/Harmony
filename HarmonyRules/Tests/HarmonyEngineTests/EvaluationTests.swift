@@ -559,4 +559,48 @@ struct EvaluationTests {
         #expect(Evaluator.waitingFor(.tree, 2) == "braune Stapel ohne Grün")
         #expect(Evaluator.waitingFor(.building, 2) == "Gebäude ohne drei Farben")
     }
+
+    // MARK: - Offene Karten
+
+    @Test("Offene Karten zählen nur mit Gewicht, und dann als Aussicht")
+    func openCardsCountOnlyWithAWeight() {
+        let meerkat = card("Erdmännchen", [11: .field, 12: .mountain1], cube: 12)
+        var position = state(stacks: [11: [.field]])
+        position.openCards = [meerkat]
+
+        let ignored = Evaluator.evaluate(position)
+        #expect(!ignored.terms.contains { $0.name.hasPrefix("Aussicht offene Karte") })
+
+        var weights = Weights()
+        weights.openCards = 0.5
+        let counted = Evaluator.evaluate(position, weights: weights)
+        let term = counted.terms.first { $0.name == "Aussicht offene Karte Erdmännchen" }
+        #expect(term != nil)
+        #expect((term?.points ?? 0) > 0)
+        #expect(counted.value > ignored.value)
+    }
+
+    @Test("Sind die Nachbarn des Anwärters einer offenen Karte zugebaut, kostet das Wert")
+    func closingAnOpenCardsSpacesCosts() {
+        // Das Feld auf 11 fehlt nur noch ein Berg daneben; liegt auf jedem
+        // Nachbarn Wasser, braucht das Muster anderswo zwei Steine.
+        let meerkat = card("Erdmännchen", [11: .field, 12: .mountain1], cube: 12)
+        var weights = Weights()
+        weights.openCards = 0.5
+
+        var open = state(stacks: [11: [.field]])
+        open.openCards = [meerkat]
+        var stacks: [Int: [Stone]] = [11: [.field]]
+        for cell in BoardSide.a.board.neighbours(11) { stacks[cell] = [.water] }
+        var blocked = state(stacks: stacks)
+        blocked.openCards = [meerkat]
+
+        // What the weight adds: the stones themselves change the rest of the
+        // value, so compare each position with and without the weight.
+        func added(_ position: EngineState) -> Double {
+            Evaluator.evaluate(position, weights: weights).value
+                - Evaluator.evaluate(position).value
+        }
+        #expect(added(open) > added(blocked))
+    }
 }

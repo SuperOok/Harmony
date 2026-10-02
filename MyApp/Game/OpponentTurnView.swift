@@ -95,7 +95,8 @@ struct OpponentTurnView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { historyOpen = true } label: {
-                        Text(isHarmony ? "\(session.turnCount) Züge" : "\(input.taps) ×")
+                        Text(isHarmony ? "\(session.turnCount) \(session.turnCount == 1 ? "Zug" : "Züge")"
+                                       : "\(input.taps) ×")
                             .font(.footnote.monospacedDigit().weight(.semibold))
                             .padding(.horizontal, 10).padding(.vertical, 4)
                             .background(Capsule().fill(.quaternary))

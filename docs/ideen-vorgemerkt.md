@@ -247,6 +247,16 @@ schwach erweist. Das gehört gemessen — das Selbstspiel dafür läuft seit dem
 2026-09-23, gemessen ist es noch nicht — und hängt damit an derselben
 offenen Frage wie die Gewichte.
 
+**Gemessen am 2026-10-02 für die offenen Karten: kein Unterschied.**
+`Weights.openCards` (Standard 0) rechnet die beste Aussicht der offenen
+Karten mit einem Anteil ein, `HarmonyMatch` kennt es als `offene=`. Standard
+gegen `offene=0.5`, 40 Austeilungen in beiden Sitzordnungen, 80 Partien, nichts
+beanstandet: **0,4 ± 1,1 Punkte** für den Standard, vorn in 51 % der
+Begegnungen. Weder besser noch schlechter; ein Effekt über etwa zwei Punkte
+ist ausgeschlossen, darunter bleibt er offen. Der Standard bleibt bei 0. Nicht
+gemessen: andere Anteile (etwa 1,0), die Seite B und drei bis vier
+Spielerinnen.
+
 ## Offen aus Phase 6 — das Ende der Partie
 
 **Die Vorhersage des Spielendes eichen.** ❓ Seit dem 2026-09-22 schreibt

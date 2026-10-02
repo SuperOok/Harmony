@@ -37,6 +37,9 @@ public struct EngineSettings: Sendable, Equatable, Codable {
     public var outlook = Weights().outlook
     /// How much the animal cards' prospects count.
     public var cardProspects = 1.0
+    /// How much the cards that only lie open count, as a share of one in
+    /// hand. See `Weights.openCards`.
+    public var openCardProspects = Weights().openCards
     /// How much the landscapes' prospects count — rivers, islands, the
     /// sleeping ones.
     public var landscapeProspects = 1.0
@@ -66,6 +69,7 @@ public struct EngineSettings: Sendable, Equatable, Codable {
     public var weights: Weights {
         var weights = Weights()
         weights.candidates = cardProspects
+        weights.openCards = openCardProspects
         weights.landscape = landscapeProspects
         weights.variety = variety
         weights.outlook = outlook
@@ -92,6 +96,8 @@ public struct EngineSettings: Sendable, Equatable, Codable {
         outlook = try c.decodeIfPresent(Double.self, forKey: .outlook) ?? d.outlook
         cardProspects = try c.decodeIfPresent(Double.self, forKey: .cardProspects)
             ?? d.cardProspects
+        openCardProspects = try c.decodeIfPresent(Double.self, forKey: .openCardProspects)
+            ?? d.openCardProspects
         landscapeProspects = try c.decodeIfPresent(Double.self, forKey: .landscapeProspects)
             ?? d.landscapeProspects
         variety = try c.decodeIfPresent(Double.self, forKey: .variety) ?? d.variety

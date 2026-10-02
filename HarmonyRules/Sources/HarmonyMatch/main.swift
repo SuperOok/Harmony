@@ -14,7 +14,7 @@ import HarmonyTable
 // A setting is `standard`, `ohne-kartenplatz` or `ohne-vorhersage`, with
 // changes after a `+`: `standard+preis=7`, `standard+bedenkzeit=10+outlook=0.7`.
 // Keys: vorhersage, kartenplatz (an/aus), preis, vollab, outlook,
-// tierkarten, landschaften, vielfalt, bedenkzeit (seconds).
+// tierkarten, offene, landschaften, vielfalt, bedenkzeit (seconds).
 // `docs/06-durchstich.md`, *Engines gegeneinander*, has the reasoning.
 
 setvbuf(stdout, nil, _IOLBF, 0)
@@ -59,6 +59,7 @@ struct Variant: Sendable {
             case "vollab": settings.cardSpaceFullFrom = Int(number())
             case "outlook": settings.outlook = number()
             case "tierkarten": settings.cardProspects = number()
+            case "offene": settings.openCardProspects = number()
             case "landschaften": settings.landscapeProspects = number()
             case "vielfalt": settings.variety = number()
             case "bedenkzeit": settings.thinkingLimit = Int(number())
@@ -211,6 +212,7 @@ for variant in variants {
     print("  \(variant): Vorhersage \(s.forecastEnd ? "an" : "aus"), Kartenplatz "
           + (s.priceCardSpaces ? "\(f(s.cardSpacePrice, 1)) ab \(s.cardSpaceFullFrom)" : "aus")
           + ", Aussicht \(f(s.outlook, 2)), Tierkarten \(f(s.cardProspects, 1)), "
+          + "offene Karten \(f(s.openCardProspects, 2)), "
           + "Landschaften \(f(s.landscapeProspects, 1)), Vielfalt \(f(s.variety, 2)), "
           + "Bedenkzeit \(s.thinkingLimit.map { "\($0) s" } ?? "unbegrenzt")")
 }

@@ -75,6 +75,13 @@ public struct Evaluation: Sendable {
 public struct Weights: Sendable, Equatable, Codable {
     public var pointsNow = 1.0
     public var candidates = 1.0
+    /// How much the best candidate of a card that only **lies open** counts,
+    /// as a share of what it would count in hand. Zero: the evaluation sees
+    /// only the cards in hand, and a stone that closes a space an open card
+    /// would have needed costs nothing. Above zero it costs that share of the
+    /// card's prospect — discounted because the card may be gone by the time
+    /// she takes it. **Not measured** until `HarmonyMatch` has run it.
+    public var openCards = 0.0
     public var landscape = 1.0
     public var variety = 0.05
 
@@ -460,6 +467,10 @@ public enum Evaluator {
                               available: available)
         let (cards, asleep) = share(promises, sleepers, weights: weights)
         terms.append(contentsOf: cards)
+        if let lying = openCardTerm(state, weights: weights,
+                                    available: available, prepared: prepared) {
+            terms.append(lying)
+        }
         terms.append(contentsOf: river)
         terms.append(contentsOf: asleep)
 
@@ -581,6 +592,31 @@ public enum Evaluator {
                                detail: prospect.detail),
                     stones: prospect.habitat.missingStoneCount)
         }
+    }
+
+    /// The best candidate among the cards that lie open, which she may take
+    /// on a later turn. `nil` while the weight is zero, with no card to take
+    /// them into, or when none of them has a candidate left.
+    static func openCardTerm(_ state: EngineState, weights: Weights,
+                             available: Availability,
+                             prepared: Prepared?) -> Term? {
+        guard weights.openCards > 0, state.mayTakeACard else { return nil }
+        let laid = prepared.map { state.cubeCells.subtracting($0.cubes) } ?? []
+        let best = state.openCards.compactMap { card -> Prospect? in
+            if let ready = prepared?.prospects[card.name],
+               !laid.contains(where: { ready.habitat.missing[$0] != nil
+                                       || ready.habitat.cubeCell == $0 }) {
+                return ready
+            }
+            return habitats(of: card, on: state, prepared)
+                .compactMap { prospect(HeldCard(card: card), $0, state, available) }
+                .max { $0.worth < $1.worth }
+        }.max { $0.worth < $1.worth }
+        guard let best else { return nil }
+        return Term(name: "Aussicht offene Karte \(best.card)",
+                    points: best.worth * weights.openCards * weights.outlook,
+                    kind: .prospect, gain: Double(best.gain), chance: best.chance,
+                    detail: best.detail)
     }
 
     /// A candidate's term, with the stones it still has to be paid in.
