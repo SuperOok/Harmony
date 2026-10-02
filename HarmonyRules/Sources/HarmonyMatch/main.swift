@@ -100,6 +100,21 @@ struct Options {
     }
 }
 
+/// Where a seat's points came from, for the table at the end of a run.
+enum Breakdown {
+    /// The first word of a score group's title, which tells the landscapes
+    /// apart on both sides of the board.
+    static let titles = ["Bäume", "Berge", "Felder", "Wasser", "Gebäude"]
+
+    static func points(of seat: Int, in table: Table) -> [Int] {
+        let groups = BoardScoring(side: table.side, columns: table.side.columns,
+                                  stacks: table.seats[seat].stacks).breakdown()
+        return titles.map { title in
+            groups.filter { $0.title.hasPrefix(title) }.reduce(0) { $0 + $1.points }
+        }
+    }
+}
+
 /// One game: which setting sat where, and how it went.
 struct GameResult: Sendable, Codable {
     let deal: Int
@@ -110,6 +125,16 @@ struct GameResult: Sendable, Codable {
     var cards: [Int] = []
     var cardsTaken: [Int] = []
     var seconds: [Double] = []
+    /// Points per landscape, in the order of `Breakdown.titles`, for each seat.
+    var byLandscape: [[Int]] = []
+    /// Cards that reached their last cube, and cubes laid and left on the
+    /// cards still held, for each seat.
+    var cardsFinished: [Int] = []
+    var cubesLaid: [Int] = []
+    var cubesLeft: [Int] = []
+    /// Stones down and spaces left empty at the end, for each seat.
+    var stonesDown: [Int] = []
+    var emptySpaces: [Int] = []
     var turns = 0
     /// Anything the referee objected to. A game with an objection is not
     /// counted.
@@ -160,6 +185,14 @@ func play(deal: Int, rotation: Int, options: Options, cards: [AnimalCard]) -> Ga
     result.landscape = (0..<players).map(table.landscape(of:))
     result.cards = (0..<players).map(table.cardPoints(of:))
     result.cardsTaken = table.seats.map(\.hand.count)
+    result.byLandscape = (0..<players).map { Breakdown.points(of: $0, in: table) }
+    result.cardsFinished = table.seats.map { $0.hand.count(where: \.isFinished) }
+    result.cubesLaid = table.seats.map { $0.hand.reduce(0) { $0 + $1.cubesPlaced } }
+    result.cubesLeft = table.seats.map {
+        $0.hand.reduce(0) { $0 + $1.card.points.count - $1.cubesPlaced }
+    }
+    result.stonesDown = table.seats.map { $0.stacks.values.reduce(0) { $0 + $1.count } }
+    result.emptySpaces = table.seats.map { table.side.board.cells.count - $0.stacks.count }
     result.seconds = seconds
     return result
 }
@@ -284,6 +317,40 @@ for variant in variants {
           + pad(f(mean(ranks), 2), 7) + pad("\(f(100 * wins / Double(max(scores.count, 1)), 0)) %", 8)
           + f(turns > 0 ? seconds / turns : 0))
 }
+
+/// Where the points come from, per setting: the landscapes, and what the
+/// cards made of their cubes. The question behind it is which part of the
+/// score falls short, not which setting wins.
+print("\nWoher die Punkte kommen (Mittel je Partie)")
+print(pad("Einstellung", 26) + Breakdown.titles.map { pad($0, 9) }.joined()
+      + pad("Karten", 8) + pad("fertig", 8) + pad("Würfel", 8) + pad("offen", 7)
+      + pad("Steine", 8) + "leer")
+for variant in variants {
+    var perLandscape = Array(repeating: 0.0, count: Breakdown.titles.count)
+    var card = 0.0, finished = 0.0, laid = 0.0, left = 0.0, stones = 0.0, empty = 0.0
+    var seats = 0.0
+    for game in valid where game.byLandscape.count == game.seats.count {
+        for seat in game.seats.indices where game.seats[seat] == variant {
+            seats += 1
+            for (index, value) in game.byLandscape[seat].enumerated() {
+                perLandscape[index] += Double(value)
+            }
+            card += Double(game.cards[seat])
+            finished += Double(game.cardsFinished[seat])
+            laid += Double(game.cubesLaid[seat])
+            left += Double(game.cubesLeft[seat])
+            stones += Double(game.stonesDown[seat])
+            empty += Double(game.emptySpaces[seat])
+        }
+    }
+    let n = max(seats, 1)
+    print(pad(variant, 26) + perLandscape.map { pad(f($0 / n), 9) }.joined()
+          + pad(f(card / n), 8) + pad(f(finished / n), 8) + pad(f(laid / n), 8)
+          + pad(f(left / n), 7) + pad(f(stones / n), 8) + f(empty / n))
+}
+print("  Karten: Punkte der Tierkarten · fertig: Karten mit letztem Würfel · "
+      + "Würfel: gelegt · offen: noch auf den gehaltenen Karten · "
+      + "leer: freie Felder am Ende")
 
 if variants.count > 1 {
     print("\nPaarweise: Punkte der ersten minus der zweiten, je Austeilung über alle "
