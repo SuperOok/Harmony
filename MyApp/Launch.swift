@@ -18,6 +18,16 @@ enum Launch {
     }
 
     static var showsStartScreen: Bool { has("-showStart") || !skipsIntro }
+
+    /// Opens on a prepared position, not on a game of its own. Such a run
+    /// neither reads nor writes the saved game: the sample position would
+    /// come back the next time the app is opened for real, looking exactly
+    /// like a game somebody played.
+    static var isTestEntry: Bool { ["-harmonyTurn", "-endScore", "-endScoreB"].contains { has($0) } }
+
+    /// Skip to the final score instead of playing the five and thirty turns
+    /// that empty the bag.
+    static var showsFinalScore: Bool { has("-endScore") || has("-endScoreB") }
 }
 
 /// The settings for Harmony's thinking, kept between launches.

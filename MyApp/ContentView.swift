@@ -6,12 +6,11 @@ struct ContentView: View {
     /// argument skips it and starts on Harmony's screen with sample data,
     /// which is what `pruefverfahren.md` foresees as a test hook.
     @State private var startState: GameState? = {
-        let arguments = ProcessInfo.processInfo.arguments
-        // Ein Prüfeinstieg, der mit leerem Tisch beginnen muss.
-        if arguments.contains("-forgetGame") { GameStore.discard() }
-        if arguments.contains("-endScoreB") { return GameState.finished(sideB: true) }
-        if arguments.contains("-endScore") { return GameState.finished() }
-        if arguments.contains("-harmonyTurn") {
+        // A test hook that has to begin with an empty table.
+        if Launch.has("-forgetGame") { GameStore.discard() }
+        if Launch.has("-endScoreB") { return GameState.finished(sideB: true) }
+        if Launch.has("-endScore") { return GameState.finished() }
+        if Launch.has("-harmonyTurn") {
             return GameState.initial(seat: Sample.turnOrder.count - 1)
         }
         // A game left open comes back as it was. `04-architektur.md` asks
@@ -22,25 +21,9 @@ struct ContentView: View {
 
     /// What was played before the app was last put away.
     @State private var restored: [GameEvent] = {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard !arguments.contains("-endScore"), !arguments.contains("-endScoreB"),
-              !arguments.contains("-harmonyTurn")
-        else { return [] }
+        guard !Launch.isTestEntry else { return [] }
         return GameStore.load()?.events ?? []
     }()
-
-    /// Set by `-endScore`: skip to the final score instead of playing the
-    /// five and thirty turns that empty the bag.
-    private let finished = ProcessInfo.processInfo.arguments.contains("-endScore")
-        || ProcessInfo.processInfo.arguments.contains("-endScoreB")
-
-    /// Started through one of the test hooks rather than by being tapped.
-    ///
-    /// Such a run must not write: the sample position would come back the
-    /// next time the app is opened for real, looking exactly like a game
-    /// somebody played.
-    private let isTestEntry = ["-harmonyTurn", "-endScore", "-endScoreB"]
-        .contains { ProcessInfo.processInfo.arguments.contains($0) }
 
     /// The start screen comes first, after the splash, with a game left
     /// open or without. The test hooks skip it, as they skip the splash.
@@ -85,9 +68,9 @@ struct ContentView: View {
         } else if let startState {
             OpponentTurnView(startState: startState,
                              restored: restored,
-                             finished: finished,
+                             finished: Launch.showsFinalScore,
                              onEventsChanged: { events in
-                                 guard !isTestEntry else { return }
+                                 guard !Launch.isTestEntry else { return }
                                  GameStore.save(start: startState, events: events)
                              },
                              onNewGame: {

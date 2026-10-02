@@ -1,6 +1,6 @@
 #!/bin/zsh
-# Runs the app-layer tests — the target `HarmonyTests`: the bridge to the
-# engine, the event log, the saved game, the session, the reasoning. They run
+# Runs the app-layer tests — the target `HarmonyTests`: the game's knowledge,
+# the event log, the saved game, the session, the reasoning. They run
 # in the simulator with the app as host, but need no interface and take
 # seconds once built.
 #

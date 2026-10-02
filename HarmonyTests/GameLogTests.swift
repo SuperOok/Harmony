@@ -48,12 +48,11 @@ struct GameLogTests {
     }
 
     @Test("Auch die Engine sieht nur die Felder, die es noch gibt")
-    func theEngineSeesOnlyTheSpacesThatExist() throws {
+    func theEngineSeesOnlyTheSpacesThatExist() {
         let start = GameState.initial()
         let events = [Self.opponentTurn(taken: 0, refill: [])]
         let state = events.state(from: start)
-        let engine = try #require(state.engineState(events: events, start: start))
-        #expect(engine.display.count == 4)
+        #expect(state.knowledge.display.count == 4)
     }
 
     // MARK: - What a saved game may contain
@@ -79,6 +78,13 @@ struct GameLogTests {
         var state = GameState.initial()
         #expect(state.isConsistent)
         state.seatIndex = 3
+        #expect(!state.isConsistent)
+    }
+
+    @Test("Eine Sitzordnung ohne Harmony ist keine zeigbare Stellung")
+    func aSeatingWithoutHarmonyIsNotShowable() {
+        var state = GameState.initial()
+        state.seating = state.seating.map { $0 == GameState.harmonyName ? "Anke" : $0 }
         #expect(!state.isConsistent)
     }
 

@@ -17,8 +17,8 @@ Xcode-Projekt prüfbar.
 **Wo es steht:** Stand 2026-09-29. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 221 Regelfällen (`tools/tests.sh`, gut drei
-Sekunden), 35 App-Fällen für Brücke, Verlauf, Spielstand, Sitzung und
+Weglegen. Geprüft wird mit 233 Regelfällen (`tools/tests.sh`, gut drei
+Sekunden), 41 App-Fällen für Wissen der Partie, Verlauf, Spielstand, Sitzung und
 Begründung (`tools/apptests.sh`) und acht Oberflächenfällen
 (`tools/uitests.sh`).
 
@@ -31,6 +31,20 @@ Steinen rechnete, die niemand nehmen kann. Dazu die Begründung: Sie hielt
 Erwartungswerte für Punkte und rechnete Aussichten doppelt herunter, weil
 `Term` seine Art nicht kannte. Jetzt trägt `Term.kind` die Art, `gain` und
 `chance` als Zahlen.
+
+**Seit dem 2026-09-30 gibt es einen Zustand statt zwei.** `GameState`
+umschließt einen `EngineState` (`knowledge`) und hält nur, was die Engine
+nicht braucht: die Namen der Sitzordnung und wer am Zug ist. Ereignisse
+tragen sich über `recordTurn`, `recordOwnTurn` und `correct` in der Engine ein
+(`EngineState+Record.swift`); die Brücke, die zwischen zwei Zuständen
+übersetzte, ist weg, die Beutelzählung entsteht ohne Umweg. Geprüft ist das
+zweifach: `RecordEquivalenceTests` spielt Partien am `Table` und trägt sie
+ein — die Sicht muss Zug für Zug der von `Table.view(for:)` gleichen —, und
+vor dem Umbau wurde von 152 Stellungen aus vier erzeugten Partien festgehalten,
+was die Engine bekommt; danach war es Zeile für Zeile dasselbe. `Table.play`
+und `SelfPlay` benutzen den Kern **nicht**: Sonst wäre der Abgleich kein
+zweiter Weg mehr, und die Reihenfolge von Auslage und offenen Karten, die
+Gleichstände der Suche mitbestimmt, hätte sich für `HarmonyMatch` geändert.
 
 **Seit dem 2026-09-25 beginnt die App mit einem Start-Bildschirm** nach der
 Startanimation: Partie fortsetzen oder neu beginnen, dazu *Spielstärke* und
@@ -150,8 +164,8 @@ HarmonyRules/          Swift Package: drei Bibliotheken samt Tests, drei
   Sources/HarmonyTable   der ganze Tisch samt Schiedsrichter, für Engines
                          gegeneinander
   Sources/HarmonyMatch   2 bis 4 Engines mit verschiedenen Einstellungen
-HarmonyTests/          App-Tests (im Simulator, mit der App als Host): Brücke
-                       zur Engine, Verlauf, Spielstand, Sitzung, Begründung
+HarmonyTests/          App-Tests (im Simulator, mit der App als Host): Wissen
+                       der Partie, Verlauf, Spielstand, Sitzung, Begründung
 HarmonyUITests/        Oberflächentests: die Antippgrenzen
 Harmony-Info.plist     Ergänzung zum erzeugten Info.plist: Farbe des
                        Startbildschirms (`LaunchBackground`), weil Xcode
@@ -165,9 +179,9 @@ MyApp/                 der Rest des Quellcodes
   Start/               Start-Bildschirm, Spielstärke, Über Harmony
   Game/                die Spielansichten, entstanden als Klickdummy in
                        Phase 5, heute mit Engine
-    EngineBridge.swift übersetzt zwischen Ansichten und Engine
+    EngineBridge.swift Vorschlag → Zug auf dem Bildschirm, Verlauf → Steine der anderen
     GameStore.swift    der gespeicherte Spielstand, beim Laden nachgespielt
-    GameLog.swift      Ereignisse, Stellung daraus, Spielende
+    GameLog.swift      Ereignisse, die Stellung (`GameState`), Spielende
     GameSession.swift  die laufende Partie: Ereignisse und was daraus folgt
     HarmonySearch.swift die Suche nach Harmonys Zug, wie der Bildschirm sie sieht
     SampleData.swift   Attrappendaten, dazu die Farben der Steine
@@ -252,7 +266,7 @@ tools/tests.sh
 `swift test`, das Skript taugt also für eine Automatik. Direkt geht es
 genauso: `cd HarmonyRules && swift test`.
 
-Die App-Schicht — Brücke, Verlauf, Spielstand, Sitzung, Begründung — hat
+Die App-Schicht — Wissen der Partie, Verlauf, Spielstand, Sitzung, Begründung — hat
 eigene Fälle im Ziel `HarmonyTests`. Sie laufen im Simulator, aber ohne
 Bedienung und in Sekunden:
 

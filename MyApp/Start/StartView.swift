@@ -89,16 +89,22 @@ struct StartView: View {
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("start-continue")
             }
-            Button {
-                if saved == nil { onNewGame() } else { confirmingNewGame = true }
-            } label: {
-                Text("Neue Partie").font(.headline).frame(maxWidth: .infinity)
+            if saved == nil {
+                newGameButton.buttonStyle(.borderedProminent)
+            } else {
+                newGameButton.buttonStyle(.bordered)
             }
-            .buttonStyle(saved == nil ? AnyPrimitiveButtonStyle(.borderedProminent)
-                                      : AnyPrimitiveButtonStyle(.bordered))
-            .accessibilityIdentifier("start-new-game")
         }
         .controlSize(.large)
+    }
+
+    private var newGameButton: some View {
+        Button {
+            if saved == nil { onNewGame() } else { confirmingNewGame = true }
+        } label: {
+            Text("Neue Partie").font(.headline).frame(maxWidth: .infinity)
+        }
+        .accessibilityIdentifier("start-new-game")
     }
 
     private var links: some View {
@@ -138,17 +144,6 @@ struct StartView: View {
 }
 
 private enum StartLink: Hashable { case settings, about }
-
-/// Two button styles behind one type, since `buttonStyle` wants one.
-private struct AnyPrimitiveButtonStyle: PrimitiveButtonStyle {
-    private let make: (Configuration) -> AnyView
-
-    init<S: PrimitiveButtonStyle>(_ style: S) {
-        make = { AnyView(style.makeBody(configuration: $0)) }
-    }
-
-    func makeBody(configuration: Configuration) -> some View { make(configuration) }
-}
 
 /// The version as the About screen and the start screen show it.
 enum AppVersion {

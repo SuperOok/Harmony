@@ -140,8 +140,11 @@ struct OpponentTurnView: View {
     private func think() {
         search.supersede()
         guard isHarmony, !sampleOnly else { return }
-        search.begin(position: state.engineState(events: session.events, start: startState,
-                                                 endsAfter: session.end.endsAfter),
+        // What the log has announced about the end reaches the engine here: it
+        // is the only way a foreign full board gets to it.
+        var position = state.knowledge
+        position.endsAfter = session.end.endsAfter
+        search.begin(position: position,
                      takes: session.events.takes(from: startState),
                      names: state.seating,
                      settings: SettingsStore.current,

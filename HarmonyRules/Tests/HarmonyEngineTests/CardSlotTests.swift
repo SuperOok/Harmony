@@ -115,4 +115,13 @@ struct CardSlotTests {
         let expected = [0, 1, 2.4, 4]
         #expect(zip(lost, expected).allSatisfy { abs($0 - $1) < 1e-9 }, "\(lost)")
     }
+
+    @Test("Die Staffel hat einen Eintrag je Karte, die die Hand halten darf")
+    func theGradingCoversTheCardLimit() {
+        #expect(Weights().freeSlots.count == EngineState.cardLimit)
+        #expect(EngineSettings.standard.weights.freeSlots.count == EngineState.cardLimit)
+        var unpriced = EngineSettings.standard
+        unpriced.priceCardSpaces = false
+        #expect(unpriced.weights.freeSlots.count == EngineState.cardLimit)
+    }
 }

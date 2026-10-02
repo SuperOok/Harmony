@@ -78,6 +78,16 @@ struct GameStoreTests {
         #expect(GameStore.load(from: url) == nil)
     }
 
+    @Test("Eine Sitzordnung ohne Harmony verwirft die Datei")
+    func aSeatingWithoutHarmonyDiscardsTheFile() {
+        let url = temporaryFile()
+        defer { GameStore.discard(at: url) }
+        var start = GameState.initial()
+        start.seating = start.seating.map { $0 == GameState.harmonyName ? "Anke" : $0 }
+        GameStore.save(start: start, events: [], to: url)
+        #expect(GameStore.load(from: url) == nil)
+    }
+
     @Test("Wo nicht geschrieben werden kann, meldet das Speichern es")
     func savingReportsAFailure() {
         let url = URL(fileURLWithPath: "/nicht-vorhanden-\(UUID().uuidString)/spielstand.json")

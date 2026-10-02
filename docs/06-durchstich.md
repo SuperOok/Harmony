@@ -792,12 +792,15 @@ rechnen alle Kerne an einer Stellung weiter, in der niemand mehr steht.
    gedreht. Nach der Nacht vom 2026-09-20 sieht man sie nach Sekunden, was
    das Argument abschwächt, aber die Reihenfolge nicht umdreht: Der teuerste
    Zug dauert weiter fast eine Minute.
-2. **Den Dummy-Zustand ablösen.** Eine **Brücke** steht seit dem 2026-09-20
-   (`MyApp/Game/EngineBridge.swift`): Sie übersetzt den Zustand des
-   Klickdummys in einen `EngineState` und den Vorschlag zurück in einen
-   `HarmonyMove`. Damit läuft die Engine auf dem Gerät. Die Ablösung selbst
-   — `EngineState` als der **eine** Zustand statt zweier, die eine Brücke
-   auseinanderhält — steht weiter aus.
+2. **Den Dummy-Zustand ablösen.** *Erledigt am 2026-09-30.* Eine **Brücke**
+   stand seit dem 2026-09-20 (`MyApp/Game/EngineBridge.swift`): Sie übersetzte
+   den Zustand des Klickdummys in einen `EngineState` und den Vorschlag
+   zurück in einen `HarmonyMove`. Zwei ihrer Fehler fanden sich erst bei der
+   Durchsicht am 2026-09-29 — die Beutelzählung und die Felder bei leerem
+   Beutel. Jetzt ist `EngineState` der **eine** Zustand: `GameState` umschließt
+   ihn, Ereignisse tragen sich über `recordTurn`, `recordOwnTurn` und
+   `correct` ein. Was von der Brücke blieb, geht in die andere Richtung
+   (Vorschlag → Anzeige).
 
    Was dabei schon erledigt ist: Eine Partie beginnt leer und füllt sich,
    Harmony nimmt Karten, ihr Zug leert und füllt ein Auslagenfeld, der

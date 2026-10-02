@@ -23,9 +23,6 @@ final class HarmonySearch {
     private(set) var took: TimeInterval?
     private(set) var weighed = 0
     private(set) var complete = true
-    /// The position could not be handed to the engine — a card it does not
-    /// know. There is no suggestion then, and the screen says so.
-    private(set) var failed = false
     /// Where the running search leaves its reports. A fresh one per search:
     /// the old one would still carry the last position's state, and that
     /// would not be recognisable as such on the screen.
@@ -50,8 +47,7 @@ final class HarmonySearch {
     /// "That is enough": the search returns the best turn it had reached.
     func stop() { task?.cancel() }
 
-    /// Starts on a position. `position` is `nil` when the app could not make
-    /// one out of what it holds.
+    /// Starts on a position.
     ///
     /// - Parameters:
     ///   - takes: what the others have taken, for the end forecast.
@@ -60,13 +56,11 @@ final class HarmonySearch {
     ///     next turn on.
     ///   - logsSearch: write what the search cost to the standard output —
     ///     the only way to learn it on a device.
-    func begin(position: EngineState?, takes: [(seat: Int, turns: [[Stone]])],
+    func begin(position: EngineState, takes: [(seat: Int, turns: [[Stone]])],
                names: [String], settings: EngineSettings, logsSearch: Bool) {
         // Cleared first: a suggestion left over from the previous position
         // must not stand where this one's belongs.
         computed = nil
-        guard let position else { failed = true; return }
-        failed = false
         took = nil
         let started = Date()
         since = started

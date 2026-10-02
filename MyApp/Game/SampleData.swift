@@ -64,11 +64,13 @@ enum Sample {
     ]
 
     /// The launch argument seeds the five longest names, so the layout can
-    /// be looked at in its worst case — a hook like `-harmonyTurn`.
+    /// be looked at in its worst case — a hook like `-harmonyTurn`. None of
+    /// the cards Harmony holds in the sample lies open: a card cannot be in
+    /// two places.
     static var openCards: [String] {
-        ProcessInfo.processInfo.arguments.contains("-longCards")
+        Launch.has("-longCards")
         ? ["Eichhörnchen", "Erdmännchen", "Fledermaus", "Marienkäfer", "Wüstenfuchs"]
-        : ["Pinguin", "Biene", "Lachs", "Wolf", "Rabe"]
+        : ["Pinguin", "Eisvogel", "Hase", "Wolf", "Rabe"]
     }
 
     /// Alphabetical, the way the open cards are always shown: the display

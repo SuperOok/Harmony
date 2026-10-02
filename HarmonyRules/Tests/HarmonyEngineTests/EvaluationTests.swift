@@ -548,4 +548,15 @@ struct EvaluationTests {
                              hand: [HeldCard(card: meerkat)])
         #expect(Evaluator.evaluate(position).value == Evaluator.evaluate(position).value)
     }
+
+    @Test("Was ein Gebäude, Berg oder Stapel erwartet, steht im Singular und im Plural richtig")
+    func waitingForInflects() {
+        #expect(Evaluator.waitingFor(.mountain, 1) == "Berg ohne Bergnachbarn")
+        #expect(Evaluator.waitingFor(.mountain, 2) == "Berge ohne Bergnachbarn")
+        #expect(Evaluator.waitingFor(.field, 1) == "einzelner gelber Stein")
+        #expect(Evaluator.waitingFor(.field, 3) == "einzelne gelbe Steine")
+        #expect(Evaluator.waitingFor(.tree, 1) == "brauner Stapel ohne Grün")
+        #expect(Evaluator.waitingFor(.tree, 2) == "braune Stapel ohne Grün")
+        #expect(Evaluator.waitingFor(.building, 2) == "Gebäude ohne drei Farben")
+    }
 }

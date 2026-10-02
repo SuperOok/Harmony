@@ -33,17 +33,17 @@ struct Variant: Sendable {
             guard parts.count == 1 else { return nil }
         case "ohne":
             guard parts.count == 1 else { return nil }
-            weights.freeSlots = [0, 0, 0, 0]
+            weights.freeSlots = Array(repeating: 0, count: EngineState.cardLimit)
         case "stufe":
             guard parts.count >= 2, let w = Double(parts[1]) else { return nil }
             weights.freeSlots = Self.grading.map { $0 * w }
         case "flach":
             guard parts.count >= 2, let w = Double(parts[1]) else { return nil }
-            weights.freeSlots = [w, w, w, w]
+            weights.freeSlots = Array(repeating: w, count: EngineState.cardLimit)
         case "liste":
             guard parts.count >= 2 else { return nil }
             let worths = parts[1].split(separator: "/").compactMap { Double($0) }
-            guard worths.count == 4 else { return nil }
+            guard worths.count == EngineState.cardLimit else { return nil }
             weights.freeSlots = worths
         default:
             return nil

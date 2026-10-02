@@ -98,6 +98,36 @@ struct RationaleTests {
         #expect(restored.runnerUpImmediate == 3)
     }
 
+    @Test("Jedes Feld der Begründung übersteht das Speichern")
+    func everyFieldOfTheRationaleSurvivesSaving() throws {
+        let terms = [
+            ScoreTerm(name: "Gebäude", points: 4, kind: .points),
+            ScoreTerm(name: "Fluss", points: 2, kind: .prospect, gain: 6, probability: 0.35),
+        ]
+        let rationale = MoveRationale(immediate: 5, value: 9, terms: terms,
+                                      probabilityNote: "aus dem Beutel",
+                                      runnerUp: "Zug B", runnerUpImmediate: 3,
+                                      runnerUpValue: 7, gapExplanation: "Zwei Punkte mehr")
+        let data = try JSONEncoder().encode(SavedRationale(rationale))
+        let restored = try JSONDecoder().decode(SavedRationale.self, from: data).restored
+
+        #expect(restored.immediate == 5)
+        #expect(restored.value == 9)
+        #expect(restored.probabilityNote == "aus dem Beutel")
+        #expect(restored.runnerUp == "Zug B")
+        #expect(restored.runnerUpImmediate == 3)
+        #expect(restored.runnerUpValue == 7)
+        #expect(restored.gapExplanation == "Zwei Punkte mehr")
+        #expect(restored.terms.count == 2)
+        for (was, now) in zip(terms, restored.terms) {
+            #expect(now.name == was.name)
+            #expect(now.points == was.points)
+            #expect(now.kind == was.kind)
+            #expect(now.gain == was.gain)
+            #expect(now.probability == was.probability)
+        }
+    }
+
     @Test("Ein älterer Spielstand ohne Art wird nach seinem Aussichts-Merkmal gelesen")
     func anOlderFileWithoutAKindIsReadByItsProspectFlag() throws {
         let json = #"{"name":"Fluss","points":3,"prospect":true,"probability":0.5}"#

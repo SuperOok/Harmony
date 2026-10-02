@@ -79,33 +79,97 @@ enum GameEvent {
     }
 }
 
+/// The position of the game as the app holds it: what Harmony knows, and
+/// who is to move.
+///
+/// What Harmony knows is an `EngineState` — the one state the engine reasons
+/// about, which events are entered into through `recordTurn`,
+/// `recordOwnTurn` and `correct`. There used to be a second, the app's own,
+/// with a bridge that translated between them; the bag count went wrong in
+/// that translation. What is left here is only what the engine has no use
+/// for: the names of the seating, and whose turn it is.
 struct GameState {
     /// Harmony's name in the seating. She is found by it, so nobody else may
     /// carry it — the setup keeps it out of the list of players.
     static let harmonyName = "Harmony"
 
-    var display: [DisplayField]
-    var openCards: [String]
-    var seenCards: Set<String>
+    /// Everything Harmony knows, as the engine holds it.
+    var knowledge: EngineState
     var seatIndex: Int
-    var harmonyBoard: [Int: [Stone]]
-    var harmonyCubes: [Int: String]
-    /// The cards Harmony has taken. The dummy never takes one in play, so
-    /// they are seeded like the board is — see `05-ui.md`, open point 6.
-    var harmonyCards: [AnimalCard]
     /// Seating in turn order, Harmony among them. Comes from the setup.
     var seating: [String]
-    var sideB: Bool
+
+    /// A position from the names and stones a setup or a saved game holds.
+    ///
+    /// The bag is what remains of the 120 stones after the display; the cards
+    /// nobody has seen are all the others. Names have to be those of the
+    /// card data — the pickers offer nothing else, and a saved game is
+    /// checked before it gets here.
+    init(display: [DisplayField], openCards: [String], seenCards: Set<String>,
+         seatIndex: Int, harmonyBoard: [Int: [Stone]], harmonyCubes: [Int: String],
+         harmonyCards: [AnimalCard], seating: [String], sideB: Bool) {
+        let all = AnimalCards.all
+        let byName = Dictionary(uniqueKeysWithValues: all.map { ($0.name, $0) })
+        let open = openCards.map { name -> AnimalCard in
+            guard let card = byName[name] else { fatalError("Keine Karte namens \(name)") }
+            return card
+        }
+        let unavailable = seenCards.union(openCards).union(harmonyCards.map(\.name))
+        knowledge = EngineState(
+            side: sideB ? .b : .a,
+            stacks: harmonyBoard,
+            cubes: harmonyCubes,
+            hand: harmonyCards.map { card in
+                HeldCard(card: card, cubesPlaced: harmonyCubes.values.count { $0 == card.name })
+            },
+            display: display.map(\.stones),
+            openCards: open,
+            deck: all.filter { !unavailable.contains($0.name) },
+            drawn: BagKnowledge.drawn(setup: display.map(\.stones), refills: []),
+            turnsPlayed: 0,
+            players: seating.count,
+            // Without Harmony the position is not `isConsistent`, and
+            // neither the setup nor `GameStore.load` lets it through.
+            seat: seating.firstIndex(of: Self.harmonyName) ?? 0)
+        self.seatIndex = seatIndex
+        self.seating = seating
+    }
+
+    // MARK: - What the screens read
+
+    var display: [DisplayField] { knowledge.display.map { DisplayField(stones: $0) } }
+    var openCards: [String] { knowledge.openCards.map(\.name) }
+    /// Every card that has lain open or been held — the complement of those
+    /// nobody has seen.
+    var seenCards: Set<String> {
+        Set(AnimalCards.all.map(\.name)).subtracting(knowledge.deck.map(\.name))
+    }
+    var harmonyBoard: [Int: [Stone]] { knowledge.stacks }
+    var harmonyCubes: [Int: String] { knowledge.cubes }
+    /// The cards Harmony has taken.
+    var harmonyCards: [AnimalCard] { knowledge.hand.map(\.card) }
+    var sideB: Bool { knowledge.side == .b }
 
     /// What a position has to be to be shown at all: someone to move, a seat
-    /// that exists, and a display of at most five spaces.
+    /// that exists, Harmony among the seats, and a display of at most five
+    /// spaces. A saved game that fails this is thrown away rather than
+    /// played on with Harmony moved to seat 0 (see `init`).
     var isConsistent: Bool {
-        seating.indices.contains(seatIndex) && display.count <= EngineState.displaySpaces
+        seating.indices.contains(seatIndex) && seating.contains(Self.harmonyName)
+            && display.count <= EngineState.displaySpaces
     }
 
     var currentPlayer: String { seating[seatIndex] }
     /// Side A has 23 spaces, side B has 25 — the game ends two later there.
-    var boardSize: Int { (sideB ? BoardSide.b : .a).board.cells.count }
+    var boardSize: Int { knowledge.side.board.cells.count }
+
+    /// Why Harmony's own board ends the game, once two cells or fewer are
+    /// left; `nil` before that.
+    var boardEndReason: String? {
+        let free = boardSize - harmonyBoard.count
+        return free <= 2 ? "Harmonys Spielplan hat nur noch \(free) freie Felder." : nil
+    }
+
     var isHarmonysTurn: Bool { currentPlayer == Self.harmonyName }
 
     static func initial(seat: Int = 0) -> GameState {
@@ -129,64 +193,43 @@ struct GameState {
     /// not even fit on the other — and water is scored by two different
     /// rules, the river against the islands.
     static func finished(sideB: Bool = false) -> GameState {
-        var state = initial()
-        state.sideB = sideB
-        state.harmonyBoard = sideB ? Sample.harmonyBoardFinalB : Sample.harmonyBoardFinal
-        state.harmonyCubes = sideB ? Sample.harmonyCubesFinalB : Sample.harmonyCubesFinal
-        state.harmonyCards = sideB ? Sample.harmonyCardsB : Sample.harmonyCards
-        return state
+        GameState(display: Sample.display,
+                  openCards: Sample.openCards,
+                  seenCards: Set(Sample.openCards),
+                  seatIndex: 0,
+                  harmonyBoard: sideB ? Sample.harmonyBoardFinalB : Sample.harmonyBoardFinal,
+                  harmonyCubes: sideB ? Sample.harmonyCubesFinalB : Sample.harmonyCubesFinal,
+                  harmonyCards: sideB ? Sample.harmonyCardsB : Sample.harmonyCards,
+                  seating: Sample.turnOrder,
+                  sideB: sideB)
     }
 
     mutating func apply(_ event: GameEvent) {
         switch event {
         case let .opponentTurn(turn):
-            // The emptied space takes the stones drawn for it — unless the
-            // bag ran dry, in which case it is gone from the display.
-            takeFromDisplay(space: turn.taken, refill: turn.refill)
-            if let taken = turn.cardTaken, let drawn = turn.cardDrawn,
-               let index = openCards.firstIndex(of: taken) {
-                openCards[index] = drawn
-                seenCards.insert(drawn)
-            }
+            knowledge.recordTurn(space: turn.taken, refill: turn.refill,
+                                 cardTaken: turn.cardTaken, cardDrawn: turn.cardDrawn)
         case let .harmonyTurn(move):
-            harmonyBoard = move.applied(to: harmonyBoard)
-            for cube in move.cubes { harmonyCubes[cube.cell] = cube.card }
             // Her turn empties a display space like anyone else's, and the
             // card she takes leaves the row like anyone else's. Leaving
             // either out would let her reckon with stones and cards that
             // are no longer there.
-            if let taken = move.cardTaken {
-                harmonyCards.append(Sample.card(taken))
-                if let index = openCards.firstIndex(of: taken), let drawn = move.cardDrawn {
-                    openCards[index] = drawn
-                    seenCards.insert(drawn)
-                } else if let index = openCards.firstIndex(of: taken) {
-                    openCards.remove(at: index)
-                }
-            }
-            takeFromDisplay(space: move.space, refill: move.refill)
+            knowledge.recordOwnTurn(
+                space: move.space,
+                placements: Dictionary(grouping: move.placements, by: \.cell)
+                    .mapValues { $0.map(\.stone) },
+                cubes: Dictionary(move.cubes.map { ($0.cell, $0.card) },
+                                  uniquingKeysWith: { _, later in later }),
+                refill: move.refill,
+                cardTaken: move.cardTaken, cardDrawn: move.cardDrawn)
         case let .correction(correction):
             for change in correction.changes {
-                harmonyBoard[change.cell] = change.stack.isEmpty ? nil : change.stack
-                harmonyCubes[change.cell] = change.cube
+                knowledge.correct(cell: change.cell, stack: change.stack, cube: change.cube)
             }
             // No move was played, so it is still the same player's turn.
             return
         }
         seatIndex = (seatIndex + 1) % seating.count
-    }
-
-    /// The space that was emptied, refilled with what was drawn for it. With
-    /// nothing drawn the bag is dry: the space stays empty, and an empty
-    /// space is not offered again — the engine counts what lies there, and a
-    /// phantom would be weighed as stones nobody can take.
-    private mutating func takeFromDisplay(space: Int, refill: [Stone]) {
-        guard display.indices.contains(space) else { return }
-        if refill.isEmpty {
-            display.remove(at: space)
-        } else {
-            display[space] = DisplayField(stones: refill)
-        }
     }
 
     /// Whether the event can be applied to this position: the space it names
@@ -195,9 +238,11 @@ struct GameState {
     func accepts(_ event: GameEvent) -> Bool {
         switch event {
         case let .opponentTurn(turn):
-            return display.indices.contains(turn.taken) && [0, 3].contains(turn.refill.count)
+            return knowledge.display.indices.contains(turn.taken)
+                && [0, EngineState.stonesPerSpace].contains(turn.refill.count)
         case let .harmonyTurn(move):
-            return display.indices.contains(move.space) && [0, 3].contains(move.refill.count)
+            return knowledge.display.indices.contains(move.space)
+                && [0, EngineState.stonesPerSpace].contains(move.refill.count)
         case .correction:
             return true
         }
@@ -308,10 +353,7 @@ extension Array where Element == GameEvent {
             if Self.stonesLeftInBag(afterTurns: turns) < EngineState.stonesPerTurn {
                 reason = "Der Beutel ist leer."
             }
-            let free = state.boardSize - state.harmonyBoard.count
-            if free <= 2 {
-                reason = "Harmonys Spielplan hat nur noch \(free) freie Felder."
-            }
+            if let boardReason = state.boardEndReason { reason = boardReason }
             if case let .opponentTurn(turn) = event, turn.boardNearlyFull {
                 reason = "Eine Mitspielerin hat nur noch zwei freie Felder."
             }

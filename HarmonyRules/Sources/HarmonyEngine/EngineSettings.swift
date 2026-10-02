@@ -71,7 +71,7 @@ public struct EngineSettings: Sendable, Equatable, Codable {
         weights.outlook = outlook
         weights.freeSlots = priceCardSpaces
             ? Self.cardSpaceGrading.map { $0 * cardSpacePrice }
-            : [0, 0, 0, 0]
+            : Array(repeating: 0, count: EngineState.cardLimit)
         weights.freeSlotsFullFrom = cardSpaceFullFrom
         return weights
     }

@@ -66,10 +66,6 @@ final class GameSession {
     /// Why the game is over. Usually what the log worked out; on the direct
     /// route it is read off the board, which gives the same answer.
     var endReason: String? {
-        if let reason = end.reason { return reason }
-        let free = state.boardSize - state.harmonyBoard.count
-        return free <= 2
-            ? "Harmonys Spielplan hat nur noch \(free) freie Felder."
-            : nil
+        end.reason ?? state.boardEndReason
     }
 }

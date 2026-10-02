@@ -152,11 +152,7 @@ struct HarmonyTurnView: View {
     /// is the whole experiment: a suggestion nobody waits for is no
     /// suggestion.
     @ViewBuilder private var engineStatus: some View {
-        if search.failed {
-            Label("Die Engine kennt eine dieser Karten nicht — es gibt keinen "
-                  + "Vorschlag.", systemImage: "exclamationmark.triangle")
-                .font(.footnote).foregroundStyle(.secondary)
-        } else if let since = search.since {
+        if let since = search.since {
             TimelineView(.periodic(from: since, by: 0.5)) { context in
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)

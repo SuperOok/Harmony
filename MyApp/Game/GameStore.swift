@@ -95,6 +95,17 @@ struct SavedChange: Codable { var cell: Int; var stack: [String]; var cube: Stri
 
 // MARK: - Both ways
 
+/// The stones a saved list of names stands for; `nil` if one of them is not
+/// a stone.
+private func stones(_ raw: [String]) -> [Stone]? {
+    var out: [Stone] = []
+    for value in raw {
+        guard let stone = Stone(rawValue: value) else { return nil }
+        out.append(stone)
+    }
+    return out
+}
+
 extension SavedState {
     init(_ state: GameState) {
         display = state.display.map { $0.stones.map(\.rawValue) }
@@ -114,15 +125,6 @@ extension SavedState {
     /// that is not a stone, a card that is not a card. Better a fresh game
     /// than a position nobody can account for.
     var restored: GameState? {
-        func stones(_ raw: [String]) -> [Stone]? {
-            var out: [Stone] = []
-            for value in raw {
-                guard let stone = Stone(rawValue: value) else { return nil }
-                out.append(stone)
-            }
-            return out
-        }
-
         var fields: [DisplayField] = []
         for raw in display {
             guard let stones = stones(raw) else { return nil }
@@ -184,15 +186,6 @@ extension SavedEvent {
     }
 
     var restored: GameEvent? {
-        func stones(_ raw: [String]) -> [Stone]? {
-            var out: [Stone] = []
-            for value in raw {
-                guard let stone = Stone(rawValue: value) else { return nil }
-                out.append(stone)
-            }
-            return out
-        }
-
         switch self {
         case let .opponent(turn):
             guard let refill = stones(turn.refill) else { return nil }

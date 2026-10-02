@@ -108,6 +108,9 @@ public struct Weights: Sendable, Equatable, Codable {
     /// two to four players: +3.4 ± 0.7 points against no price. Seven gains
     /// less, fourteen is erratic, twenty loses. `docs/06-durchstich.md`,
     /// *Der Preis eines Kartenplatzes*, has the rounds.
+    ///
+    /// One entry per card the hand may hold, `EngineState.cardLimit` of
+    /// them.
     public var freeSlots: [Double] = [10, 6, 2.5, 0]
     /// Own turns left from which a free space keeps its full worth. Below,
     /// it shrinks in proportion, and with no turn left it is worth nothing:
@@ -1059,11 +1062,14 @@ public enum Evaluator {
     }
 
     static func waitingFor(_ landscape: Landscape, _ count: Int) -> String {
-        switch landscape {
-        case .mountain: "Berg\(count == 1 ? "" : "e") ohne Bergnachbarn"
-        case .field: "einzelne\(count == 1 ? "r" : "") gelbe\(count == 1 ? "r" : "") Stein\(count == 1 ? "" : "e")"
+        let one = count == 1
+        // Adjectives end on "-er" in the singular and "-e" in the plural.
+        let adjective = one ? "er" : "e"
+        return switch landscape {
+        case .mountain: (one ? "Berg" : "Berge") + " ohne Bergnachbarn"
+        case .field: "einzeln\(adjective) gelb\(adjective) " + (one ? "Stein" : "Steine")
         case .building: "Gebäude ohne drei Farben"
-        case .tree: "braune\(count == 1 ? "r" : "") Stapel ohne Grün"
+        case .tree: "braun\(adjective) Stapel ohne Grün"
         case .water: ""
         }
     }

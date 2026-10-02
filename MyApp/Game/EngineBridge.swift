@@ -2,77 +2,13 @@ import Foundation
 import HarmonyRules
 import HarmonyEngine
 
-// The click dummy and the engine, joined. A **bridge**, not the merge:
-// `docs/06-durchstich.md` foresees the dummy's state giving way to
-// `EngineState` entirely, and that is its own piece of work. What is here
-// serves one purpose — getting a computed move onto the device so its timing
-// can be felt, which is the thing no measurement on a Mac answers.
+// What the engine says, in the shape the screens draw. The position itself
+// needs no translation any more: `GameState` holds an `EngineState`, and
+// events are entered into it directly. What is left here goes the other way
+// — a suggestion becomes a `HarmonyMove`, a search report a line on screen —
+// and the one replay the forecast asks for.
 //
 // Everything in here translates. Nothing decides.
-
-extension GameState {
-    /// The position as the engine needs it.
-    ///
-    /// The dummy knows its cards only by name; the patterns come from
-    /// `animals.json`. A name that is not in there is a mistake in the
-    /// sample data and gives `nil` rather than a quietly wrong position.
-    ///
-    /// `endsAfter` is the end the log has announced, if any — see
-    /// `EndStatus`. It is the only way a foreign full board reaches the
-    /// engine.
-    func engineState(events: [GameEvent], start: GameState,
-                     endsAfter: Int? = nil) -> EngineState? {
-        let deck = HarmonyRules.AnimalCards.all
-        let byName = Dictionary(uniqueKeysWithValues: deck.map { ($0.name, $0) })
-
-        func cards(_ names: [String]) -> [HarmonyRules.AnimalCard]? {
-            var found: [HarmonyRules.AnimalCard] = []
-            for name in names {
-                guard let card = byName[name] else { return nil }
-                found.append(card)
-            }
-            return found
-        }
-
-        guard let open = cards(openCards),
-              let held = cards(harmonyCards.map(\.name))
-        else { return nil }
-
-        let hand = held.map { card in
-            HeldCard(card: card,
-                     cubesPlaced: harmonyCubes.values.count { $0 == card.name })
-        }
-
-        return EngineState(
-            side: sideB ? .b : .a,
-            stacks: harmonyBoard,
-            cubes: harmonyCubes,
-            hand: hand,
-            display: display.map(\.stones),
-            openCards: open,
-            deck: deck.filter { !seenCards.contains($0.name) },
-            drawn: Self.stonesDrawn(start: start, events: events),
-            turnsPlayed: events.turnCount,
-            players: seating.count,
-            seat: seating.firstIndex(of: Self.harmonyName) ?? 0,
-            endsAfter: endsAfter)
-    }
-
-    /// Everything that has left the bag: the display as the game was set up
-    /// and every refill entered since, Harmony's own turns included — she
-    /// empties a space like anyone else, and the table refills it from the
-    /// same bag.
-    static func stonesDrawn(start: GameState, events: [GameEvent]) -> [Stone: Int] {
-        let refills = events.compactMap { event -> [Stone]? in
-            switch event {
-            case let .opponentTurn(turn): turn.refill
-            case let .harmonyTurn(move): move.refill
-            case .correction: nil
-            }
-        }
-        return BagKnowledge.drawn(setup: start.display.map(\.stones), refills: refills)
-    }
-}
 
 extension Array where Element == GameEvent {
     /// What each opponent has taken, turn by turn: the three stones of the
