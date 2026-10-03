@@ -257,7 +257,13 @@ ist ausgeschlossen, darunter bleibt er offen. Der Standard bleibt bei 0. Nicht
 gemessen: andere Anteile (etwa 1,0), die Seite B und drei bis vier
 Spielerinnen.
 
-**Der Würfel danach — gemessen in der Nacht zum 2026-10-03.** ❓ Die
+**Der Würfel danach — gemessen in der Nacht zum 2026-10-03.** ✅ **Seit dem
+2026-10-03 Standard (Tiefe 1, Gewicht 1,0); unter *Spielstärke* abschaltbar,
+Tiefe 1 bis 3. Tiefe 2 ist nicht gemessen** — gemessen sind 1 und 3, weil
+der Unterschied zwischen dem einen und dem weit vorausgedachten Würfel
+zuerst die Frage war; die Tiefe brachte nichts, und eine Zwischenstufe
+liegt voraussichtlich dazwischen. Die Messung unten nennt noch den alten
+Standard „Standard" und meint damit `ohne-folgewuerfel`. Die
 Bewertung sieht je Karte nur den **nächsten** Würfel. Was eine Karte danach
 noch hergibt, und dass ein hohes Feld (Baum3, Berg3) mehrere Habitate
 derselben Karte tragen kann, wenn der Würfel auf dem niedrigen Feld liegt
@@ -317,6 +323,27 @@ Tiefe 3; beide Läufe liefen gleichzeitig, die Verhältnisse gelten, die
 absoluten Zeiten nicht). Mehr Zentren legt sie nicht an. Nach diesem
 Vorsortieren lohnt die Tiefe ihre Rechenzeit nicht; offen bleibt, ob sie es
 mit einem Abschlag je Stufe täte.
+
+**Gewicht und Abschlag je Stufe, vier Stunden am 2026-10-03.**
+`Weights.followUpDecay` (`folgeabschlag=`, Standard 1) lässt jeden weiteren
+vorausgedachten Würfel nur diesen Anteil des vorigen Gewichts behalten. Zu
+viert am Tisch `folgewuerfel` 0,5, 1,0, 1,5 und 1,0 mit Tiefe 3 und
+Abschlag 0,5, je Seite acht Austeilungen in allen Sitzordnungen (64
+Partien), dazu zu zweit auf Seite B 0,5 gegen 1,0 (32 Partien); nichts
+beanstandet.
+
+| Vergleich | B zu viert | A zu viert | B zu zweit |
+| --- | --- | --- | --- |
+| 1,0 − 0,5 | +4,1 ± 2,0 | +3,1 ± 2,8 | −1,7 ± 1,5 |
+| 1,5 − 1,0 | −2,9 ± 2,0 | +1,2 ± 3,0 | |
+| Tiefe 3, Abschlag 0,5 − 1,0 | +0,6 ± 1,5 | −2,0 ± 1,6 | |
+
+Mit allen direkten Vergleichen beider Läufe zusammen liegt **1,0 vor 0,5 um
++0,5 ± 1,0** — nicht zu unterscheiden; zu viert spricht mehr für 1,0, zu
+zweit eher für 0,5. **1,5 bringt nichts über 1,0** (−1,6 ± 1,7), und **die
+Tiefe auch mit Abschlag nicht** (−0,6 ± 1,1) bei rund 40 Prozent mehr
+Rechenzeit. Was bleibt: der eine Würfel danach, mit einem Gewicht zwischen
+0,5 und 1,0, gegen den Standard über alle Läufe rund +2 bis +9 Punkte.
 
 **Die Sperr-Probe, dieselben Läufe.** Ein fertiges Muster, das nur an
 einem Würfel einer **anderen** Karte auf seinem Zielstein scheitert, kommt

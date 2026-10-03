@@ -72,9 +72,10 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings-follow-up")
                 if settings.followUpCubes > 0 {
                     WeightRow(title: "Gewicht der Würfel danach", value: $settings.followUpCubes,
-                              range: 0.1...1.5, step: 0.1, standard: 1,
+                              range: 0.1...1.5, step: 0.1,
+                              standard: EngineSettings.standard.followUpCubes,
                               note: "Wie viel ein späterer Würfel gegenüber dem nächsten zählt.")
-                    Stepper(value: $settings.followUpDepth, in: 1...4) {
+                    Stepper(value: $settings.followUpDepth, in: 1...3) {
                         LabeledContent("Vorausgedacht",
                                        value: settings.followUpDepth == 1
                                            ? "1 Würfel" : "\(settings.followUpDepth) Würfel")
@@ -82,14 +83,16 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings-follow-up-depth")
                 }
             } header: {
-                SourceHeader("Würfel danach", measured: false)
+                SourceHeader("Würfel danach", measured: true)
             } footer: {
                 Text("""
                 Sonst zählt je Karte nur der nächste Würfel. Mitgerechnet wird \
                 auch, was die Karte danach noch hergibt — etwa mehrere \
-                Fledermäuse um denselben hohen Baum. Kostet Rechenzeit: ein \
-                Würfel rund 40 Prozent, jeder weitere mehr. In Messung, \
-                deshalb noch nicht Standard.
+                Fledermäuse um denselben hohen Baum. Im Selbstspiel brachte \
+                das zwei bis neun Punkte je Partie, kostet aber rund 40 \
+                Prozent Rechenzeit. Wird es zu langsam, hier abschalten. \
+                Mehr als einen Würfel vorauszudenken brachte nichts und \
+                kostet noch mehr Zeit.
                 """)
             }
 

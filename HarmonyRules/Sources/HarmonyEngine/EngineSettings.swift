@@ -46,6 +46,9 @@ public struct EngineSettings: Sendable, Equatable, Codable {
     /// How many cubes after the next are thought ahead while the weight
     /// above is on. See `Weights.followUpDepth`.
     public var followUpDepth = Weights().followUpDepth
+    /// What each further cube keeps of the weight. See
+    /// `Weights.followUpDecay`.
+    public var followUpDecay = Weights().followUpDecay
     /// How much the landscapes' prospects count — rivers, islands, the
     /// sleeping ones.
     public var landscapeProspects = 1.0
@@ -78,6 +81,7 @@ public struct EngineSettings: Sendable, Equatable, Codable {
         weights.openCards = openCardProspects
         weights.followUp = followUpCubes
         weights.followUpDepth = followUpDepth
+        weights.followUpDecay = followUpDecay
         weights.landscape = landscapeProspects
         weights.variety = variety
         weights.outlook = outlook
@@ -110,6 +114,8 @@ public struct EngineSettings: Sendable, Equatable, Codable {
             ?? d.followUpCubes
         followUpDepth = try c.decodeIfPresent(Int.self, forKey: .followUpDepth)
             ?? d.followUpDepth
+        followUpDecay = try c.decodeIfPresent(Double.self, forKey: .followUpDecay)
+            ?? d.followUpDecay
         landscapeProspects = try c.decodeIfPresent(Double.self, forKey: .landscapeProspects)
             ?? d.landscapeProspects
         variety = try c.decodeIfPresent(Double.self, forKey: .variety) ?? d.variety

@@ -615,7 +615,10 @@ struct EvaluationTests {
     @Test("Der Würfel danach zählt nur mit Gewicht")
     func theFollowingCubeCountsOnlyWithAWeight() {
         let position = state(hand: [HeldCard(card: bat)])
-        #expect(!Evaluator.evaluate(position).terms.contains { $0.name.hasPrefix("Folgewürfel") })
+        var off = Weights()
+        off.followUp = 0
+        #expect(!Evaluator.evaluate(position, weights: off).terms
+            .contains { $0.name.hasPrefix("Folgewürfel") })
 
         var weights = Weights()
         weights.followUp = 0.5
@@ -690,5 +693,42 @@ struct EvaluationTests {
         let terms = Evaluator.evaluate(state(hand: [HeldCard(card: bat)]), weights: weights)
             .terms.filter { $0.name.hasPrefix("Folgewürfel") }
         #expect(terms.map(\.name) == ["Folgewürfel Fledermaus"])
+    }
+
+    @Test("Der Abschlag je Stufe senkt nur die weiteren Würfel")
+    func theDecayLowersOnlyTheFurtherCubes() {
+        let board = BoardSide.a.board
+        guard let middle = board.cells.first(where: { board.neighbours($0).count == 6 }) else {
+            Issue.record("Kein Feld mit sechs Nachbarn")
+            return
+        }
+        let position = state(stacks: [middle: [.wood, .wood, .leaves]],
+                             hand: [HeldCard(card: bat)])
+        func terms(decay: Double) -> [String: Double] {
+            var weights = Weights()
+            weights.followUp = 1
+            weights.followUpDepth = 3
+            weights.followUpDecay = decay
+            return Dictionary(Evaluator.evaluate(position, weights: weights).terms
+                .filter { $0.name.hasPrefix("Folgewürfel") }
+                .map { ($0.name, $0.points) }, uniquingKeysWith: +)
+        }
+        let full = terms(decay: 1), half = terms(decay: 0.5)
+        #expect(full.count > 1)
+        #expect(half["Folgewürfel Fledermaus"] == full["Folgewürfel Fledermaus"])
+        for (name, points) in full where name != "Folgewürfel Fledermaus" {
+            #expect((half[name] ?? 0) < points)
+        }
+    }
+
+    @Test("Standard ist der eine Würfel danach mit vollem Gewicht")
+    func theStandardLooksOneCubeAhead() {
+        #expect(Weights().followUp == 1)
+        #expect(Weights().followUpDepth == 1)
+        #expect(EngineSettings.standard.weights.followUp == 1)
+        #expect(EngineSettings.standard.isStandard)
+        var off = EngineSettings.standard
+        off.followUpCubes = 0
+        #expect(!off.isStandard)
     }
 }

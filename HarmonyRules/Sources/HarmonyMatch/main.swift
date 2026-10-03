@@ -11,10 +11,11 @@ import HarmonyTable
 //
 //   swift run -c release HarmonyMatch --plaetze standard,ohne-kartenplatz --partien 50
 //
-// A setting is `standard`, `ohne-kartenplatz` or `ohne-vorhersage`, with
+// A setting is `standard`, `ohne-kartenplatz`, `ohne-vorhersage` or
+// `ohne-folgewuerfel` (the standard before 2026-10-03), with
 // changes after a `+`: `standard+preis=7`, `standard+bedenkzeit=10+outlook=0.7`.
 // Keys: vorhersage, kartenplatz (an/aus), preis, vollab, outlook,
-// tierkarten, offene, folgewuerfel, folgetiefe, landschaften, vielfalt, bedenkzeit (seconds).
+// tierkarten, offene, folgewuerfel, folgetiefe, folgeabschlag, landschaften, vielfalt, bedenkzeit (seconds).
 // `docs/06-durchstich.md`, *Engines gegeneinander*, has the reasoning.
 
 setvbuf(stdout, nil, _IOLBF, 0)
@@ -35,6 +36,7 @@ struct Variant: Sendable {
         case "standard": break
         case "ohne-kartenplatz": settings.priceCardSpaces = false
         case "ohne-vorhersage": settings.forecastEnd = false
+        case "ohne-folgewuerfel": settings.followUpCubes = 0
         default: fail("unbekannte Einstellung \(parts.first ?? "")")
         }
         for change in parts.dropFirst() {
@@ -62,6 +64,7 @@ struct Variant: Sendable {
             case "offene": settings.openCardProspects = number()
             case "folgewuerfel": settings.followUpCubes = number()
             case "folgetiefe": settings.followUpDepth = Int(number())
+            case "folgeabschlag": settings.followUpDecay = number()
             case "landschaften": settings.landscapeProspects = number()
             case "vielfalt": settings.variety = number()
             case "bedenkzeit": settings.thinkingLimit = Int(number())
@@ -318,7 +321,8 @@ for variant in variants {
           + (s.priceCardSpaces ? "\(f(s.cardSpacePrice, 1)) ab \(s.cardSpaceFullFrom)" : "aus")
           + ", Aussicht \(f(s.outlook, 2)), Tierkarten \(f(s.cardProspects, 1)), "
           + "offene Karten \(f(s.openCardProspects, 2)), "
-          + "Folgewürfel \(f(s.followUpCubes, 2)) × \(s.followUpDepth), "
+          + "Folgewürfel \(f(s.followUpCubes, 2)) × \(s.followUpDepth)"
+          + (s.followUpDepth > 1 ? " je Stufe \(f(s.followUpDecay, 2))" : "") + ", "
           + "Landschaften \(f(s.landscapeProspects, 1)), Vielfalt \(f(s.variety, 2)), "
           + "Bedenkzeit \(s.thinkingLimit.map { "\($0) s" } ?? "unbegrenzt")")
 }

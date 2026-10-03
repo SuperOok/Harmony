@@ -85,18 +85,30 @@ public struct Weights: Sendable, Equatable, Codable {
     /// How much the cube **after** the next one counts, as a share of what
     /// the next one counts. Zero: each card promises only its next cube,
     /// and a tall space that could carry several of its habitats is worth
-    /// no more than one that carries a single one. Above zero the best
-    /// candidate is thought built, cube and all, and the best candidate for
-    /// the following cube is sought on that board — around the same tall
-    /// space it needs a stone or two, elsewhere the whole pattern again.
-    /// **Not measured** until `HarmonyMatch` has run it.
-    public var followUp = 0.0
+    /// no more than one that carries a single one. At one the best candidate
+    /// is thought built, cube and all, and the best candidate for the
+    /// following cube is sought on that board — around the same tall space
+    /// it needs a stone or two, elsewhere the whole pattern again.
+    ///
+    /// **Measured**: against zero it gains about two to nine points a game,
+    /// over both sides and two to four players; 0.5 and 1.0 cannot be told
+    /// apart, 1.5 gains nothing more. It costs about forty percent more
+    /// thinking time. `docs/ideen-vorgemerkt.md` has the runs.
+    public var followUp = 1.0
     /// How many cubes after the next one are thought ahead, each on the
     /// board where the ones before it stand built. One is the cube after the
     /// next; more lets a tall space show what it carries for a card with
     /// four or five cubes. Each one costs about another search for
-    /// candidates per card and laying.
+    /// candidates per card and laying. **Measured** at one and at three
+    /// (with the weight cut by half for every further cube): three gains
+    /// nothing over one and takes about forty percent more time still. Two
+    /// is not measured.
     public var followUpDepth = 1
+    /// What each cube further ahead keeps of the weight above: the first
+    /// counts `followUp`, the next `followUp × followUpDecay`, and so on.
+    /// One leaves them all at the same weight; the chance already falls
+    /// with every link, since more stones are wanted together.
+    public var followUpDecay = 1.0
     public var landscape = 1.0
     public var variety = 0.05
 
@@ -646,7 +658,9 @@ public enum Evaluator {
                                       among: habitats(of: held.card, on: state, prepared),
                                       depth: weights.followUpDepth, state, available)
                 }
+                var share = weights.followUp
                 for (index, link) in ahead.enumerated() {
+                    defer { share *= weights.followUpDecay }
                     // The first keeps the plain name: the reasoning and the
                     // tests know it by that.
                     let name = index == 0
@@ -654,7 +668,7 @@ public enum Evaluator {
                         : "Folgewürfel \(first.card), \(held.cubesPlaced + index + 2). Würfel"
                     promises.append(Promise(
                         term: Term(name: name,
-                                   points: link.worth * weights.followUp * weights.candidates
+                                   points: link.worth * share * weights.candidates
                                        * weights.outlook,
                                    kind: .prospect, gain: Double(link.gain),
                                    chance: link.chance,

@@ -17,7 +17,7 @@ Xcode-Projekt prüfbar.
 **Wo es steht:** Stand 2026-09-29. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 239 Regelfällen (`tools/tests.sh`, gut drei
+Weglegen. Geprüft wird mit 240 Regelfällen (`tools/tests.sh`, gut drei
 Sekunden), 41 App-Fällen für Wissen der Partie, Verlauf, Spielstand, Sitzung und
 Begründung (`tools/apptests.sh`) und acht Oberflächenfällen
 (`tools/uitests.sh`).
@@ -56,6 +56,17 @@ geschätzten Gewichte (`EngineSettings` im Engine-Paket, gespeichert in
 `Weights.pointsNow` als Maßstab der übrigen und die Annahmen über das Spiel
 selbst, etwa die Stapelanteile der Vorhersage; Begründung am Kopf von
 `EngineSettings.swift`.
+
+**Seit dem 2026-10-03 rechnet die Bewertung den Würfel danach mit**
+(`Weights.followUp`, Standard 1, `followUpDepth` 1): je Karte wird der beste
+Anwärter als gebaut gedacht und der beste für den **übernächsten** Würfel
+gesucht, gemeinsame Steine einmal gezählt. Gemessen mit `HarmonyMatch` über
+beide Seiten und zwei bis vier Spielerinnen: gegen null rund +2 bis +9
+Punkte je Partie; 0,5 und 1,0 sind nicht zu trennen, 1,5 und Tiefe 3 bringen
+nichts mehr. Es kostet rund 40 Prozent Rechenzeit, **auf dem Gerät noch nicht
+nachgemessen**; unter *Spielstärke* → „Würfel danach" lässt es sich
+abschalten, mit Gewicht und Tiefe 1 bis 3. In `HarmonyMatch` ist der alte
+Standard `ohne-folgewuerfel`. Einzelheiten in `docs/ideen-vorgemerkt.md`.
 
 **Seit dem 2026-09-23 läuft Selbstspiel** (`HarmonySelfPlay`): Harmony gegen
 würfelnde Mitspielerinnen, Varianten der Gewichte gepaart auf denselben
