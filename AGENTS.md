@@ -46,10 +46,16 @@ Was es gibt, in Stichworten:
 **Fürs Gerät `-configuration Release` bauen.** Das Schema baut beim
 Laufenlassen Debug, und Debug ist hier sechs- bis achtmal langsamer.
 
-**Offen:** Dass die Bewertung nur die Karten in Harmonys Hand kennt, nie die
-offenen (`docs/ideen-vorgemerkt.md`); was in Phase 5 offen blieb, führt
-`docs/05-ui.md` am Ende auf. Die Rechenzeit der Landschaft je Legung steht
-in `docs/06-durchstich.md` unter *Fünf Abhilfen*.
+**Offen:** Die Rechenzeit des Würfels danach auf dem Gerät; was zur
+Spielstärke noch zu messen ist, steht im Skill `spielstaerke` und in
+`docs/ideen-vorgemerkt.md` (die offenen Karten sind gemessen: kein
+Unterschied). Was in Phase 5 offen blieb, führt `docs/05-ui.md` am Ende auf.
+Die Rechenzeit der Landschaft je Legung steht in `docs/06-durchstich.md`
+unter *Fünf Abhilfen*.
+
+**Skills** unter `.claude/skills/` laden das Vorgehen für ein Gebiet erst bei
+Bedarf: `spielstaerke` für Bewertung, Gewichte und Messungen mit
+`HarmonyMatch`, `szenen` für die Tierszenen.
 
 ## Aufbau
 
