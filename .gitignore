@@ -36,3 +36,6 @@ __pycache__/
 
 # Rohdaten der Messläufe (tools/nachtlauf.sh); Ergebnisse gehören in docs/
 messungen/
+
+# Worktrees paralleler Sitzungen (Claude Code legt sie hier an)
+.claude/worktrees/

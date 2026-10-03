@@ -325,6 +325,17 @@ Tisch liegt kein Mac.
 
 ## Hinweise zum Repository
 
+- **Worktrees für parallele Sitzungen** legt das Werkzeug `EnterWorktree`
+  an, nicht `git worktree add` von Hand: Es setzt sie nach
+  `.claude/worktrees/<name>` auf einen neuen Branch; der Ordner ist
+  ignoriert. **Vorsicht beim Ausgangspunkt:** Die Voreinstellung
+  (`worktree.baseRef: fresh`) zweigt von `origin/<Standardbranch>` ab, also
+  von `main` und nicht vom aktuellen Stand. Solange Arbeit auf
+  `review-cleanup` noch nicht in `main` ist, fehlt sie dort; dann
+  `worktree.baseRef: head` einstellen, oder einen von Hand angelegten
+  Worktree betreten (`EnterWorktree` mit `path`; er muss unter
+  `.claude/worktrees/` liegen). In einem Worktree nur die eigenen Pfade
+  stagen, nie `git add -A`.
 - Das Remote `origin` ist **öffentlich**: `github.com/SuperOok/Harmony`.
   Niemals API-Schlüssel, Provisioning-Profile oder Signaturzertifikate
   einchecken. Ebenso keine wörtlich übernommenen Regeltexte oder
