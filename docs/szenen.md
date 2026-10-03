@@ -147,7 +147,68 @@ Landschaft des Würfels, dort endet jede Animation.
 5. Die Kamera zoomt ein zweites Mal heraus: alle drei Häuser, die
    äußeren gut zur Hälfte im Bild.
 
-Zoom nur herein, nie wieder zurück, das wirkt unruhig.
+Die Kamera zoomt nur heraus, nie wieder hinein: Erst heraus, dann wieder
+hinein wirkte unruhig. Ein zweites Herausziehen am Ende ist dagegen gewollt.
+
+## Das Eichhörnchen als Szene
+
+Der erste voll ausgearbeitete Fall, an dem die Regeln oben entstanden sind.
+
+**Die Karte.** Muster `Baum3` und `Gebäude`, der Würfel liegt auf dem
+Gebäude, drei Würfel (4, 9 und 15 Punkte). Gebaut wird der volle
+Lebensraum: dreimal das Muster, auf jedem der drei Häuser ein Tier. Wer das
+Spiel kennt, soll an der Szene die Zahl der Tiere ablesen können.
+
+**Anordnung.** Ein Baum der Höhe 3 darf sich alle drei Häuser teilen, wie im
+Spiel; das ergibt vier Felder: der Baum in der Mitte, ein Haus vorn, zwei
+hinten links und rechts. Ohne Teilen (`cards.py --getrennt`) wären es sechs
+Felder mit drei Bäumen. Die geteilte Fassung ist die der Animation, weil sie
+den Lebensraum klein hält und die Regel zeigt. Ob das bei jeder Karte so
+sein soll oder je Karte entschieden wird, ist offen.
+
+**Drei Animationen, eine je Würfel.** Bei der k-ten sitzen die Tiere der
+vorigen schon auf ihren Häusern, und das k-te Tier erscheint und macht seine
+kleine Bewegung. Das erste Tier sitzt vorn und ist am deutlichsten, die
+späteren füllen den Hintergrund: Die Szene zählt so mit wie die Würfelleiste
+der Karte. Bisher gibt es nur die erste.
+
+**Die Handlung der ersten.** Sie beginnt in der Baumkrone und endet auf dem
+Haus, weil das Haus die Landschaft ist, auf der der Würfel liegt. Das Tier
+springt in die Krone, hält inne, die Kamera zoomt heraus; es läuft ein
+Stück über die Krone (das wurde ausdrücklich gewünscht, bevor es springt),
+springt aufs Dach, läuft den First hinunter, setzt sich auf sein Haus und
+knabbert die Eichel. Dann zoomt die Kamera noch einmal heraus, bis alle drei
+Häuser zu sehen sind, die beiden äußeren gut zur Hälfte.
+
+**Größe.** Das Tier ist nur etwa ein Viertel so hoch wie das Haus
+(`SIZE['Eichhörnchen']`). Bei so kleinen Tieren ist der Zoom nötig, nicht
+Zierde: Die Animation beginnt in der Nahaufnahme, in der die Figur das Bild
+füllt, und gibt erst nach und nach den Lebensraum frei.
+
+**Umgebung: Wald.**
+- Hinter dem Habitat und daneben steht Wald aus Bäumen der Höhen 1 bis 3.
+  Hohe Bäume neben den Häusern sind erlaubt; dass dabei weitere
+  Eichhörnchen-Habitate entstehen, stört nicht, die Szene soll aufmuntern.
+  Das Habitat selbst soll nur nicht zu viel Platz einnehmen.
+- Wasser gehört nicht hinter das Habitat, sondern in den Vordergrund, vor
+  die Häuser, zusammen mit niedrigem Bewuchs.
+- Keine Prärie im Hintergrund; ganz hinten stehen weiter Bäume und einzelne
+  Berge.
+- Vor den beiden äußeren Häusern liegt keine kahle Fläche: links zwei
+  Wasserfelder, rechts ein Feld mit einem Busch darunter. Das Feld ist die
+  Lesart `praerie` (Voreinstellung), `korn` wäre ebenso denkbar.
+- Büsche sind unauffälliger als Bäume: niedriger, mehrere Ballen, die das
+  Feld füllen, statt einer einzelnen Krone.
+
+**Leere und Horizont.** Auf dem hochkanten Bildschirm blieb oben fast die
+Hälfte leer. Gelöst ist das durch einen in der Welt verankerten Horizont mit
+Abendhimmel und durch die gefüllte Umgebung. Dass der Dunst die hinteren
+Tiere verschluckt, ist kein Problem: Sie bleiben ausreichend sichtbar.
+
+**Die Figur.** Das Tier sitzt je nach Landschaft auf dem Dachfirst, auf einer
+Blätterkugel der Krone oder auf dem Gipfel. Schwanz und Ohrpinsel sind
+bewusst keine Kreise: der Schwanz eine buschige Feder mit Fellkante, die
+Pinsel Haarbüschel.
 
 ## Verworfen
 
