@@ -14,7 +14,7 @@ import HarmonyTable
 // A setting is `standard`, `ohne-kartenplatz` or `ohne-vorhersage`, with
 // changes after a `+`: `standard+preis=7`, `standard+bedenkzeit=10+outlook=0.7`.
 // Keys: vorhersage, kartenplatz (an/aus), preis, vollab, outlook,
-// tierkarten, offene, landschaften, vielfalt, bedenkzeit (seconds).
+// tierkarten, offene, folgewuerfel, landschaften, vielfalt, bedenkzeit (seconds).
 // `docs/06-durchstich.md`, *Engines gegeneinander*, has the reasoning.
 
 setvbuf(stdout, nil, _IOLBF, 0)
@@ -60,6 +60,7 @@ struct Variant: Sendable {
             case "outlook": settings.outlook = number()
             case "tierkarten": settings.cardProspects = number()
             case "offene": settings.openCardProspects = number()
+            case "folgewuerfel": settings.followUpCubes = number()
             case "landschaften": settings.landscapeProspects = number()
             case "vielfalt": settings.variety = number()
             case "bedenkzeit": settings.thinkingLimit = Int(number())
@@ -115,6 +116,53 @@ enum Breakdown {
     }
 }
 
+/// What the patterns did: where a cube was in the way, and how the habitats
+/// under the cubes share their spaces.
+enum Patterns {
+    /// The finished patterns of the mover's unfinished cards that stand
+    /// only on stones another card's cube already holds. Keyed by card and
+    /// stone, so a case that lasts several turns counts once.
+    static func blocked(_ seat: Seat, board: Board) -> [String] {
+        var found: [String] = []
+        for held in seat.hand where !held.isFinished {
+            let free = Habitat.all(of: held.card, on: seat.stacks,
+                                   cubes: Set(seat.cubes.keys), board: board)
+            guard !free.contains(where: \.isComplete) else { continue }
+            for habitat in Habitat.all(of: held.card, on: seat.stacks, board: board)
+            where habitat.isComplete {
+                if let owner = seat.cubes[habitat.cubeCell], owner != held.card.name {
+                    found.append("\(held.card.name)@\(habitat.cubeCell)")
+                }
+            }
+        }
+        return found
+    }
+
+    /// For every cube, a finished pattern of its card on the final board
+    /// with the cube's stone as target. A pattern built over later is not
+    /// found, and its cube is left out.
+    static func traced(_ seat: Seat, board: Board) -> (cubes: Int, apart: Int, together: Int,
+                                                        hubs: Int) {
+        var habitats: [Habitat] = []
+        for (cell, name) in seat.cubes.sorted(by: { $0.key < $1.key }) {
+            guard let held = seat.hand.first(where: { $0.card.name == name }) else { continue }
+            if let habitat = Habitat.all(of: held.card, on: seat.stacks, board: board)
+                .first(where: { $0.isComplete && $0.cubeCell == cell }) {
+                habitats.append(habitat)
+            }
+        }
+        let apart = habitats.reduce(0) { $0 + $1.requirement.count }
+        let together = Set(habitats.flatMap(\.requirement.keys)).count
+        var tallUse: [Int: Int] = [:]
+        for habitat in habitats {
+            for (cell, wanted) in habitat.requirement where wanted.height >= 2 {
+                tallUse[cell, default: 0] += 1
+            }
+        }
+        return (habitats.count, apart, together, tallUse.values.count { $0 >= 2 })
+    }
+}
+
 /// One game: which setting sat where, and how it went.
 struct GameResult: Sendable, Codable {
     let deal: Int
@@ -135,6 +183,16 @@ struct GameResult: Sendable, Codable {
     /// Stones down and spaces left empty at the end, for each seat.
     var stonesDown: [Int] = []
     var emptySpaces: [Int] = []
+    /// Times a held card had a finished pattern only where another card's
+    /// cube already sat on the target stone — each card and stone once.
+    var blocked: [Int] = []
+    /// The habitats under the cubes, traced on the final board: how many
+    /// were found, how many spaces they cover apart and together, and how
+    /// many tall spaces (height two or three) carry two or more of them.
+    var cubesTraced: [Int] = []
+    var habitatSpaces: [Int] = []
+    var distinctSpaces: [Int] = []
+    var hubs: [Int] = []
     var turns = 0
     /// Anything the referee objected to. A game with an objection is not
     /// counted.
@@ -149,9 +207,11 @@ func play(deal: Int, rotation: Int, options: Options, cards: [AnimalCard]) -> Ga
                       seed: options.seed &* 1_000_003 &+ UInt64(deal))
     var result = GameResult(deal: deal, rotation: rotation, seats: seated.map(\.name))
     var seconds = Array(repeating: 0.0, count: players)
+    var blocked = Array(repeating: Set<String>(), count: players)
 
     while !table.isOver {
         let seat = table.mover
+        blocked[seat].formUnion(Patterns.blocked(table.seats[seat], board: table.side.board))
         let settings = seated[seat].settings
         let view = table.view(for: seat, forecast: settings.forecastEnd)
         if !view.inconsistencies.isEmpty {
@@ -193,6 +253,17 @@ func play(deal: Int, rotation: Int, options: Options, cards: [AnimalCard]) -> Ga
     }
     result.stonesDown = table.seats.map { $0.stacks.values.reduce(0) { $0 + $1.count } }
     result.emptySpaces = table.seats.map { table.side.board.cells.count - $0.stacks.count }
+    // The final board, too: a pattern finished by the last turn and never
+    // cubed counts as well.
+    for seat in 0..<players {
+        blocked[seat].formUnion(Patterns.blocked(table.seats[seat], board: table.side.board))
+    }
+    result.blocked = blocked.map(\.count)
+    let traced = table.seats.map { Patterns.traced($0, board: table.side.board) }
+    result.cubesTraced = traced.map(\.cubes)
+    result.habitatSpaces = traced.map(\.apart)
+    result.distinctSpaces = traced.map(\.together)
+    result.hubs = traced.map(\.hubs)
     result.seconds = seconds
     return result
 }
@@ -246,6 +317,7 @@ for variant in variants {
           + (s.priceCardSpaces ? "\(f(s.cardSpacePrice, 1)) ab \(s.cardSpaceFullFrom)" : "aus")
           + ", Aussicht \(f(s.outlook, 2)), Tierkarten \(f(s.cardProspects, 1)), "
           + "offene Karten \(f(s.openCardProspects, 2)), "
+          + "Folgewürfel \(f(s.followUpCubes, 2)), "
           + "Landschaften \(f(s.landscapeProspects, 1)), Vielfalt \(f(s.variety, 2)), "
           + "Bedenkzeit \(s.thinkingLimit.map { "\($0) s" } ?? "unbegrenzt")")
 }
@@ -351,6 +423,31 @@ for variant in variants {
 print("  Karten: Punkte der Tierkarten · fertig: Karten mit letztem Würfel · "
       + "Würfel: gelegt · offen: noch auf den gehaltenen Karten · "
       + "leer: freie Felder am Ende")
+
+print("\nMuster unter den Würfeln (Mittel je Partie)")
+print(pad("Einstellung", 26) + pad("gesperrt", 10) + pad("verfolgt", 10)
+      + pad("Felder", 8) + pad("davon geteilt", 15) + pad("je Würfel", 11) + "Zentren")
+for variant in variants {
+    var blocked = 0.0, traced = 0.0, apart = 0.0, together = 0.0, hubs = 0.0, seats = 0.0
+    for game in valid where game.blocked.count == game.seats.count {
+        for seat in game.seats.indices where game.seats[seat] == variant {
+            seats += 1
+            blocked += Double(game.blocked[seat])
+            traced += Double(game.cubesTraced[seat])
+            apart += Double(game.habitatSpaces[seat])
+            together += Double(game.distinctSpaces[seat])
+            hubs += Double(game.hubs[seat])
+        }
+    }
+    let n = max(seats, 1)
+    print(pad(variant, 26) + pad(f(blocked / n, 2), 10) + pad(f(traced / n), 10)
+          + pad(f(together / n), 8) + pad(f((apart - together) / n), 15)
+          + pad(f(traced > 0 ? together / traced : 0, 2), 11) + f(hubs / n, 2))
+}
+print("  gesperrt: fertiges Muster nur auf dem Würfel einer anderen Karte · "
+      + "verfolgt: Würfel mit wiedergefundenem Muster · Felder: von diesen Mustern "
+      + "belegt · geteilt: mehrfach belegt · Zentren: hohe Felder unter zwei oder "
+      + "mehr Mustern")
 
 if variants.count > 1 {
     print("\nPaarweise: Punkte der ersten minus der zweiten, je Austeilung über alle "

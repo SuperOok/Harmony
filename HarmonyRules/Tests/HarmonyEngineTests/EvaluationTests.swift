@@ -603,4 +603,53 @@ struct EvaluationTests {
         }
         #expect(added(open) > added(blocked))
     }
+
+    // MARK: - Der Würfel danach
+
+    /// Fledermaus: a tall tree and a low mountain beside it, the cube on the
+    /// mountain. One tree can carry several of them.
+    private var bat: AnimalCard {
+        card("Fledermaus", [11: .tree3, 12: .mountain1], cube: 12, [3, 6, 10, 16])
+    }
+
+    @Test("Der Würfel danach zählt nur mit Gewicht")
+    func theFollowingCubeCountsOnlyWithAWeight() {
+        let position = state(hand: [HeldCard(card: bat)])
+        #expect(!Evaluator.evaluate(position).terms.contains { $0.name.hasPrefix("Folgewürfel") })
+
+        var weights = Weights()
+        weights.followUp = 0.5
+        let term = Evaluator.evaluate(position, weights: weights).terms
+            .first { $0.name == "Folgewürfel Fledermaus" }
+        #expect(term != nil)
+        #expect((term?.points ?? 0) > 0)
+        // The gain is the step from the first cube to the second: 6 − 3.
+        #expect(term?.gain == 3)
+    }
+
+    @Test("Ein hoher Baum mit freien Nachbarn trägt den Würfel danach")
+    func aTallTreeWithRoomCarriesTheFollowingCube() {
+        // Ein Baum der Höhe 3 mitten im Plan. Mit freien Nachbarn kostet der
+        // zweite Würfel einen grauen Stein mehr; sind die Nachbarn bis auf
+        // einen zugebaut, muss das ganze Muster ein zweites Mal entstehen.
+        let board = BoardSide.a.board
+        guard let middle = board.cells.first(where: { board.neighbours($0).count == 6 }) else {
+            Issue.record("Kein Feld mit sechs Nachbarn")
+            return
+        }
+        var weights = Weights()
+        weights.followUp = 0.5
+        let tree: [Stone] = [.wood, .wood, .leaves]
+
+        let room = state(stacks: [middle: tree], hand: [HeldCard(card: bat)])
+        var crowded: [Int: [Stone]] = [middle: tree]
+        for cell in board.neighbours(middle).dropFirst() { crowded[cell] = [.water] }
+        let tight = state(stacks: crowded, hand: [HeldCard(card: bat)])
+
+        func ahead(_ position: EngineState) -> Double {
+            Evaluator.evaluate(position, weights: weights).terms
+                .first { $0.name == "Folgewürfel Fledermaus" }?.points ?? 0
+        }
+        #expect(ahead(room) > ahead(tight))
+    }
 }

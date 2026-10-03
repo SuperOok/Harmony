@@ -40,6 +40,9 @@ public struct EngineSettings: Sendable, Equatable, Codable {
     /// How much the cards that only lie open count, as a share of one in
     /// hand. See `Weights.openCards`.
     public var openCardProspects = Weights().openCards
+    /// How much the cube after the next one counts, as a share of the next.
+    /// See `Weights.followUp`.
+    public var followUpCubes = Weights().followUp
     /// How much the landscapes' prospects count — rivers, islands, the
     /// sleeping ones.
     public var landscapeProspects = 1.0
@@ -70,6 +73,7 @@ public struct EngineSettings: Sendable, Equatable, Codable {
         var weights = Weights()
         weights.candidates = cardProspects
         weights.openCards = openCardProspects
+        weights.followUp = followUpCubes
         weights.landscape = landscapeProspects
         weights.variety = variety
         weights.outlook = outlook
@@ -98,6 +102,8 @@ public struct EngineSettings: Sendable, Equatable, Codable {
             ?? d.cardProspects
         openCardProspects = try c.decodeIfPresent(Double.self, forKey: .openCardProspects)
             ?? d.openCardProspects
+        followUpCubes = try c.decodeIfPresent(Double.self, forKey: .followUpCubes)
+            ?? d.followUpCubes
         landscapeProspects = try c.decodeIfPresent(Double.self, forKey: .landscapeProspects)
             ?? d.landscapeProspects
         variety = try c.decodeIfPresent(Double.self, forKey: .variety) ?? d.variety

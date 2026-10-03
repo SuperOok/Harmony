@@ -257,6 +257,56 @@ ist ausgeschlossen, darunter bleibt er offen. Der Standard bleibt bei 0. Nicht
 gemessen: andere Anteile (etwa 1,0), die Seite B und drei bis vier
 Spielerinnen.
 
+**Der Würfel danach — gemessen in der Nacht zum 2026-10-03.** ❓ Die
+Bewertung sieht je Karte nur den **nächsten** Würfel. Was eine Karte danach
+noch hergibt, und dass ein hohes Feld (Baum3, Berg3) mehrere Habitate
+derselben Karte tragen kann, wenn der Würfel auf dem niedrigen Feld liegt
+(Fledermaus, Lachs, Krokodil, Eichhörnchen), war ihr unsichtbar.
+`Weights.followUp` (Standard 0, in `HarmonyMatch` `folgewuerfel=`) denkt den
+besten Anwärter fertig gebaut und sucht auf diesem Brett den besten für den
+Würfel danach: unter den Anwärtern, die ein Feld mit dem ersten teilen, und
+den drei billigsten übrigen. Gemeinsame Steine zählen einmal, der Gewinn ist
+der Schritt vom nächsten zum übernächsten Würfel.
+
+Standard gegen `folgewuerfel=0.5`, Punkte des Folgewürfels minus Standard,
+gepaart je Austeilung über alle Sitzordnungen, nichts beanstandet:
+
+| Lauf | Seite | Spielerinnen | Partien | Unterschied |
+| --- | --- | --- | --- | --- |
+| r1 | A | 2 | 64 | +1,0 ± 1,7 |
+| r2 | B | 2 | 64 | **+5,7 ± 1,6** |
+| r3 | A | 3 | 60 | +3,2 ± 1,4 |
+| r4 | B | 4 | 48 | +4,5 ± 1,4 |
+| r5 | B | 3 | 45 | −2,5 ± 1,7 |
+| r6 | A | 4 | 48 | +1,0 ± 1,8 |
+
+Zusammen **+2,5 ± 0,6** nach den Standardfehlern; die Läufe streuen aber
+mehr, als die Fehler erlauben (r2 gegen r5, beide Seite B), und mit dieser
+Streuung gerechnet bleiben **+2,3 ± 1,2**. Der Gewinn kommt aus den Karten,
+nicht aus den Landschaften, wo er auftritt (r2: 49,1 statt 43,2
+Kartenpunkte, mehr gelegte Würfel und fertige Karten). Die Rechenzeit
+steigt um rund 40 Prozent (s/Zug 16,8 → 23,4 in r1). Die Kennzahlen der
+Muster — geteilte Felder, Zentren — bewegen sich kaum: Der Folgewürfel
+wirkt eher über den Wert neuer Karten als über bewusst angelegte Zentren.
+Zentren entstehen schon im Standard, rund 1,5 je Partie.
+
+Ein Zusatzlauf mit **`folgewuerfel=1.0`** auf denselben Austeilungen wie r1
+(Seite A, zu zweit, 64 Partien) ergab **+3,7 ± 1,7**, wo 0,5 dort +1,0
+brachte. Ein stärkeres Gewicht ist damit eher besser; vor einer Änderung
+des Standards gehört 1,0 über beide Seiten und alle Spielerzahlen gemessen,
+und die Rechenzeit auf dem Gerät nachgemessen.
+
+**Die Sperr-Probe, dieselben Läufe.** Ein fertiges Muster, das nur an
+einem Würfel einer **anderen** Karte auf seinem Zielstein scheitert, kommt
+0,5 bis 0,8 Mal je Partie vor. Ein Preis dafür könnte also höchstens um
+zwei bis drei Punkte gewinnen, und das nur, wenn jeder Fall vermeidbar wäre
+und der Würfel sonst gelegt würde. Nicht gebaut.
+
+**Seite B und die Inseln, dieselben Läufe.** Wasser bringt auf Seite B
+11,5 bis 13,6 Punkte, auf Seite A 8 bis 11. Insgesamt liegt Seite B zu zweit
+und zu dritt bei 98 bis 107 Punkten, Seite A bei 84 bis 91; zu viert liegen
+beide Seiten bei 82 bis 87.
+
 ## Offen aus Phase 6 — das Ende der Partie
 
 **Die Vorhersage des Spielendes eichen.** ❓ Seit dem 2026-09-22 schreibt

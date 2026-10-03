@@ -82,6 +82,15 @@ public struct Weights: Sendable, Equatable, Codable {
     /// card's prospect — discounted because the card may be gone by the time
     /// she takes it. **Not measured** until `HarmonyMatch` has run it.
     public var openCards = 0.0
+    /// How much the cube **after** the next one counts, as a share of what
+    /// the next one counts. Zero: each card promises only its next cube,
+    /// and a tall space that could carry several of its habitats is worth
+    /// no more than one that carries a single one. Above zero the best
+    /// candidate is thought built, cube and all, and the best candidate for
+    /// the following cube is sought on that board — around the same tall
+    /// space it needs a stone or two, elsewhere the whole pattern again.
+    /// **Not measured** until `HarmonyMatch` has run it.
+    public var followUp = 0.0
     public var landscape = 1.0
     public var variety = 0.05
 
@@ -335,6 +344,9 @@ public struct Prepared: Sendable {
     /// turn that lays one changes what the next cube is worth, and then the
     /// prospect is no longer that card's.
     let cubesPlaced: [String: Int]
+    /// The best candidate for the cube after the next, given the next one's
+    /// candidate built. `nil` unless `Weights.followUp` was above zero.
+    let followUps: [String: Evaluator.FollowUp]?
     /// Which spaces carried a cube when this was worked out. A turn that
     /// lays one more does not throw the stock away — see `Evaluator.habitats`.
     let cubes: Set<Int>
@@ -421,6 +433,18 @@ public enum Evaluator {
                 .max { $0.worth < $1.worth }
         }
 
+        var followUps: [String: FollowUp]? = nil
+        if weights.followUp > 0 {
+            followUps = [:]
+            for card in cardsInPlay(of: state) where followUps?[card.name] == nil {
+                guard let first = prospects[card.name] else { continue }
+                let held = held[card.name] ?? HeldCard(card: card)
+                followUps?[card.name] = followUp(after: first, of: held,
+                                                among: habitats[card.name] ?? [],
+                                                state, available)
+            }
+        }
+
         return Prepared(
             landscapeNow: scoring.breakdown().reduce(0) { $0 + $1.points },
             landscapeTerms: landscapeTerms(state, scoring: scoring, weights: weights,
@@ -429,6 +453,7 @@ public enum Evaluator {
             habitats: habitats,
             prospects: prospects,
             cubesPlaced: cubesPlaced,
+            followUps: followUps,
             cubes: state.cubeCells)
     }
 
@@ -550,15 +575,21 @@ public enum Evaluator {
                                available: Availability,
                                prepared: Prepared? = nil) -> [Promise] {
         let laid = prepared.map { state.cubeCells.subtracting($0.cubes) } ?? []
+        func untouched(_ habitat: Habitat) -> Bool {
+            !laid.contains { habitat.missing[$0] != nil || habitat.cubeCell == $0 }
+        }
+        var heldFor: [String: HeldCard] = [:]
+        var weighedAhead: Set<String> = []
         let best = state.hand.filter { !$0.isFinished }.compactMap { held -> Prospect? in
+            heldFor[held.card.name] = held
             // Vorgewogen gilt, solange diese Karte seither keinen Würfel
             // bekommen hat und der damals beste Anwärter noch steht. Ein
             // Würfel auf einem seiner Felder nimmt ihn heraus, und dann
             // könnte ein anderer der beste sein.
             if let ready = prepared?.prospects[held.card.name],
                prepared?.cubesPlaced[held.card.name] == held.cubesPlaced,
-               !laid.contains(where: { ready.habitat.missing[$0] != nil
-                                       || ready.habitat.cubeCell == $0 }) {
+               untouched(ready.habitat) {
+                weighedAhead.insert(held.card.name)
                 return ready
             }
             return habitats(of: held.card, on: state, prepared)
@@ -583,7 +614,7 @@ public enum Evaluator {
         let apart = chosen.reduce(0) { $0 + $1.worth }
         let factor = apart > 0 ? bestWorth / apart : 1
 
-        return chosen.map { prospect in
+        var promises = chosen.map { prospect in
             Promise(term: Term(name: "Aussicht \(prospect.card)",
                                points: prospect.worth * factor * weights.candidates
                                    * weights.outlook,
@@ -592,6 +623,109 @@ public enum Evaluator {
                                detail: prospect.detail),
                     stones: prospect.habitat.missingStoneCount)
         }
+
+        // (2b) Der Würfel danach. Vorgewogen gilt er wie der erste, solange
+        // kein Würfel dieses Zuges eines seiner Felder genommen hat.
+        if weights.followUp > 0 {
+            for first in chosen {
+                guard let held = heldFor[first.card] else { continue }
+                let ahead: FollowUp?
+                let stored = weighedAhead.contains(first.card) ? prepared?.followUps : nil
+                if let stored, let ready = stored[first.card], untouched(ready.habitat) {
+                    ahead = ready
+                } else if let stored, stored[first.card] == nil {
+                    ahead = nil
+                } else {
+                    ahead = followUp(after: first, of: held,
+                                     among: habitats(of: held.card, on: state, prepared),
+                                     state, available)
+                }
+                guard let ahead else { continue }
+                promises.append(Promise(
+                    term: Term(name: "Folgewürfel \(first.card)",
+                               points: ahead.worth * weights.followUp * weights.candidates
+                                   * weights.outlook,
+                               kind: .prospect, gain: Double(ahead.gain),
+                               chance: ahead.chance,
+                               detail: ahead.detail),
+                    stones: ahead.extraStones))
+            }
+        }
+        return promises
+    }
+
+    /// The cube after the next one: the best candidate for it on the board
+    /// where the next one's candidate stands built and carries its cube.
+    struct FollowUp: Sendable {
+        let habitat: Habitat
+        let gain: Int
+        /// The chance of getting **both** patterns built, shared stones
+        /// counted once.
+        let chance: Double
+        /// What the second pattern costs beyond the first.
+        let extraStones: Int
+        var worth: Double { Double(gain) * chance }
+        var detail: String {
+            "\(gain) Punkte × \(Int((chance * 100).rounded())) %, "
+                + "\(extraStones) Steine mehr"
+        }
+    }
+
+    /// Two kinds of candidates are looked at for the following cube, not
+    /// all of them against all: those sharing a space with the first, which
+    /// is where a tall space carries several habitats, and the three
+    /// cheapest of the rest, which stand for a pattern built a second time
+    /// elsewhere. Pairing every candidate with every other would cost the
+    /// square of a few hundred per card and laying.
+    static func followUp(after first: Prospect, of held: HeldCard, among stock: [Habitat],
+                         _ state: EngineState, _ available: Availability) -> FollowUp? {
+        let next = held.cubesPlaced + 1
+        guard next < held.card.points.count else { return nil }
+        let gain = held.card.points[next] - held.card.points[next - 1]
+        let spaces = Set(first.habitat.requirement.keys)
+
+        var sharing: [Habitat] = []
+        var apart: [Habitat] = []
+        for habitat in stock where habitat.cubeCell != first.habitat.cubeCell
+            && habitat.requirement != first.habitat.requirement {
+            if habitat.requirement.keys.contains(where: spaces.contains) {
+                sharing.append(habitat)
+            } else {
+                apart.append(habitat)
+            }
+        }
+        apart.sort { $0.missingStoneCount < $1.missingStoneCount }
+
+        let firstStones = first.habitat.missingStoneCount
+        var best: FollowUp? = nil
+        for habitat in sharing + apart.prefix(3) {
+            guard let needed = missingStones(together: [first.habitat, habitat], on: state)
+            else { continue }
+            let total = needed.values.reduce(0, +)
+            let chance = chance(ofBuilding: needed, state: state, available: available)
+            guard chance > 0 else { continue }
+            let candidate = FollowUp(habitat: habitat, gain: gain, chance: chance,
+                                     extraStones: max(0, total - firstStones))
+            if best == nil || candidate.worth > best!.worth { best = candidate }
+        }
+        return best
+    }
+
+    /// The stones a set of candidates still needs together, by colour,
+    /// shared spaces paid once. `nil` when they cannot all come about — a
+    /// contradiction, or a space that would have to grow under a cube.
+    static func missingStones(together habitats: [Habitat],
+                              on state: EngineState) -> [Stone: Int]? {
+        guard let combined = Habitat.combinedRequirement(habitats) else { return nil }
+        var needed: [Stone: Int] = [:]
+        for (cell, wanted) in combined {
+            let stack = state.stacks[cell] ?? []
+            guard !wanted.stacks.contains(stack) else { continue }
+            guard !state.cubeCells.contains(cell),
+                  let way = stack.waysTo(wanted).first else { return nil }
+            for stone in way { needed[stone, default: 0] += 1 }
+        }
+        return needed
     }
 
     /// The best candidate among the cards that lie open, which she may take
