@@ -38,8 +38,10 @@ class Scene:
         self.peaks[(q, r)] = height
         self.things[(q, r)] = mountain(height, q*31 + r*7 + height)
 
-    def svg(self, view=(0, 0, 100, 100), width=1000):
-        """The scene through a camera: view is (x, y, w, h) in drawing units."""
+    def svg(self, view=(0, 0, 100, 100), width=1000, inject=()):
+        """The scene through a camera: view is (x, y, w, h) in drawing units.
+        `inject` is (y, svg) pieces to draw at that depth, among the things
+        that stand: what lies nearer is drawn over them."""
         b = self.b
         vx, vy, vw, vh = view
         size = 'width="100%" height="100%"' if width is None else f'width="{width}" height="{round(width*vh/vw)}"'
@@ -63,6 +65,7 @@ class Scene:
             g = []
             draw(g, cx, cy)
             items.append((cy + 0.001*q, g))
+        items += [(y, piece) for y, piece in inject]
         for (q, r), (draw, x, y) in self.animals:
             g = []
             draw(g, x, y)

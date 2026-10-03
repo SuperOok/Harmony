@@ -331,6 +331,15 @@ def main():
     house = s.b.pos(*cubes[0])
     tree = s.b.pos(*next(c for c, v in layout.items() if v.startswith('Baum')))
     a = anchors(house, tree, scale, [s.b.pos(*c) for c in cubes])
+    used = set()
+    def collect(ops):
+        for o in ops:
+            if o.get('f', '').startswith('@'):
+                used.add(o['f'][1:])
+            collect(o.get('g', []))
+    collect(scene_ops)
+    collect(squirrel_ops)
+    ex.gradients = {k: v for k, v in ex.gradients.items() if k in used}   # not the other animals' shades
     out = dict(
         view=[num(v) for v in view],
         background='#22313A',

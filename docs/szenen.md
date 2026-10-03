@@ -270,13 +270,61 @@ Pinsel Haarbüschel.
 
 ## Die Tierfigur
 
-Bisher gibt es nur das Eichhörnchen (`figures.py`). Es ist aus Kreisen und
+Das Eichhörnchen (`figures.py`) kam zuerst; vier weitere folgen im nächsten
+Abschnitt. Es ist aus Kreisen und
 Ellipsen gebaut, aber wie die Steine schattiert: jedes Teil ein rundes
 Volumen, hell oben links, dunkel unten rechts. Der Schwanz ist eine
 einzige buschige Feder entlang einer Mittellinie mit Breitenverlauf, außen
 mit Fellspitzen und innen mit hellen Strähnen; die Ohrpinsel sind
 Haarbüschel. Schwanz, Kopf, Auge und Nuss sind eigene Gruppen mit
 Drehpunkt und damit einzeln animierbar.
+
+## Vier weitere Tiere (2026-10-04)
+
+Je eine Landschaft, damit sich zeigt, wie Wasser, Getreide, Berg und Luft
+aussehen können. Alle als SVG-Animation; **noch nicht in der App** (der
+Export `export.py` ist auf das Eichhörnchen verdrahtet).
+
+```bash
+python3 tools/szenen/stories.py                 # alle vier
+python3 tools/szenen/stories.py Ente Adler      # einzelne
+```
+
+| Tier | Karte (Muster, Würfel) | Figur | Geschichte |
+| --- | --- | --- | --- |
+| **Ente** | Gebäude + Wasser, 4 Würfel, Würfel auf Wasser | `figures_more.py`: Erpel, an der Wasserlinie abgeschnitten, Ring davor | paddelt von links herein, schaut sich um, gründelt (Heck hoch, Kopf unter Wasser), schüttelt das Heck; Ringe auf dem Wasser |
+| **Marienkäfer** | Baum1 + Feld, 5 Würfel, Würfel auf Feld | `fig_bug.py`: von hinten oben, Flügeldecken öffnen sich wie Türen | krabbelt durch die Halme, Fühler, Flügel entfalten und flattern, hebt ab und setzt weiter vorn auf; **die Halme davor verdecken ihn** (`depth`) |
+| **Adler** | Berg3 + Feld, 2 Würfel, Würfel auf Berg3 | `fig_bird.py`: sitzend mit gefaltetem Flügel, fliegend mit zwei Flügeln | gleitet von links oben heran, bremst über dem Gipfel, landet, faltet, schaut, schreit mit halb gespreizten Flügeln |
+| **Rabe** | Gebäude + Feld, 2 Würfel, Würfel auf Feld | dieselbe Vogelfigur, schwarz, schlanker | fliegt über das Feld (Schatten läuft am Boden), landet, hüpft zweimal, ruft dreimal |
+
+**Warum Adler und nicht Lama.** Der Würfel des Lamas liegt auf dem Feld
+neben dem Berg, nicht auf dem Berg. Der Adler (Berg3 + Feld) hat ihn auf dem
+Gipfel und deckt zugleich das Fliegen ab; der Rabe fliegt, landet aber auf
+dem Feld, weil seine Karte es so verlangt.
+
+**Aufbau.**
+
+| Datei | Inhalt |
+| --- | --- |
+| `anim.py` | schreibt eine Geschichte als animiertes SVG, für jede Figur: Füße, Blickrichtung (`face`), Drehung (`rot`), Stauchung, Kamera, Teile mit Drehpunkt (`rotate`, `translate`, `scale`), Schatten auf dem Boden, Ringe (`below`) |
+| `stories.py` | die vier Geschichten, Bild für Bild: `Setup` liefert Szene, Zielfeld und die drei Kameraausschnitte (nah, weit, Lebensraum) |
+| `figures_more.py` | Farbtöne der neuen Figuren, Erpel |
+| `fig_bug.py`, `fig_bird.py` | Marienkäfer; Adler und Rabe aus einem Bau (`bird_body`) |
+| `cards.py` | `MIX` und `BEHIND` je Tier: Wasser um die Ente, Felder um den Käfer, Berge um den Adler, Äcker um den Raben |
+
+**Ansehen.** Die Vorschau hakt bei SMIL: `qlmanage` zeichnet es nicht. Im
+Browser (zum Beispiel lokal mit `python3 -m http.server -d tools/szenen/out`)
+lässt sich eine Stelle anspringen:
+
+```js
+const s = document.documentElement; s.pauseAnimations(); s.setCurrentTime(6.5)
+```
+
+**Was noch fehlt.** Es sind erste Entwürfe, nicht abgenommen: Die Figuren
+sind klein im Bild (der Lebensraum-Ausschnitt zeigt alle Würfel, nicht nur
+den ersten), der Erpel taucht nur mit dem Kopf, der Adler ähnelt einem Geier,
+und die Flügelschläge sind grob (ein Flügel dreht sich um die Schulter,
+Verkürzung fehlt). Die zweiten und dritten Tiere je Karte kommen nicht vor.
 
 ## Noch offen
 

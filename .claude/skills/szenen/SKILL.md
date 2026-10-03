@@ -17,6 +17,11 @@ was verworfen wurde. Erst dort nachlesen, dann ändern.
 - `tools/szenen/scene.py`: Plan, Tiefensortierung, Dunst, Himmel, Kamera.
 - `tools/szenen/cards.py`: Szene einer Karte (Anordnung, Umgebung, drei Ausschnitte).
 - `tools/szenen/figures.py`: Tierfiguren; `animate.py`: die Animation.
+- `tools/szenen/stories.py` (mit `anim.py`, `figures_more.py`, `fig_bug.py`,
+  `fig_bird.py`): Ente, Marienkäfer, Adler, Rabe als Animation, noch nicht
+  in der App (`python3 tools/szenen/stories.py <Tier>`); Abschnitt *Vier
+  weitere Tiere* in `docs/szenen.md`. SMIL zeigt `qlmanage` nicht: im
+  Browser ansehen und mit `setCurrentTime` anspringen.
 
 ```bash
 python3 tools/szenen/scene.py --feld korn      # Beispielszene
