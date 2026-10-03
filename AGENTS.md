@@ -203,6 +203,8 @@ tools/                 Prüfwerkzeuge: Kartendaten (Python), Regeltests
                        (tests.sh), Oberflächentests (uitests.sh),
                        Verzweigung messen (messe-verzweigung.sh),
                        App-Icon zeichnen (app-icon.swift)
+  szenen/              Entwurf der Tierszenen als SVG (Python): Stil,
+                       Landschaften, Szene; Regeln in docs/szenen.md
 ```
 
 `MyApp/`, `HarmonyTests/` und `HarmonyUITests/` sind **synchronisierte Gruppen**

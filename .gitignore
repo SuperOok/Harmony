@@ -29,3 +29,7 @@ Carthage/Build/
 # Fastlane
 fastlane/report.xml
 fastlane/screenshots/**/*.png
+
+# Szenen-Generator: erzeugte Bilder und Python-Cache
+tools/szenen/out/
+__pycache__/

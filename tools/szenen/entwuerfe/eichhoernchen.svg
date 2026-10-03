@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024">
+  <!-- Background and palette from the app icon (IconFlower.swift). -->
+  <rect width="100" height="100" fill="#22313A"/>
+
+  <!-- Animatable parts as groups; pivots noted for SwiftUI. -->
+  <ellipse id="shadow" cx="51" cy="88.5" rx="24" ry="2.2" fill="#000" opacity="0.22"/>
+
+  <!-- Tail: a chain of dots, as in the icon; pivot at its base (38,74). Each dot can sway with a delay. -->
+  <g id="tail">
+    <circle cx="31" cy="70" r="12.5" fill="#B9472A"/>
+    <circle cx="23.5" cy="55" r="11.5" fill="#C9542D"/>
+    <circle cx="24.5" cy="39.5" r="10" fill="#D4612F"/>
+    <circle cx="32" cy="28.5" r="8.2" fill="#DD7034"/>
+    <circle cx="40" cy="23" r="5.6" fill="#E4803B"/>
+  </g>
+
+  <!-- Hind leg and foot. -->
+  <g id="leg">
+    <ellipse cx="47" cy="79" rx="10" ry="8" fill="#A9411F"/>
+    <ellipse cx="55" cy="86.2" rx="8.5" ry="2.7" fill="#A9411F"/>
+  </g>
+
+  <!-- Body; pivot at the bottom (52,86) for breathing and hops. -->
+  <g id="body">
+    <ellipse cx="52" cy="68" rx="15" ry="17" fill="#C9542D" transform="rotate(-12 52 68)"/>
+    <ellipse cx="58" cy="71" rx="7.5" ry="11.5" fill="#F2EDDB" transform="rotate(-12 58 71)"/>
+  </g>
+
+  <!-- Nut and front paws; nibbling moves this group up and down. -->
+  <g id="nut">
+    <ellipse cx="69" cy="63" rx="4.6" ry="5.4" fill="#744F30"/>
+    <path d="M64.2 60.4 Q69 55.6 73.8 60.4 Q69 58.8 64.2 60.4 Z" fill="#3F8F4A"/>
+    <ellipse cx="65" cy="64.5" rx="2.6" ry="3.4" fill="#A9411F"/>
+    <ellipse cx="73" cy="64.5" rx="2.6" ry="3.4" fill="#A9411F"/>
+  </g>
+
+  <!-- Head; pivot at the neck (57,55) for tilting and looking round. -->
+  <g id="head">
+    <!-- far ear -->
+    <path d="M58 37 Q57.5 29 61.5 26 Q65 31 64 38 Z" fill="#A9411F"/>
+    <circle cx="61.6" cy="25.6" r="1.6" fill="#8E3519"/>
+    <circle cx="60" cy="45" r="12" fill="#D4612F"/>
+    <ellipse cx="70" cy="49" rx="6.5" ry="5.2" fill="#D4612F"/>
+    <ellipse cx="66" cy="53" rx="6" ry="3.6" fill="#F2EDDB"/>
+    <!-- near ear, with its tuft -->
+    <path d="M50.5 39 Q49.5 29 54.5 24.5 Q59 30 58.5 37 Z" fill="#C9542D"/>
+    <path d="M52.6 36 Q52.4 30.5 54.6 28 Q56.6 31.5 56.4 35.5 Z" fill="#A9411F"/>
+    <circle cx="54.6" cy="23.8" r="2" fill="#A9411F"/>
+    <!-- eye: blinking scales it vertically about its centre -->
+    <g id="eye">
+      <circle cx="64" cy="43.5" r="2.4" fill="#22313A"/>
+      <circle cx="64.9" cy="42.6" r="0.8" fill="#F2EDDB"/>
+    </g>
+    <circle cx="76" cy="48" r="1.4" fill="#22313A"/>
+  </g>
+</svg>
