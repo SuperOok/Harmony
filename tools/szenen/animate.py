@@ -185,6 +185,7 @@ def main():
     o.append('<g>' + smil(None, [f'{f["face"]*f["sx"]*scale:.4f} {f["sy"]*scale:.4f}' for f in frames], 'scale'))
     o.append(f'<g transform="translate({-fx} {-fy})">' + squirrel_body(anim, shadow=False) + '</g></g></g>')
     out = head + '\n'.join(o) + '</svg>' + tail_
+    os.makedirs(OUT, exist_ok=True)           # a fresh clone has no out/ yet
     p = os.path.join(OUT, 'eichhoernchen-animation.svg')
     with open(p, 'w') as fh:
         fh.write(out)
