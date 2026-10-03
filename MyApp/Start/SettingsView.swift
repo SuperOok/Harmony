@@ -12,6 +12,12 @@ struct SettingsView: View {
 
     private static let limits: [Int?] = [nil, 10, 20, 30, 60]
 
+    /// On with the measured weight of one, off at zero.
+    private var followUpOn: Binding<Bool> {
+        Binding(get: { settings.followUpCubes > 0 },
+                set: { settings.followUpCubes = $0 ? 1 : 0 })
+    }
+
     var body: some View {
         Form {
             Section {
@@ -58,6 +64,32 @@ struct SettingsView: View {
                 Harmony nur, was den Platz wert ist, und wartet sonst auf eine \
                 bessere. Im Selbstspiel brachte das 3,4 Punkte je Partie; \
                 höhere Werte als 10 halfen nicht mehr.
+                """)
+            }
+
+            Section {
+                Toggle("Würfel danach mitrechnen", isOn: followUpOn)
+                    .accessibilityIdentifier("settings-follow-up")
+                if settings.followUpCubes > 0 {
+                    WeightRow(title: "Gewicht der Würfel danach", value: $settings.followUpCubes,
+                              range: 0.1...1.5, step: 0.1, standard: 1,
+                              note: "Wie viel ein späterer Würfel gegenüber dem nächsten zählt.")
+                    Stepper(value: $settings.followUpDepth, in: 1...4) {
+                        LabeledContent("Vorausgedacht",
+                                       value: settings.followUpDepth == 1
+                                           ? "1 Würfel" : "\(settings.followUpDepth) Würfel")
+                    }
+                    .accessibilityIdentifier("settings-follow-up-depth")
+                }
+            } header: {
+                SourceHeader("Würfel danach", measured: false)
+            } footer: {
+                Text("""
+                Sonst zählt je Karte nur der nächste Würfel. Mitgerechnet wird \
+                auch, was die Karte danach noch hergibt — etwa mehrere \
+                Fledermäuse um denselben hohen Baum. Kostet Rechenzeit: ein \
+                Würfel rund 40 Prozent, jeder weitere mehr. In Messung, \
+                deshalb noch nicht Standard.
                 """)
             }
 

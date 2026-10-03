@@ -296,6 +296,28 @@ brachte. Ein stärkeres Gewicht ist damit eher besser; vor einer Änderung
 des Standards gehört 1,0 über beide Seiten und alle Spielerzahlen gemessen,
 und die Rechenzeit auf dem Gerät nachgemessen.
 
+**Rekursiv, vorsortiert am 2026-10-03.** `Weights.followUpDepth`
+(`folgetiefe=`, Standard 1) denkt weitere Würfel voraus, jeden auf dem
+Brett, auf dem die vorherigen gebaut sind, gierig je Würfel. Eine Stunde,
+zu viert alle vier Varianten am Tisch, je Seite drei Austeilungen in allen
+Sitzordnungen (24 Partien, nichts beanstandet). Punkte gegenüber dem
+Standard:
+
+| Seite | 0,5 | 1,0 | 1,0, Tiefe 3 |
+| --- | --- | --- | --- |
+| A | +2,1 | +0,5 | +3,3 |
+| B | +9,3 | +7,9 | +8,2 |
+
+Alle drei schlagen den Standard, untereinander sind sie nicht zu
+unterscheiden: Die paarweisen Fehler liegen bei drei Austeilungen bei 3 bis
+6 Punkten. Tiefe 3 legt die meisten Würfel (9,8 bis 9,9 gegen 8,0 bis 8,8),
+lässt aber auch die meisten offen und verdoppelt die Rechenzeit gegenüber
+Tiefe 1 nahezu (s/Zug je Seite 35/41 Standard, 49/61 Tiefe 1, 79/92
+Tiefe 3; beide Läufe liefen gleichzeitig, die Verhältnisse gelten, die
+absoluten Zeiten nicht). Mehr Zentren legt sie nicht an. Nach diesem
+Vorsortieren lohnt die Tiefe ihre Rechenzeit nicht; offen bleibt, ob sie es
+mit einem Abschlag je Stufe täte.
+
 **Die Sperr-Probe, dieselben Läufe.** Ein fertiges Muster, das nur an
 einem Würfel einer **anderen** Karte auf seinem Zielstein scheitert, kommt
 0,5 bis 0,8 Mal je Partie vor. Ein Preis dafür könnte also höchstens um

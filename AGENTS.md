@@ -17,7 +17,7 @@ Xcode-Projekt prüfbar.
 **Wo es steht:** Stand 2026-09-29. Der Durchstich aus Phase 6
 trägt und läuft **auf dem Gerät**: Die App rechnet ihre Züge selbst, eine
 Partie beginnt mit leerem Spielplan und füllt sich, und sie überdauert das
-Weglegen. Geprüft wird mit 237 Regelfällen (`tools/tests.sh`, gut drei
+Weglegen. Geprüft wird mit 239 Regelfällen (`tools/tests.sh`, gut drei
 Sekunden), 41 App-Fällen für Wissen der Partie, Verlauf, Spielstand, Sitzung und
 Begründung (`tools/apptests.sh`) und acht Oberflächenfällen
 (`tools/uitests.sh`).

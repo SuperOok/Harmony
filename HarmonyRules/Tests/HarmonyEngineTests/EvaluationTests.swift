@@ -652,4 +652,43 @@ struct EvaluationTests {
         }
         #expect(ahead(room) > ahead(tight))
     }
+
+    @Test("Tiefer gedacht trägt die Mitte mehr Würfel als der Rand")
+    func deeperTheMiddleCarriesMoreThanTheEdge() {
+        // Ein Baum der Höhe 3 in der Mitte mit sechs freien Nachbarn gegen
+        // einen, dem nur zwei Nachbarn frei bleiben. Ein Würfel danach passt
+        // um beide; drei passen nur um den in der Mitte.
+        let board = BoardSide.a.board
+        guard let middle = board.cells.first(where: { board.neighbours($0).count == 6 }) else {
+            Issue.record("Kein Feld mit sechs Nachbarn")
+            return
+        }
+        let tree: [Stone] = [.wood, .wood, .leaves]
+        let open = state(stacks: [middle: tree], hand: [HeldCard(card: bat)])
+        var crowded: [Int: [Stone]] = [middle: tree]
+        for cell in board.neighbours(middle).dropFirst(2) { crowded[cell] = [.water] }
+        let tight = state(stacks: crowded, hand: [HeldCard(card: bat)])
+
+        func ahead(_ position: EngineState, depth: Int) -> Double {
+            var weights = Weights()
+            weights.followUp = 1
+            weights.followUpDepth = depth
+            return Evaluator.evaluate(position, weights: weights).terms
+                .filter { $0.name.hasPrefix("Folgewürfel Fledermaus") }
+                .reduce(0) { $0 + $1.points }
+        }
+        let shallow = ahead(open, depth: 1) - ahead(tight, depth: 1)
+        let deep = ahead(open, depth: 3) - ahead(tight, depth: 3)
+        #expect(deep > shallow)
+        #expect(ahead(open, depth: 3) > ahead(open, depth: 1))
+    }
+
+    @Test("Tiefe 1 ist der eine Würfel danach")
+    func depthOneIsTheOneFollowingCube() {
+        var weights = Weights()
+        weights.followUp = 1
+        let terms = Evaluator.evaluate(state(hand: [HeldCard(card: bat)]), weights: weights)
+            .terms.filter { $0.name.hasPrefix("Folgewürfel") }
+        #expect(terms.map(\.name) == ["Folgewürfel Fledermaus"])
+    }
 }
