@@ -20,7 +20,10 @@ HEX_GAP = 0.95                # a board hex is drawn this much of its size
 # How things fade with distance. A row r < 0 lies -r rows behind the front.
 FADE_PER_ROW = 0.22           # visibility lost per row back
 SATURATION_FAR = 0.45         # colour left in anything behind the front row
-HAZE_TOP = (0.22, 0.5)        # the sky: solid down to, then fading out by
+HAZE_TOP = (22, 50)           # the sky: solid down to this height, clear by this one
+                              # (a scene may set its own horizon, see cards.py)
+STAR = '#F2EDDB'              # stars and moon, the icon's light centre
+MOON_R = 3.2
 
 # A stone: radius, its ellipse, its height.
 STONE_RX, STONE_RY, STONE_H = 9, 3.5, 6.3
@@ -54,6 +57,12 @@ CROWN = [  # (dx, dy above the leaves' foot, radius, in the back)
 ]
 CROWN_FRONT = ('#74C57B', '#46974F', '#2E6B36')    # light, base, dark
 CROWN_BACK = ('#55A35D', '#357A3E', '#22552A')
+
+# Bush (a tree of height 1): low clumps filling the hex, duller than a crown.
+BUSH = ('#5E9663', '#3B7343', '#26502D')
+BUSH_CLUMPS = 7
+BUSH_SPREAD = 0.55            # how far the clumps reach, in hex radii
+BUSH_SIZE = (2.0, 2.7)        # clump radius, smallest to largest
 
 # Mountain: a rocky cone stepping in at every stone. Its stones are drawn
 # taller than the others so that a Berg3 is at least as high as a Baum3.

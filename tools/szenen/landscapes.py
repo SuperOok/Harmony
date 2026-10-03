@@ -11,21 +11,28 @@ import random
 from style import *
 
 R, SQ = HEX_RADIUS, SQUASH
-W = R*math.sqrt(3)
+COL = 1.5*R                     # flat-top hexes, as on the player board:
+ROW = math.sqrt(3)*R*SQ         # columns 1.5 radii apart, rows one hex high
 RX, RY, H = STONE_RX, STONE_RY, STONE_H
 
 # Neighbour across the edge whose middle lies at this angle (0 = right,
 # clockwise, since y grows downwards).
-NEIGHBOURS = {0: (1, 0), 60: (0, 1), 120: (-1, 1), 180: (-1, 0), 240: (0, -1), 300: (1, -1)}
+NEIGHBOURS = {30: (1, 0), 90: (0, 1), 150: (-1, 1), 210: (-1, 0), 270: (0, -1), 330: (1, -1)}
 
 
 class Board:
-    """Where the hexes lie: axial (q, r), hex (0, 0) at origin."""
-    def __init__(self, origin=(50 + W/2, 72)):
+    """Where the hexes lie: axial (q, r) on flat-top hexes, (0, 0) at origin.
+    Moving in q goes right and half a row down, in r one row down."""
+    def __init__(self, origin=(50, 72)):
         self.ox, self.oy = origin
 
     def pos(self, q, r):
-        return self.ox + W*(q + r/2), self.oy + 1.5*R*SQ*r
+        return self.ox + COL*q, self.oy + ROW*(r + q/2)
+
+    @staticmethod
+    def depth(q, r):
+        """Rows in front of (> 0) or behind (< 0) the front row through (0, 0)."""
+        return r + q/2
 
 
 # ------------------------------------------------------------- helpers
@@ -35,43 +42,46 @@ def points(ps): return ' '.join(f'{x:.2f},{y:.2f}' for x, y in ps)
 def grey(v): v = max(0, min(255, int(v))); return f'#{v:02X}{v:02X}{v:02X}'
 
 def corners(cx, cy, s=1.0):
-    return [(cx + s*R*math.cos(math.radians(30 + 60*k)), cy + s*R*math.sin(math.radians(30 + 60*k))*SQ)
+    return [(cx + s*R*math.cos(math.radians(60*k)), cy + s*R*math.sin(math.radians(60*k))*SQ)
             for k in range(6)]
 
 def inside(px, py, cx, cy, s=1.0):
     dx, dy = abs(px - cx)/(s*R), abs(py - cy)/(s*R*SQ)
-    return dx <= math.sqrt(3)/2 and dy + dx/math.sqrt(3) <= 1
+    return dy <= math.sqrt(3)/2 and dx + dy/math.sqrt(3) <= 1
 
 def outer_edges(board, cells):
     """Edges of a group of hexes that border no other hex of the group."""
     for q, r in cells:
         pts = corners(*board.pos(q, r))
         for k in range(6):
-            angle = (60*(k + 1)) % 360
+            angle = 60*k + 30
             dq, dr = NEIGHBOURS[angle]
             if (q + dq, r + dr) not in cells:
                 yield pts[k], pts[(k + 1) % 6], angle
 
-def visibility(r):
+FAR_LEVELS = 24
+
+def visibility(depth, fade=FADE_PER_ROW):
     """1 in the front row, less for every row behind it."""
-    return max(0.0, 1 + FADE_PER_ROW*r) if r < 0 else 1.0
+    return max(0.0, 1 + fade*depth) if depth < 0 else 1.0
+
+def fog(q, r):
+    """The haze filter for a hex behind the front row, or None."""
+    d = Board.depth(q, r)
+    return f'far{min(FAR_LEVELS, math.ceil(-d))}' if d < 0 else None
 
 
-def defs():
-    """Gradients and filters every scene uses."""
+def defs(fade=FADE_PER_ROW, horizon=HAZE_TOP):
+    """Gradients and filters every scene uses. `fade` is the visibility lost
+    per row back, `horizon` where the sky is solid and where it is clear."""
     d = ['<defs>']
     for k, (b, t, dk) in STONES.items():
         d.append(f'<linearGradient id="side-{k}" x1="0" x2="1"><stop offset="0" stop-color="{dk}"/><stop offset="0.3" stop-color="{b}"/>'
                  f'<stop offset="0.45" stop-color="{t}"/><stop offset="0.7" stop-color="{b}"/><stop offset="1" stop-color="{dk}"/></linearGradient>')
         d.append(f'<radialGradient id="top-{k}" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="{t}"/><stop offset="1" stop-color="{b}"/></radialGradient>')
-    for r in range(-6, 0):
-        a = 0.2 + 0.6*visibility(r)
-        d.append(f'<filter id="far{-r}"><feColorMatrix type="saturate" values="{SATURATION_FAR}" result="s"/>'
-                 f'<feFlood flood-color="{BACKGROUND}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="fm"/>'
-                 f'<feComposite in="s" in2="fm" operator="arithmetic" k2="{a:.2f}" k3="{1-a:.2f}"/></filter>')
-    d.append(f'<linearGradient id="haze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{BACKGROUND}"/>'
-             f'<stop offset="{HAZE_TOP[0]}" stop-color="{BACKGROUND}"/><stop offset="{HAZE_TOP[1]}" stop-color="{BACKGROUND}" stop-opacity="0"/></linearGradient>')
-    for name, (light, base, dark) in (('ball', CROWN_FRONT), ('ball-back', CROWN_BACK)):
+    d.append(f'<linearGradient id="haze" gradientUnits="userSpaceOnUse" x1="0" y1="{horizon[0]}" x2="0" y2="{horizon[1]}">'
+             f'<stop offset="0" stop-color="{BACKGROUND}"/><stop offset="1" stop-color="{BACKGROUND}" stop-opacity="0"/></linearGradient>')
+    for name, (light, base, dark) in (('ball', CROWN_FRONT), ('ball-back', CROWN_BACK), ('bush', BUSH)):
         d.append(f'<radialGradient id="{name}" cx="0.36" cy="0.3" r="0.75"><stop offset="0" stop-color="{light}"/>'
                  f'<stop offset="0.6" stop-color="{base}"/><stop offset="1" stop-color="{dark}"/></radialGradient>')
     d.append(f'<linearGradient id="water" gradientUnits="userSpaceOnUse" x1="0" y1="40" x2="0" y2="100">'
@@ -80,15 +90,21 @@ def defs():
     return d
 
 
-def board(o, b, rows=range(-6, 3), cols=range(-8, 8)):
-    for r in rows:
-        for q in cols:
-            cx, cy = b.pos(q, r)
-            if not (-W < cx < 100 + W and 20 < cy < 110):
-                continue
-            a = 0.25 + 0.75*visibility(r)
-            o.append(f'<polygon points="{points(corners(cx, cy, HEX_GAP))}" fill="{HEX_FILL}" fill-opacity="{a:.2f}" '
-                     f'stroke="{HEX_EDGE}" stroke-opacity="{a:.2f}" stroke-width="0.35"/>')
+def cells_in(b, view, margin=R):
+    """Every hex whose middle lies in the view, or near it."""
+    x, y, w, h = view
+    span = range(-40, 40)
+    return [(q, r) for q in span for r in span
+            if x - margin < b.pos(q, r)[0] < x + w + margin and y - margin < b.pos(q, r)[1] < y + h + margin]
+
+def board(o, b, view=(0, 0, 100, 100), fade=FADE_PER_ROW, horizon=HAZE_TOP):
+    for q, r in sorted(cells_in(b, view), key=lambda c: b.pos(*c)[1]):
+        cx, cy = b.pos(q, r)
+        if cy < horizon[0] - 10:
+            continue
+        a = 0.25 + 0.75*visibility(Board.depth(q, r), fade)
+        o.append(f'<polygon points="{points(corners(cx, cy, HEX_GAP))}" fill="{HEX_FILL}" fill-opacity="{a:.2f}" '
+                 f'stroke="{HEX_EDGE}" stroke-opacity="{a:.2f}" stroke-width="0.35"/>')
 
 
 # ------------------------------------------------------------- stones
@@ -158,8 +174,27 @@ def building(base='stone'):
 
 # ------------------------------------------------------------- tree
 
-def tree(height):
+def bush(seed=0):
+    """A tree of height 1: low clumps spread over the hex, no trunk, darker
+    than a crown so it keeps in the background."""
+    def draw(o, cx, cy):
+        rr = random.Random(seed)
+        clumps = []
+        for k in range(BUSH_CLUMPS):
+            a = 2*math.pi*k/BUSH_CLUMPS + rr.uniform(-0.3, 0.3)
+            d = R*BUSH_SPREAD*(0.45 if k % 2 else 1.0)*rr.uniform(0.8, 1.05)
+            clumps.append((math.cos(a)*d, math.sin(a)*d*SQ, rr.uniform(*BUSH_SIZE)))
+        clumps.append((0, 0, BUSH_SIZE[1]*1.1))
+        shadow(o, cx, cy, R*BUSH_SPREAD + 2.5, (R*BUSH_SPREAD + 2.5)*SQ)
+        for dx, dz, r in sorted(clumps, key=lambda c: c[1]):
+            o.append(f'<circle cx="{cx+dx:.2f}" cy="{cy+dz-r*0.75:.2f}" r="{r:.2f}" fill="url(#bush)"/>')
+    return draw
+
+
+def tree(height, seed=0):
     """Wood stones as a narrow trunk, the leaves as a crown of clumps."""
+    if height == 1:
+        return bush(seed)
     def draw(o, cx, cy):
         shadow(o, cx, cy)
         for i in range(height - 1):
@@ -247,7 +282,7 @@ def water(o, b, cells, name):
     cells = set(cells)
     rnd = random.Random(name)
     o.append(f'<clipPath id="clip-{name}">' + ''.join(f'<polygon points="{points(corners(*b.pos(q, r), 1.004))}"/>' for q, r in cells) + '</clipPath>')
-    o.append(f'<g clip-path="url(#clip-{name})"><rect width="100" height="100" fill="url(#water)"/>')
+    o.append(f'<g clip-path="url(#clip-{name})"><rect x="-500" y="-500" width="1100" height="1100" fill="url(#water)"/>')
     for q, r in sorted(cells):
         cx, cy = b.pos(q, r)
         for _ in range(RIPPLES_PER_HEX):
@@ -256,7 +291,7 @@ def water(o, b, cells, name):
                      f'stroke-opacity="{rnd.uniform(0.25, 0.55):.2f}" stroke-width="0.3" stroke-linecap="round"/>')
     o.append('</g>')
     for p, q, angle in outer_edges(b, cells):         # the far banks show their earth wall
-        if 180 <= angle < 360 or angle == 0:
+        if 180 < angle < 360:
             o.append(f'<polygon points="{points([p, q, (q[0], q[1]+1.3), (p[0], p[1]+1.3)])}" fill="{BANK_WALL}" opacity="0.8"/>')
     for p, q, _ in outer_edges(b, cells):
         o.append(f'<line x1="{p[0]:.2f}" y1="{p[1]:.2f}" x2="{q[0]:.2f}" y2="{q[1]:.2f}" stroke="{BANK_EDGE}" stroke-opacity="0.7" stroke-width="0.45" stroke-linecap="round"/>')
@@ -317,3 +352,19 @@ def field(o, b, cells, kind='korn', seed=3):
             items.append((py, ''.join(_blade(px + rnd.uniform(-0.25, 0.25), py, rnd.uniform(lo, hi), rnd.uniform(-1.2, 1.2), rnd.choice(st['blades']), 0.22)
                                       for _ in range(rnd.randint(3, 6)))))
     return items
+
+
+def sky(o, view, horizon, seed=5):
+    """An evening sky above the horizon: stars, brighter the higher, and a moon."""
+    x, y, w, h = view
+    if y > horizon[1]:
+        return
+    rnd = random.Random(seed)
+    top, low = y, horizon[1]
+    for _ in range(int(w*(low - top)/40)):
+        sx, sy = rnd.uniform(x, x + w), rnd.uniform(top, low)
+        up = (low - sy)/max(1, low - top)
+        o.append(f'<circle cx="{sx:.2f}" cy="{sy:.2f}" r="{rnd.uniform(0.12, 0.32):.2f}" fill="{STAR}" opacity="{min(1, 0.15 + up*rnd.uniform(0.5, 1.1)):.2f}"/>')
+    mx, my, mr = x + w*0.76, top + (low - top)*0.28, MOON_R
+    o.append(f'<circle cx="{mx:.2f}" cy="{my:.2f}" r="{mr*2.2:.2f}" fill="{STAR}" opacity="0.06"/>')
+    o.append(f'<path d="M{mx:.2f} {my-mr:.2f} A{mr} {mr} 0 1 0 {mx:.2f} {my+mr:.2f} A{mr*0.78:.2f} {mr} 0 1 1 {mx:.2f} {my-mr:.2f} Z" fill="{STAR}" transform="rotate(-25 {mx:.2f} {my:.2f})"/>')

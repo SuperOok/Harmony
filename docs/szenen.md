@@ -1,6 +1,6 @@
 # Szenen der Tierkarten
 
-Stand 2026-10-03. Entwurf für kleine Start- und Zwischenanimationen, eine
+Stand 2026-10-03, abends. Entwurf für kleine Start- und Zwischenanimationen, eine
 je Tierkarte. Noch nichts davon ist in der App. Gezeichnet wird mit einem
 Generator in Python, der SVG schreibt (`tools/szenen/`). Damit ist jede
 Änderung in Sekunden als Bild zu sehen. Die SwiftUI-Fassung folgt, wenn der
@@ -12,12 +12,17 @@ Stil steht.
 | --- | --- |
 | `tools/szenen/style.py` | alle Stellschrauben: Farben, Maße, Höhen, Dunst, Feldlesarten |
 | `tools/szenen/landscapes.py` | eine Funktion je Landschaft: wie sie aussieht |
-| `tools/szenen/scene.py` | stellt Landschaften auf den Plan, sortiert nach Tiefe, schreibt das SVG |
-| `tools/szenen/entwuerfe/` | erste Tierfigur (Eichhörnchen), still und als Sprung animiert |
+| `tools/szenen/scene.py` | stellt Landschaften auf den Plan, sortiert nach Tiefe, legt Dunst und Himmel darüber, schreibt das SVG durch eine Kamera |
+| `tools/szenen/cards.py` | die Szene einer Karte: Muster so oft wie Würfel, Anordnung, Umgebung, Kameraausschnitte |
+| `tools/szenen/figures.py` | die Tierfiguren, schattiert, in Teilen animierbar |
+| `tools/szenen/animate.py` | die Eichhörnchen-Animation als animiertes SVG |
+| `tools/szenen/entwuerfe/` | erste flache Fassung des Eichhörnchens, nur noch zur Erinnerung |
 | `tools/szenen/out/` | erzeugte Bilder, nicht eingecheckt |
 
 ```bash
-python3 tools/szenen/scene.py --feld korn
+python3 tools/szenen/scene.py --feld korn       # Beispielszene mit jeder Landschaft
+python3 tools/szenen/cards.py Eichhörnchen      # Szene einer Karte, drei Zoomstufen
+python3 tools/szenen/animate.py                 # die Animation
 ```
 
 ```bash
@@ -47,11 +52,18 @@ Steinfarben der Spielansicht, dazu je ein heller und ein dunkler Ton.
 Licht fällt von links oben. Durch die erleuchteten Fenster und den Dunst
 wirkt die Szene wie eine Abendstimmung.
 
-**Schräg von oben auf den Plan.** Sechseckfelder, zur Ellipse gestaucht
-(`SQUASH`), ohne Fluchtpunkt. Der Plan reicht über die Szene hinaus.
-Hinten verblasst alles zur Hintergrundfarbe hin: Je Reihe gehen 22 %
-Sichtbarkeit verloren, und die Farben verlieren Sättigung. Oben läuft die
-Fläche ins Dunkle aus.
+**Schräg von oben auf den Plan.** Sechseckfelder mit flacher Oberseite wie
+auf dem Spielplan, vertikal gestaucht (`SQUASH`), ohne Fluchtpunkt. Der
+Plan reicht über die Szene hinaus. Oben liegt ein Horizont mit Abendhimmel,
+Sternen und Mondsichel, der in der Welt verankert ist und beim Zoomen nicht
+wandert.
+
+**Dunst ohne Filter.** Hinten verblasst alles zur Hintergrundfarbe. Das
+geschieht durch halbtransparente Schleier zwischen den Reihen, die alles
+bedecken, was weiter oben im Bild liegt; was danach gezeichnet wird, ist
+näher und bleibt klar. SVG-Filter taugen dafür nicht: WebKit zeichnet
+gefilterte Gruppen bei starkem Zoom nicht mehr oder sehr langsam, auf dem
+iPhone fehlten dadurch Baumkronen und Wasser, und die Animation ruckelte.
 
 ## Die Landschaften
 
@@ -94,6 +106,49 @@ Echse und Waschbär passen auch zu Steppe bzw. Wiese. Die Halme werden mit
 den stehenden Dingen nach Tiefe sortiert. So verdecken sie, was hinter
 ihnen steht, und ein Tier kann aus dem Korn schauen.
 
+## Die Szene einer Karte
+
+Das Muster der Karte wird so oft auf den Plan gelegt, wie die Karte Würfel
+trägt, in allen sechs Drehungen, nicht gespiegelt. Muster dürfen Steine
+teilen wie im Spiel, jeder Würfel aber liegt auf einem eigenen Feld. Eine
+Suche (`cards.place`) wählt die Anordnung: wenig Felder, alles im Bild, das
+erste Tier vorn in der Mitte, die übrigen hinten und seitlich verteilt,
+nichts Hohes vor einem Tier. Ein Baum der Höhe 3 darf sich drei Häuser
+teilen; das Eichhörnchen braucht dann vier Felder statt neun.
+
+Die **Umgebung** füllt den Plan, damit die Szene nicht leer ist, in drei
+Zonen je Tier (`MIX`): vorn nur Niedriges (Wasser, Felder, Büsche), in der
+Mitte und weit hinten je nach Tier. Das Eichhörnchen lebt im Wald: Bäume
+direkt hinter dem Habitat, Wald ringsum, kein offenes Feld. Weitere
+Habitate in der Umgebung stören nicht, die Szene soll aufmuntern, nicht
+zählen. Vor den beiden äußeren Häusern liegen links zwei Wasserfelder,
+rechts ein Feld mit einem Busch darunter.
+
+**Büsche** (Baum1) sind keine Krone, sondern acht niedrige Ballen, die das
+Feld füllen, ohne Stamm und dunkler als Kronen.
+
+**Kamera.** Das Bild ist hochkant wie das iPhone 15 Pro Max (430 × 932).
+Drei Ausschnitte je Karte: `nah` (das erste Tier), `mittel` (das Habitat),
+`weit` (mit Umgebung bis zum Horizont). Kleine Tiere brauchen die Nähe, das
+Eichhörnchen ist nur etwa ein Viertel so hoch wie das Haus.
+
+## Die Animation
+
+`animate.py` rechnet die Zeitleiste Bild für Bild (25 je Sekunde) und
+schreibt sie als SMIL-Werte ins SVG; das SVG enthält keine Logik, und
+dieselbe Zeitleiste kann später SwiftUI antreiben. Sie läuft 13,5 Sekunden
+und beginnt in der Baumkrone, nicht auf dem Haus: Das Haus ist die
+Landschaft des Würfels, dort endet jede Animation.
+
+1. Nahaufnahme der Krone, das Eichhörnchen springt hinein, hält inne.
+2. Die Kamera zoomt einmal heraus.
+3. Es läuft über die Krone, springt aufs Dach, läuft den First hinunter.
+4. Es kommt auf seinem Haus zur Ruhe und knabbert.
+5. Die Kamera zoomt ein zweites Mal heraus: alle drei Häuser, die
+   äußeren gut zur Hälfte im Bild.
+
+Zoom nur herein, nie wieder zurück, das wirkt unruhig.
+
 ## Verworfen
 
 - **Kreise statt Steine.** Der erste Entwurf stapelte Kreise. Das wirkte
@@ -105,29 +160,34 @@ ihnen steht, und ein Tier kann aus dem Korn schauen.
   sah das Haus aus wie ein Pilz.
 - **Krone als einzelne Wölbung.** Sie wirkte wie ein Kissen oder ein
   Pilzhut. Erst die einzelnen Kugeln machen daraus einen Baum.
+- **SVG-Filter für den Dunst.** Siehe oben: zu langsam bei starkem Zoom.
+- **Video der Animation zur Prüfung.** Ein WebKit-Programm nahm sie Bild für
+  Bild auf. Nach dem Wegfall der Filter läuft das SVG auch auf dem iPhone
+  flüssig, der Umweg war überflüssig und ist gestrichen.
 - **Berg als Steinstapel mit Felsspitze.** Das sah aus wie Fässer mit
   Zelt, und die Füllstücke zwischen Nachbarn verschwanden hinter den
   Scheiben.
 
 ## Die Tierfigur
 
-Bisher gibt es nur das Eichhörnchen (`tools/szenen/entwuerfe/`): flach,
-aus Kreisen und Ellipsen gebaut. Der Schwanz ist eine Kette von Kreisen,
-als Anklang an die Punkte des Icons. Jedes Teil (Schwanz, Kopf, Auge,
-Nuss, Körper) ist eine eigene Gruppe mit Drehpunkt und damit einzeln
-animierbar. Die animierte Fassung springt vom Dach auf den Baum und
-knabbert dort an der Nuss. Sie stammt noch aus der Zeit vor den räumlichen
-Steinen und passt im Stil noch nicht zur Kulisse.
+Bisher gibt es nur das Eichhörnchen (`figures.py`). Es ist aus Kreisen und
+Ellipsen gebaut, aber wie die Steine schattiert: jedes Teil ein rundes
+Volumen, hell oben links, dunkel unten rechts. Der Schwanz ist eine
+einzige buschige Feder entlang einer Mittellinie mit Breitenverlauf, außen
+mit Fellspitzen und innen mit hellen Strähnen; die Ohrpinsel sind
+Haarbüschel. Schwanz, Kopf, Auge und Nuss sind eigene Gruppen mit
+Drehpunkt und damit einzeln animierbar.
 
 ## Noch offen
 
-- Wie die Muster einer Karte auf dem Plan liegen. Angedacht ist die volle
-  Würfelbesetzung: das Muster so oft, wie die Karte Würfel trägt, und auf
-  jedem Würfelfeld ein Tier.
+- Die Animationen 2 und 3 je Karte: Tier k kommt auf sein Würfelfeld, die
+  früheren sitzen schon an ihren Plätzen. `cards.build(name, arrived=k)`
+  liefert die Szene dafür.
+- Die übrigen 31 Tiere; bis dahin steht auf dem Würfelfeld ein Würfel.
+- Umgebung (`MIX`) und Feldlesart je Tier festlegen.
 - Ob der Dunst innerhalb eines zusammenhängenden Gebirges einheitlich
-  sein soll; jetzt zerfällt ein Gebirge über zwei Reihen in zwei Helligkeiten.
-- Die Tierfiguren im räumlichen Stil der Kulisse.
+  sein soll.
 - Die Übertragung nach SwiftUI (`TimelineView` und `Canvas`, wie bei der
   Blüte des Icons). Die Kulisse wird dort aus denselben Formeln gerechnet,
-  der Code bleibt klein. Das SVG des Generators ist mit rund 100 KB nur
-  deshalb groß, weil es jeden Halm einzeln ausschreibt.
+  der Code bleibt klein; das SVG ist mit rund 400 KB nur deshalb groß,
+  weil es jede Form einzeln ausschreibt.
