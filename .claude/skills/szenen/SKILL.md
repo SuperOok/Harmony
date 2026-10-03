@@ -56,6 +56,14 @@ einzelner Wunsch pro Runde, dann zeigen, nicht mehrere Änderungen bündeln.
 ## Offen
 
 Animationen 2 und 3 je Karte (`cards.build(name, arrived=k)`), die übrigen
-31 Tiere, Umgebung und Feldlesart je Tier, die Übertragung nach SwiftUI
-(`TimelineView` und `Canvas`, wie `IconFlower.swift`). Stand und Reihenfolge
-stehen am Ende von `docs/szenen.md`.
+31 Tiere, Umgebung und Feldlesart je Tier, die Rechenzeit der Szene auf dem
+Gerät. Stand und Reihenfolge stehen am Ende von `docs/szenen.md`.
+
+## In der App
+
+Die erste Animation läuft in der App (`MyApp/Szenen/`, vor „Über Harmony").
+Die Szene geht als Anzeigeliste dorthin: nach **jeder** Änderung an Stil,
+Landschaft oder Figur `python3 tools/szenen/export.py` laufen lassen, sonst
+zeigt die App den alten Stand. Eine Änderung an `animate.py` ist in
+`SquirrelTimeline.swift` nachzuziehen. Einzelheiten unter *In der App* in
+`docs/szenen.md`.

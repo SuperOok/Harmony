@@ -1,10 +1,49 @@
 # Szenen der Tierkarten
 
 Stand 2026-10-03, abends. Entwurf für kleine Start- und Zwischenanimationen, eine
-je Tierkarte. Noch nichts davon ist in der App. Gezeichnet wird mit einem
-Generator in Python, der SVG schreibt (`tools/szenen/`). Damit ist jede
-Änderung in Sekunden als Bild zu sehen. Die SwiftUI-Fassung folgt, wenn der
-Stil steht.
+je Tierkarte. Gezeichnet wird mit einem Generator in Python, der SVG
+schreibt (`tools/szenen/`). Damit ist jede Änderung in Sekunden als Bild zu
+sehen. In der App läuft bisher nur die erste Animation des Eichhörnchens,
+vor dem Über-Bildschirm (siehe *In der App*).
+
+## In der App
+
+Die Übertragung geht nicht über eine Neufassung der Landschaften in Swift,
+sondern über eine **Anzeigeliste**: `tools/szenen/export.py` liest das SVG
+der Szene zurück und schreibt die Formen in Zeichenreihenfolge nach
+`MyApp/Szenen/szene-eichhoernchen.json` (rund 480 KB, gut 3500 Knoten;
+Pfade nur aus M, L, Q, C, Z, Verläufe, ein Ausschnitt für das Wasser, benannte
+Gruppen). Dasselbe Python zeichnet damit Vorschau und App, ein Unterschied
+kann nur im Zeichnen selbst entstehen. Nach jeder Änderung an Stil, Landschaft
+oder Figur wird die Datei neu geschrieben:
+
+```bash
+python3 tools/szenen/export.py
+```
+
+| Datei | Inhalt |
+| --- | --- |
+| `MyApp/Szenen/SceneDisplayList.swift` | lädt die Liste, baut Pfade, zeichnet Knoten mit `Canvas`; Verläufe wie `objectBoundingBox` im SVG, Knoten außerhalb des Bildes werden übersprungen |
+| `MyApp/Szenen/SquirrelTimeline.swift` | die Zeitleiste in Swift, Zahl für Zahl aus `animate.py`; Ankerpunkte und Kameraausschnitte stehen in der Liste (`animate.anchors`) |
+| `MyApp/Szenen/SquirrelSceneView.swift` | `TimelineView` und `Canvas`, Kamera, Tier mit Schwanz, Nuss und Auge; Tippen beendet vorzeitig |
+
+Eine Änderung an `animate.py` muss in `SquirrelTimeline.swift` nachgezogen
+werden (und bei neuen Ankerpunkten in `anchors()`); der Test `SceneTests`
+prüft nur Anfang, Ende und dass die Kamera nie wieder hineinzoomt.
+
+Abgespielt wird sie, wenn in `StartView` „Über Harmony" angetippt wird: Die
+Szene liegt als Decke über dem Start-Bildschirm, beim Ausblenden wird der
+Über-Bildschirm darunter eingeschoben. Sie läuft 13,5 Sekunden, blendet in
+den letzten 0,5 aus (das Tier blendet dort anders als im SVG nicht aus, die
+Szene schon). Die Prüfeinstiege (`Launch.skipsIntro`) und „Bewegung
+reduzieren" überspringen sie.
+
+Der Ausschnitt ist ein Hochformat von 430 : 932 und wird so groß gezeichnet,
+wie er auf den Bildschirm passt; ein breiterer Bildschirm zeigt seitlich mehr.
+Dafür ist die Liste für den weitesten Ausschnitt (`weit`) gezeichnet, nicht
+für `mittel` wie das SVG; der Mond sitzt deshalb an anderer Stelle.
+**Auf dem Gerät nicht nachgemessen:** je Bild sind bis zu rund 3500 Formen zu
+zeichnen. Verläufe laufen als Füllung mit Matrix, nicht als Maske.
 
 ## Wo was liegt
 
@@ -248,7 +287,9 @@ Drehpunkt und damit einzeln animierbar.
 - Umgebung (`MIX`) und Feldlesart je Tier festlegen.
 - Ob der Dunst innerhalb eines zusammenhängenden Gebirges einheitlich
   sein soll.
-- Die Übertragung nach SwiftUI (`TimelineView` und `Canvas`, wie bei der
-  Blüte des Icons). Die Kulisse wird dort aus denselben Formeln gerechnet,
-  der Code bleibt klein; das SVG ist mit rund 400 KB nur deshalb groß,
-  weil es jede Form einzeln ausschreibt.
+- Die Rechenzeit der Szene auf dem Gerät. Wird sie zu knapp, bieten sich an:
+  die Felder (über 1000 Halme) nur nahe vor der Kamera zeichnen, oder die
+  ruhende Kulisse je Kameraschritt zwischenspeichern.
+- Die Liste ist mit 480 KB groß, weil sie jede Form einzeln ausschreibt.
+  Für mehr als ein Tier wird eine gemeinsame Kulisse oder eine Verdichtung
+  (Halme und Wellen aus Formeln) nötig.

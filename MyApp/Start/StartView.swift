@@ -17,9 +17,41 @@ struct StartView: View {
     /// Read when the screen appears and after the settings close, so the
     /// line under "Spielstärke" says what is set.
     @State private var settings = SettingsStore.load()
+    @State private var path: [StartLink] = []
+    /// The squirrel's animation, played before the About screen.
+    @State private var showsScene = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            stack
+            if showsScene {
+                SquirrelSceneView(
+                    onLeaving: {
+                        // About goes in underneath as the picture fades, with
+                        // no push of its own to be seen.
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) { path.append(.about) }
+                    },
+                    onFinished: { showsScene = false })
+                .zIndex(1)
+            }
+        }
+        // Decoded now rather than at the tap, where it would stall the first frames.
+        .task(priority: .utility) { _ = SceneDisplayList.squirrelHabitat }
+    }
+
+    private func openAbout() {
+        if Launch.skipsIntro || reduceMotion || SceneDisplayList.squirrelHabitat == nil {
+            path.append(.about)
+        } else {
+            showsScene = true
+        }
+    }
+
+    private var stack: some View {
+        NavigationStack(path: $path) {
             ZStack {
                 IconFlower.background.ignoresSafeArea()
 
@@ -116,7 +148,7 @@ struct StartView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("start-settings")
             Divider().padding(.leading, 52)
-            NavigationLink(value: StartLink.about) {
+            Button(action: openAbout) {
                 row("Über Harmony", systemImage: "info.circle", value: nil)
             }
             .buttonStyle(.plain)
