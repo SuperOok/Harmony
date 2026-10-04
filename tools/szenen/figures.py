@@ -198,5 +198,5 @@ from fig_eagle import EAGLE_FEET, eagle_still as eagle_still_new
 
 SIZE['Adler'] = 0.085
 FIGURES['Adler'] = _still(eagle_still_new, EAGLE_FEET)
-SIZE['Rabe'] = 0.05
+SIZE['Rabe'] = 0.065
 FIGURES['Rabe'] = _still(raven_still, BIRD_FEET)
