@@ -58,7 +58,7 @@ gesucht, gemeinsame Steine einmal gezählt. Gemessen mit `HarmonyMatch` über
 beide Seiten und zwei bis vier Spielerinnen: gegen null rund +2 bis +9
 Punkte je Partie; 0,5 und 1,0 sind nicht zu trennen, 1,5 und Tiefe 3 bringen
 nichts mehr. Es kostet rund 40 Prozent Rechenzeit, **auf dem Gerät noch nicht
-nachgemessen**; unter *Spielstärke* → „Würfel danach" lässt es sich
+nachgemessen** (siehe unten: 30,2 s im ersten Zug bei Tiefe 3); unter *Spielstärke* → „Würfel danach" lässt es sich
 abschalten, mit Gewicht und Tiefe 1 bis 3. In `HarmonyMatch` ist der alte
 Standard `ohne-folgewuerfel`. Einzelheiten in `docs/ideen-vorgemerkt.md`.
 
@@ -129,8 +129,14 @@ Auf dem iPhone 15 Pro Max, Release-Bau:
 | 3 Karten, fast leerer Plan | 401.856 | **24 s** |
 
 Gemessen vor der Vorhersage des Spielendes; mit ihr rechnet die Bewertung
-auf dem Mac rund zehn Prozent länger. Auf dem Gerät nachgemessen ist das
-noch nicht.
+auf dem Mac rund zehn Prozent länger.
+
+**Nachgemessen am 2026-10-03 auf dem Gerät „Zackebuh“** (von Hauke
+gemeldet, `-logSearch`): Harmonys erster Zug mit Vorhersage und Würfel danach
+in Tiefe 3 braucht **30,2 s bei 321.816 Zügen**. Das gilt als akzeptabel, weil
+spätere Züge viel weniger Züge prüfen. Der Standard (Tiefe 1) wurde nicht
+einzeln gemessen und liegt darunter, da Tiefe 3 auf dem Mac etwa die doppelte
+Zeit von Tiefe 1 braucht.
 
 **Der teuerste Fall ist nicht der leerste Plan**, sondern drei Karten in der
 Hand auf offenem Plan: Dort legen sechs von zehn Zügen einen Würfel. Keine

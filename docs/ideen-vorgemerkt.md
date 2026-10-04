@@ -356,6 +356,100 @@ und der Würfel sonst gelegt würde. Nicht gebaut.
 und zu dritt bei 98 bis 107 Punkten, Seite A bei 84 bis 91; zu viert liegen
 beide Seiten bei 82 bis 87.
 
+**Das Gefälle zwischen Seite A und B, Nachtlauf zum 2026-10-04.** ✅ Kein
+Fehler und kein Seitenproblem der Engine: Die Punkte je eigenem Zug sind auf
+beiden Seiten gleich, B läuft nur länger. `HarmonyMatch` schreibt dafür seit
+dem 2026-10-04 einen Block „Ende und Wasser" (Züge je Spielerin, Plan voll,
+Wasserfelder, Flusslänge, Inseln) und kennt die Einstellung `gierig`: nur
+Punkte in der Hand, kein Ausblick, keine Vorhersage, kein Würfel danach — eine
+Baseline dafür, was das Brett allein hergibt. Der Lauf steht in
+`tools/nachtlauf.sh`; die Rohdaten (`messungen/`, nicht eingecheckt) sind
+zwölf Läufe, nichts beanstandet.
+
+| Lauf | Partien | A: Punkte | A: Züge je Spielerin | B: Punkte | B: Züge je Spielerin | Punkte je Zug A / B |
+| --- | --- | --- | --- | --- | --- | --- |
+| `gierig`, 2 Spielerinnen | 16 | 78,7 ± 1,9 | 8,9 | 86,6 ± 2,6 | 10,0 | 8,8 / 8,7 |
+| `standard`, 2 | 32 | 92,9 ± 1,4 | 9,9 | 101,3 ± 1,5 | 10,7 | 9,4 / 9,5 |
+| `standard`, 3 | 24 | 87,3 ± 1,4 | 9,3 | 98,3 ± 1,6 | 10,1 | 9,4 / 9,7 |
+| `standard`, 4 | 16 | 86,1 ± 1,4 | 9,0 | 86,7 ± 1,1 | 9,0 | 9,6 / 9,6 |
+
+Alle Werte sind Mittel je Spielerin, eine Einstellung auf allen Plätzen. Die
+Zugzahlen sind **kurz**: Der Beutel ließe zu zweit 18, zu dritt 12, zu viert 9
+eigene Züge zu (36 Züge zusammen); zu zweit und zu dritt endet aber jede Partie
+über den vollen Plan (zwei freie Felder), nach rund zehn eigenen Zügen. Zu viert
+endet auf Seite A noch 81 Prozent der Partien über den Plan, auf Seite B
+keine — dort endet der Beutel, und am Ende liegen im Mittel 5,0 Felder frei
+(Seite A 2,9). Damit stimmt das Bild: Die zwei Felder mehr auf Seite B kosten
+rund einen Zug, und ein eigener Zug ist rund 9,5 Punkte wert; wo der Beutel
+beide Seiten gleich früh beendet (vier Spielerinnen), verschwindet das
+Gefälle. Auch die gierige Baseline liegt auf B 7,9 Punkte vor A, bei gleich
+vielen Punkten je Zug. Die Aufschlüsselung zu zweit, Standard, A gegen B:
+Karten 40,0 gegen 45,4, Wasser 10,4 gegen 13,3, Bäume 13,1 gegen 14,3, Berge
+7,7 gegen 7,1, Felder 8,4 gegen 8,0, Gebäude 13,4 gegen 13,2. Das Gefälle
+sitzt also bei Karten und Wasser, und beide folgen aus der längeren Partie.
+Zu viert gleichen sich Karten (40,3 und 40,4) und Landschaft an.
+
+Dazu zwei Paarvergleiche zu zweit, beide Seiten, je 16 Austeilungen in beiden
+Sitzordnungen (32 Partien, nichts beanstandet), Standard minus die
+Einstellung:
+
+| Einstellung | Seite A | Seite B |
+| --- | --- | --- |
+| `landschaften=1.5` | +7,9 ± 2,6 | +4,9 ± 2,2 |
+| `ohne-vorhersage` | +16,4 ± 3,0 | +8,7 ± 2,7 |
+
+Ein stärkerer Landschaftsausblick schadet also auf beiden Seiten; ob **weniger**
+als 1,0 besser ist, ist nicht gemessen. Die Vorhersage des Spielendes trägt
+viel: Ohne sie nimmt Harmony deutlich weniger Kartenpunkte (A: 25,5 gegen
+38,4), weil sie mit mehr Restzeit rechnet, als die Partie hat.
+
+**Folgerung und offene Frage.** Weil jeder weitere eigene Zug rund 9 Punkte
+bringt, ist die **Länge der Partie** der große Hebel: Zu zweit und zu dritt
+endet sie weit vor dem Beutelende. Ob sich das ausnutzen lässt, hängt davon ab,
+wer den Plan zuerst voll hat — zwei Harmonys verlängern gemeinsam, eine
+Mitspielerin am Tisch löst das Ende womöglich früher aus. Gemessen ist das
+nicht; ebenso steht der Vergleich mit echten Partien aus (wie viele Züge dort
+gespielt wurden, ob sie bei „leicht 110" länger dauerten). Mögliche Messungen:
+`landschaften` unter 1,0; ein Gewicht, das neue Felder zugunsten höherer
+Stapel verzögert (Tempo am Ende); eine Mitspielerin, die den Plan schneller
+füllt, als Gegenüber.
+
+**Echte Partien zum Vergleich, am 2026-10-04 vom Bewertungsblock abgetippt.**
+Vier Partien zu zweit, alle um 110 Punkte; es sind die Ergebnisse, die dort
+standen — ob andere fehlen, ist nicht bekannt, eine Auswahl nach oben also
+möglich. Gezählt ist je Partie eine Spielerin. „Karten" ist die Summe der
+Tierkarten, von denen Würfel kamen; wie viele davon fertig wurden, ist nicht
+festgehalten.
+
+| Partie | Seite | Bäume | Berge | Felder | Gebäude | Wasser | Karten (Zahl) | Summe |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | B | 19 | 11 | 15 | 5 | 15 | 46 (5) | 111 |
+| 2 | B | 9 | 6 | 10 | 25 | 10 | 58 (6) | 118 |
+| 3 | A | 5 | 17 | 10 | 5 | 11 | 61 (6) | 109 |
+| 4 | A | 18 | 9 | 5 | 15 | 11 | 48 (5) | 106 |
+
+Gegen Harmonys Mittel (`standard`, zu zweit, siehe oben), Mensch je Seite
+über zwei Partien:
+
+| Seite | Bäume | Berge | Felder | Gebäude | Wasser | Landschaft | Karten | Summe |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A, Mensch | 11,5 | 13 | 7,5 | 10 | 11 | 53,0 | 54,5 | 107,5 |
+| A, Harmony | 13,1 | 7,7 | 8,4 | 13,4 | 10,4 | 53,0 | 40,0 | 93,0 |
+| B, Mensch | 14 | 8,5 | 12,5 | 15 | 12,5 | 62,5 | 52 | 114,5 |
+| B, Harmony | 14,3 | 7,1 | 8,0 | 13,2 | 13,3 | 55,9 | 45,4 | 101,3 |
+
+Auf Seite A ist die **Landschaft gleich** (53,0 gegen 53,0); der ganze
+Abstand von 14,5 Punkten liegt bei den **Tierkarten**. Auf Seite B verteilt er
+sich je zur Hälfte auf Landschaft (+6,6, vor allem Felder) und Karten (+6,6).
+Zugleich liegen die menschlichen Ergebnisse nicht außerhalb dessen, was
+Harmony erreicht: Von 64 Ergebnissen zu zweit liegen auf A 7 bei 109 oder
+mehr (11 bei 106), auf B 11 bei 111 oder mehr und 7 bei 118 oder mehr. Es sind
+vier Partien mit möglicher Auswahl; sie sagen, **wo** nachzusehen ist, nicht
+wie groß der Abstand wirklich ist. Dazu passt, was die Aufschlüsselung der
+Engine zeigt: Harmony nimmt 5,2 Karten, schließt 1,8 ab und lässt 6,9 Würfel
+auf den Karten ungelegt (A). Offen: Zugzahl und Steine auf dem Plan der echten
+Partien, um die Partielänge zu vergleichen.
+
 ## Offen aus Phase 6 — das Ende der Partie
 
 **Die Vorhersage des Spielendes eichen.** ❓ Seit dem 2026-09-22 schreibt

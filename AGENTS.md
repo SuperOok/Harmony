@@ -39,15 +39,17 @@ Was es gibt, in Stichworten:
 - **Rechenzeit** auf dem iPhone 15 Pro Max, Release-Bau: halbvolles Brett
   ~1 s, Harmonys erster Zug 9 s, teuerster gemessener Fall 24 s; die Suche
   bleibt abbrechbar. Mit Vorhersage und Würfel danach rechnet die Bewertung
-  länger; **auf dem Gerät nicht nachgemessen**.
+  länger: Harmonys erster Zug mit Würfel danach in **Tiefe 3** (mehr als der
+  Standard) 30,2 s bei 321.816 Zügen auf dem Gerät „Zackebuh“, von Hauke
+  gemeldet und als akzeptabel befunden, weil spätere Züge viel weniger Züge
+  prüfen. Der Standard (Tiefe 1) ist nicht einzeln nachgemessen.
 - **Tierszenen** als Entwurf für kleine Animationen, noch nicht in der App:
   `tools/szenen/`, Regeln in `docs/szenen.md`.
 
 **Fürs Gerät `-configuration Release` bauen.** Das Schema baut beim
 Laufenlassen Debug, und Debug ist hier sechs- bis achtmal langsamer.
 
-**Offen:** Die Rechenzeit des Würfels danach auf dem Gerät; was zur
-Spielstärke noch zu messen ist, steht im Skill `spielstaerke` und in
+**Offen:** Was zur Spielstärke noch zu messen ist, steht im Skill `spielstaerke` und in
 `docs/ideen-vorgemerkt.md` (die offenen Karten sind gemessen: kein
 Unterschied). Was in Phase 5 offen blieb, führt `docs/05-ui.md` am Ende auf.
 Die Rechenzeit der Landschaft je Legung steht in `docs/06-durchstich.md`
