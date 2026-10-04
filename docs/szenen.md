@@ -342,8 +342,11 @@ andere überrascht:
   Liste je Tier ist rund 0,5 MB, siehe *Noch offen*.
 - Offene Messung: Rechenzeit der Szene auf dem iPhone (kein Gerät
   angeschlossen gewesen).
-- Beide Sitzungen auf `szenen1`: vor dem Arbeiten `git pull --rebase`, nur
-  eigene Pfade stagen.
+- Die Sitzungen haben je einen eigenen Worktree und Branch (`szenen1`,
+  `szenen2`, beide unter `.claude/worktrees/`). `szenen2` zweigt vom Stand
+  `6e6210a` ab, vor dieser Notiz. Zusammengeführt wird später per Merge;
+  Konflikte sind in `anim.py`, `scene.py`, `cards.py` und `stories.py` zu
+  erwarten, wo beide Seiten Tiere eintragen (`STORIES`, `MIX`, `SIZE`).
 
 ## Noch offen
 
