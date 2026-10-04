@@ -326,6 +326,25 @@ den ersten), der Erpel taucht nur mit dem Kopf, der Adler ähnelt einem Geier,
 und die Flügelschläge sind grob (ein Flügel dreht sich um die Schulter,
 Verkürzung fehlt). Die zweiten und dritten Tiere je Karte kommen nicht vor.
 
+**Übergabe (Stand 2026-10-04, Rückmeldung: „gute Anfänge, überarbeiten").**
+Zwei Sitzungen arbeiten daran, deshalb hier der Stand, damit keine die
+andere überrascht:
+
+- Die vier Entwürfe sind unverändert so, wie sie committet sind; was
+  zuerst anzufassen wäre, steht im Absatz davor. Gestaltet wird über
+  Bilder, ein Wunsch pro Runde.
+- Eine Änderung an einer Figur oder Geschichte betrifft nur ihre Datei
+  (`figures_more.py`, `fig_bug.py`, `fig_bird.py`, `stories.py`); `anim.py`,
+  `scene.py`, `cards.py` gelten für alle Tiere, dort Änderungen absprechen.
+- Nicht in der App sind die vier Tiere und ihre Szenen. Der Weg dahin ist
+  der des Eichhörnchens (*In der App*): `export.py` auf einen Tiernamen
+  und `SquirrelTimeline` auf eine Zeitleiste je Tier verallgemeinern; eine
+  Liste je Tier ist rund 0,5 MB, siehe *Noch offen*.
+- Offene Messung: Rechenzeit der Szene auf dem iPhone (kein Gerät
+  angeschlossen gewesen).
+- Beide Sitzungen auf `szenen1`: vor dem Arbeiten `git pull --rebase`, nur
+  eigene Pfade stagen.
+
 ## Noch offen
 
 - Die Animationen 2 und 3 je Karte: Tier k kommt auf sein Würfelfeld, die
