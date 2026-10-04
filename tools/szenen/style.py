@@ -91,8 +91,8 @@ RIDGE_WIDTH = 0.62            # in hex radii
 WATER = ('#4C8FC8', '#2A64A0')  # far, near
 RIPPLE = '#BFE0F5'
 RIPPLES_PER_HEX = 7
-BANK_WALL = '#1B3A55'
-BANK_EDGE = '#8FC3E6'
+BANK_WALL = '#7E6B44'          # the bank's wall, wet sand
+BANK_EDGE = '#E6DABA'          # the shore line, pale sand
 
 # Field: three ways to read it, chosen per animal (see docs/szenen.md).
 FIELD = {
