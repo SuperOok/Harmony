@@ -228,88 +228,9 @@ def bird_pose(p, spread=0.0, fold=1.0, legs=1.0, flap=None, head=0.0, tail=0.0, 
 
 
 def raven():
-    import fig_bird as fbird
-    S = Setup('Rabe')
-    length = 14.0
-    spot = S.spot
-    start = (spot[0] - 28, spot[1] - 17)
-    hop1 = (spot[0] + 1.4, spot[1] + 0.3)
-    hop2 = (spot[0] + 2.6, spot[1] - 0.3)
-    close = S.close(0.2, 5.0)
-    wide = frame(spot[0] + 1, spot[1] - 2, 20)
-    habitat = S.habitat
-    c1, c2 = (spot[0] - 14, spot[1] - 20), (spot[0] - 8, spot[1] - 8)
-    frames = []
-    for i in range(int(length*FPS)):
-        t = i/FPS
-        f = base_frame(close)
-        p = f['parts']
-        feet, rot = spot, 0.0
-        if t < 0.4:
-            feet, f['alpha'] = start, 0
-            bird_pose(p, 1, 0, 0.3, -25)
-            f['airborne'] = True
-        elif t < 2.8:                                # flies in over the field, quick wingbeats, then flares
-            u = (t - 0.4)/2.4
-            e = u**0.85
-            feet = bezier(start, c1, c2, spot, e)
-            nxt = bezier(start, c1, c2, spot, min(1, e + 0.02))
-            rot = max(-25, min(25, math.degrees(math.atan2(nxt[1] - feet[1], nxt[0] - feet[0]))*0.7))
-            f['alpha'] = clamp((t - 0.4)/0.3)
-            flap = -15 + 50*math.sin(t*2*math.pi*(3.2 if u < 0.7 else 4.0))
-            bird_pose(p, 1, 0, 0.3 + 0.7*clamp((u - 0.7)/0.3), flap, tail=-6)
-            f['ground'] = (feet[0], spot[1])           # the shadow runs along the ground below it
-            f['shadow'] = clamp((u - 0.1)/0.5)*0.6 + 0.2*u
-            if u > 0.72:
-                rot = -32*ease(clamp((u - 0.72)/0.28))
-        elif t < 3.5:                                # touches down
-            u = (t - 2.8)/0.7
-            flap = -5 + 35*math.sin(t*2*math.pi*3.5)*(1 - u)
-            bird_pose(p, 1, 0, 1, flap)
-            rot = -32*(1 - ease(u))
-            f['sy'] = 1 - 0.07*math.sin(u*math.pi)
-        elif t < 4.0:                                # folds
-            u = ease((t - 3.5)/0.5)
-            bird_pose(p, 1 - u, u, 1, -15*(1 - u))
-        elif t < 6.0:                                # hops forward twice, head cocked
-            u = (t - 4.0)/2.0
-            if u < 0.4:    a, b, v = spot, hop1, u/0.4
-            elif u < 0.55: a, b, v = hop1, hop1, 0
-            elif u < 0.95: a, b, v = hop1, hop2, (u - 0.55)/0.4
-            else:          a, b, v = hop2, hop2, 0
-            if a == b:
-                feet = a
-            else:
-                feet = jump(a, b, ease(v), 1.1)
-                f['ground'] = lerp2(a, b, ease(v))
-                f['sy'] = 1.06 if 0.1 < v < 0.9 else 1
-            bird_pose(p, 0, 1, 1, head=-12 + 10*math.sin(t*5), tail=6*math.sin(t*9))
-            f['view'] = lerp_view(close, wide, ease(clamp((t - 5.0)/1.0)))
-        elif t < 9.0:                                # the camera has pulled back; it caws, three times
-            f['view'] = wide
-            feet = hop2
-            u = (t - 6.0)/3.0
-            cry_n = u*3
-            k = cry_n - int(cry_n)
-            caw = math.sin(min(1, k/0.5)*math.pi) if k < 0.5 and cry_n < 3 else 0
-            bird_pose(p, 0, 1, 1, head=-18*caw + 4*math.sin(t*2), tail=-8*caw, beak=24*caw,
-                      blink=0.1 if 8.3 < t < 8.42 else 1)
-            f['sy'] = 1 + 0.04*caw
-        elif t < 10.4:                               # looks about
-            f['view'] = wide
-            feet = hop2
-            bird_pose(p, 0, 1, 1, head=14*math.sin((t - 9.0)*3)*(1 - (t - 9.0)/1.4))
-        else:                                        # the second pull-back: the farm
-            u = ease(clamp((t - 10.0)/3.0))
-            f['view'] = lerp_view(wide, habitat, u)
-            feet = hop2
-            bird_pose(p, 0, 1, 1, head=5*math.sin(t*2))
-            if t > length - 0.5:
-                f['alpha'] = (length - t)/0.5
-        f['feet'], f['rot'] = feet, rot
-        frames.append(f)
-    return dict(S=S, length=length, frames=frames, body=fbird.raven_body, parts=fbird.BIRD_PARTS,
-                feet=fbird.BIRD_FEET, shadow=fbird.RAVEN_SHADOW, below=None, file='rabe-animation.svg')
+    """The raven on the new flight pose; told in story_raven.py."""
+    import story_raven
+    return story_raven.ravens()
 
 
 # ------------------------------------------------------------- the registry

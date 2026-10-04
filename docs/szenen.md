@@ -295,7 +295,7 @@ python3 tools/szenen/stories.py Ente Adler      # einzelne
 | **Ente** | Gebäude + Wasser, 4 Würfel, Würfel auf Wasser | `figures_more.py`: Erpel, an der Wasserlinie abgeschnitten, Ring davor | paddelt von links herein, schaut sich um, gründelt (Heck hoch, Kopf unter Wasser), schüttelt das Heck; Ringe auf dem Wasser |
 | **Marienkäfer** | Baum1 + Feld, 5 Würfel, Würfel auf Feld | `fig_bug.py`: von hinten oben, ein Oval, Flügeldecken öffnen sich wie Türen; die Flügel sind bis dahin ganz eingeklappt | **Drei Käfer auf Grasland** (`story_bug.py`): zwei krabbeln langsam durchs Gras (mit Pausen), der dritte krabbelt über einen Busch, bleibt stehen, öffnet die Decken, entfaltet die Flügel und fliegt zu den anderen hinunter; **die Halme davor verdecken sie** (`depth`); Kamera nicht mehr ganz so nah (25 Einheiten breit), zieht einmal auf 36 heraus und bleibt dort; jeder Käfer hat sein eigenes Stück Feld |
 | **Adler** | Berg3 + Feld, 2 Würfel, Würfel auf Berg3 | `fig_eagle.py`: Weißkopfseeadler, klein und befiedert der Kopf, kurzer Hakenschnabel, lange gefaltete Flügel; `fig_chick.py`: Küken; `nest.py`: Horst | **Horst auf dem Gipfel** (`story_eagle.py`): die Mutter brütet, das Männchen fliegt mit einem Fisch heran, landet am Rand, füttert drei Küken nacheinander und fliegt weiter; Küken und Mutter bleiben, die Kamera zieht zweimal heraus |
-| **Rabe** | Gebäude + Feld, 2 Würfel, Würfel auf Feld | dieselbe Vogelfigur, schwarz, schlanker | fliegt über das Feld (Schatten läuft am Boden), landet, hüpft zweimal, ruft dreimal |
+| **Rabe** | Gebäude + Feld, 2 Würfel, Würfel auf Feld | `fig_raven_flight.py`: die Flugpose des Adlers (Flügel im Raum gedreht) in Schwarz, schmaler, mit dickem geradem Schnabel und Keilschwanz; am Boden `fig_bird.py` | `story_raven.py`: fliegt tief über das Feld (Schatten läuft am Boden), richtet sich zur Landung auf, faltet die Flügel, hüpft zweimal, ruft dreimal; zwei Figuren lösen sich bei der Landung ab |
 
 **Der Adler** ist seit dem 2026-10-04 größer (`SIZE` 0,085) und wirkt weniger wie ein Geier: Der erste Entwurf (`fig_bird.py`, jetzt nur noch Vorlage des Raben) hatte einen großen kahlen Kopf auf langem Hals und einen hängenden Schnabel. Der Horst ist ein Zwei-Hälften-Zeichnung (`nest.py`): Boden und hintere Kante unter den Tieren, vordere Kante darüber; sie sitzen darin, nicht davor. Die Geschichte steht in einer eigenen Datei, damit eine zweite Sitzung an `stories.py` arbeiten kann.
 
@@ -308,7 +308,7 @@ angezogen. Eben ausgestreckt hängt der nahe Flügel zu uns herab und der
 ferne ragt nach oben weg; angehoben zeigen beide nach oben; im Abschlag
 fährt der nahe am Bauch vorbei, und die Hand bleibt im Schlag zurück und
 knickt am Handgelenk. Die Geschichte gibt je Bild zwei Winkel
-(`wing_paths(arm, hand)`), die Pfade laufen als `d`-Animation (neue Teileart
+(`wing_paths(arm, hand)`; der Rabe hat dieselbe Form mit kürzerer Spannweite und schmalerem Flügel, `span` und `chord`), die Pfade laufen als `d`-Animation (neue Teileart
 `path` in `anim.py`). Zum Landen richtet sich die Figur auf (Drehung um die
 Krallen), faltet die Flügel und wird nach 0,4 s durch die sitzende abgelöst;
 zum Abflug umgekehrt.

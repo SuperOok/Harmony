@@ -43,46 +43,46 @@ FINGERS = (                    # (how far out, how far behind the leading edge),
 )
 
 
-def _lead(s):
+def _lead(s, span=SPAN):
     """The leading edge's way back from the shoulder: swept back, a little forward at the wrist."""
-    return 6 - 0.34*s + 5.0*math.sin(math.pi*s/SPAN)
+    return 6 - 0.34*s + 5.0*math.sin(math.pi*s/span)
 
 
-def _chord(s):
+def _chord(s, span=SPAN):
     """How far the trailing edge lies behind the leading one on the arm, scalloped at the secondaries."""
-    f = min(1.0, s/(0.62*SPAN))
+    f = min(1.0, s/(0.62*span))
     return 34 - 11*f + 1.6*math.sin(s*0.9)
 
 
-def _project(s, d, e_arm, e_hand, side, shoulder):
+def _project(s, d, e_arm, e_hand, side, shoulder, span=SPAN):
     """A point of the wing, s out along it and d behind its leading edge, as a point of the picture."""
-    a = min(s, 0.5*SPAN)
-    h = max(0.0, s - 0.5*SPAN)
+    a = min(s, 0.5*span)
+    h = max(0.0, s - 0.5*span)
     e1, e2 = math.radians(e_arm), math.radians(e_hand)
     up = a*math.sin(e1) + h*math.sin(e2)
     toward = side*(a*math.cos(e1) + h*math.cos(e2))
-    return (shoulder[0] + _lead(s) - d, shoulder[1] - CAMERA[0]*up + CAMERA[1]*toward)
+    return (shoulder[0] + _lead(s, span) - d, shoulder[1] - CAMERA[0]*up + CAMERA[1]*toward)
 
 
-def wing_paths(e_arm, e_hand, near=True, spread=1.0):
+def wing_paths(e_arm, e_hand, near=True, spread=1.0, span=SPAN, chord=1.0):
     """The outline and the feather lines of one wing, as SVG path data. Angles
-    in degrees above level; `spread` below 1 draws the wing drawn in (a stoop)."""
+    in degrees above level; `spread` below 1 draws the wing drawn in (a stoop);
+    `span` and `chord` make it longer or broader (a raven's is narrower)."""
     side = 1 if near else -1
     shoulder = SHOULDER if near else (SHOULDER[0] - 3, SHOULDER[1] - 2)
-    S = SPAN*spread
     def P(frac, d):
-        return _project(frac*SPAN*spread, d*spread, e_arm, e_hand, side, shoulder)
+        return _project(frac*span*spread, d*chord*spread, e_arm, e_hand, side, shoulder, span)
     pts = [P(k/14, 0) for k in range(15)]                          # leading edge, root to tip
     pts += [P(frac, d) for frac, d in FINGERS]                     # the fingers, tip to wrist
     frac = 0.758
     while frac > 0.02:                                             # the trailing edge back to the body
         frac -= 0.08
-        pts.append(P(max(frac, 0.0), _chord(max(frac, 0.0)*SPAN)))
-    pts.append(P(0.0, _chord(0.0)))
+        pts.append(P(max(frac, 0.0), _chord(max(frac, 0.0)*span, span)))
+    pts.append(P(0.0, _chord(0.0, span)))
     sil = 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in pts) + ' Z'
     lines = []
     for share in (0.28, 0.55, 0.8):                                # feather lines along the arm
-        seg = [P(f/12*0.74 + 0.04, share*_chord((f/12*0.74 + 0.04)*SPAN)) for f in range(13)]
+        seg = [P(f/12*0.74 + 0.04, share*_chord((f/12*0.74 + 0.04)*span, span)) for f in range(13)]
         lines.append('M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in seg))
     for frac, d in FINGERS[0::2]:                                  # one line along each finger
         a = P(frac - 0.08, max(2, d - 12))
