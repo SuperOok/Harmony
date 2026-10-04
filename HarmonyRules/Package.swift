@@ -36,6 +36,9 @@ let package = Package(
         // not "is this right", and `docs/04-architektur.md` asks for the
         // number rather than for a bound.
         .executableTarget(name: "HarmonyMeasure", dependencies: ["HarmonyEngine"]),
+        // What a whole card costs in stones, all its habitats laid over each
+        // other as far as the rules allow. `docs/kartenguete.md`.
+        .executableTarget(name: "HarmonyCardCost", dependencies: ["HarmonyRules"]),
         // Plays Harmony against random opponents, to measure the weights
         // the evaluation can only guess. Not a test either: it answers
         // "which is better", and a whole run takes hours, not seconds.
