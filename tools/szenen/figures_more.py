@@ -31,6 +31,11 @@ SHADES_MORE = {
     'eagle-brown': ('#8A6A4A', '#5E4430', '#34261A'),
     'eagle-white': ('#FFFFFF', '#F2EDDB', '#BDB49A'),
     'eagle-yellow': ('#FBE27A', '#EFC230', '#B38A10'),
+    'eagle-dark':  ('#6B5238', '#3F2F20', '#1E160E'),
+    'eagle-gold':  ('#D2AB72', '#A27B48', '#6B4D2A'),
+    'chick-down':  ('#FFFFFF', '#EAE5D5', '#B9B19A'),
+    'chick-beak':  ('#F6D77A', '#E0B13A', '#A87C14'),
+    'fish':        ('#EEF3F6', '#A5B8C6', '#5E7384'),
     'raven':       ('#5A6678', '#2E3846', '#12161D'),
     'raven-sheen': ('#7C8DB0', '#46567A', '#232C45'),
 }

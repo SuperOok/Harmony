@@ -294,8 +294,10 @@ python3 tools/szenen/stories.py Ente Adler      # einzelne
 | --- | --- | --- | --- |
 | **Ente** | Gebäude + Wasser, 4 Würfel, Würfel auf Wasser | `figures_more.py`: Erpel, an der Wasserlinie abgeschnitten, Ring davor | paddelt von links herein, schaut sich um, gründelt (Heck hoch, Kopf unter Wasser), schüttelt das Heck; Ringe auf dem Wasser |
 | **Marienkäfer** | Baum1 + Feld, 5 Würfel, Würfel auf Feld | `fig_bug.py`: von hinten oben, Flügeldecken öffnen sich wie Türen | krabbelt durch die Halme, Fühler, Flügel entfalten und flattern, hebt ab und setzt weiter vorn auf; **die Halme davor verdecken ihn** (`depth`) |
-| **Adler** | Berg3 + Feld, 2 Würfel, Würfel auf Berg3 | `fig_bird.py`: sitzend mit gefaltetem Flügel, fliegend mit zwei Flügeln | gleitet von links oben heran, bremst über dem Gipfel, landet, faltet, schaut, schreit mit halb gespreizten Flügeln |
+| **Adler** | Berg3 + Feld, 2 Würfel, Würfel auf Berg3 | `fig_eagle.py`: Weißkopfseeadler, klein und befiedert der Kopf, kurzer Hakenschnabel, lange gefaltete Flügel; `fig_chick.py`: Küken; `nest.py`: Horst | **Horst auf dem Gipfel** (`story_eagle.py`): die Mutter brütet, das Männchen fliegt mit einem Fisch heran, landet am Rand, füttert drei Küken nacheinander und fliegt weiter; Küken und Mutter bleiben, die Kamera zieht zweimal heraus |
 | **Rabe** | Gebäude + Feld, 2 Würfel, Würfel auf Feld | dieselbe Vogelfigur, schwarz, schlanker | fliegt über das Feld (Schatten läuft am Boden), landet, hüpft zweimal, ruft dreimal |
+
+**Der Adler** ist seit dem 2026-10-04 größer (`SIZE` 0,085) und wirkt weniger wie ein Geier: Der erste Entwurf (`fig_bird.py`, jetzt nur noch Vorlage des Raben) hatte einen großen kahlen Kopf auf langem Hals und einen hängenden Schnabel. Der Horst ist ein Zwei-Hälften-Zeichnung (`nest.py`): Boden und hintere Kante unter den Tieren, vordere Kante darüber; sie sitzen darin, nicht davor. Die Geschichte steht in einer eigenen Datei, damit eine zweite Sitzung an `stories.py` arbeiten kann.
 
 **Warum Adler und nicht Lama.** Der Würfel des Lamas liegt auf dem Feld
 neben dem Berg, nicht auf dem Berg. Der Adler (Berg3 + Feld) hat ihn auf dem

@@ -319,84 +319,6 @@ def bird_pose(p, spread=0.0, fold=1.0, legs=1.0, flap=None, head=0.0, tail=0.0, 
     p['head'], p['tail'], p['beak'], p['eye'] = head, tail, beak, (1, blink)
 
 
-def eagle():
-    import fig_bird as fbird
-    S = Setup('Adler')
-    length = 15.0
-    spot = S.spot
-    start = (spot[0] - 36, spot[1] - 22)
-    close = S.close(0.35, 4.6)
-    wide = frame(spot[0] - 1, spot[1] + 8, 28)
-    habitat = S.habitat
-    # the approach: a long glide down from the upper left, a flare over the peak
-    c1, c2 = (spot[0] - 18, spot[1] - 28), (spot[0] - 12, spot[1] - 9)
-    frames = []
-    for i in range(int(length*FPS)):
-        t = i/FPS
-        f = base_frame(close)
-        p = f['parts']
-        feet, rot = spot, 0.0
-        if t < 0.4:                                  # the empty peak
-            feet, f['alpha'] = start, 0
-            bird_pose(p, 1, 0, 0.3, -25)
-            f['airborne'] = True
-        elif t < 3.3:                                # glides in, flapping slowly, flares over the peak
-            u = (t - 0.4)/2.9
-            e = u**0.8
-            feet = bezier(start, c1, c2, spot, e)
-            nxt = bezier(start, c1, c2, spot, min(1, e + 0.02))
-            rot = max(-25, min(25, math.degrees(math.atan2(nxt[1] - feet[1], nxt[0] - feet[0]))*0.7))
-            f['alpha'] = clamp((t - 0.4)/0.3)
-            glide = 1 if u < 0.55 else 0
-            flap = -20 + 45*math.sin(t*2*math.pi*(1.3 if u < 0.75 else 2.6))
-            if glide and u > 0.2 and u < 0.5:
-                flap = -28 + 6*math.sin(t*3)          # soars with the wings out
-            bird_pose(p, 1, 0, 0.3 + 0.7*clamp((u - 0.7)/0.3), flap, tail=-8 + 10*math.sin(t*3))
-            f['airborne'] = u < 0.97
-            f['sy'] = 1.0
-            if u > 0.7:                              # braking: it rears up, wings pulled forward
-                rot = -35*ease(clamp((u - 0.7)/0.3))
-        elif t < 4.1:                                # lands, wings still out for balance
-            u = (t - 3.3)/0.8
-            feet = spot
-            flap = -10 + 30*math.sin(t*2*math.pi*2.4)*(1 - u)
-            bird_pose(p, 1, 0, 1, flap)
-            rot = -35*(1 - ease(u))
-            f['sy'] = 1 - 0.06*math.sin(u*math.pi)
-        elif t < 4.6:                                # folds the wings
-            u = ease((t - 4.1)/0.5)
-            bird_pose(p, 1 - u, u, 1, -25*(1 - u))
-        elif t < 6.4:                                # perched: looks left and right, blinks
-            u = t - 4.6
-            bird_pose(p, 0, 1, 1, head=-12*math.sin(u*2.4) + 6, tail=2*math.sin(t*3),
-                      blink=0.1 if 5.4 < t < 5.52 else 1)
-        elif t < 8.2:                                # the camera pulls back: the mountains
-            f['view'] = lerp_view(close, wide, ease((t - 6.4)/1.8))
-            bird_pose(p, 0, 1, 1, head=8*math.sin((t - 6.4)*2), tail=2*math.sin(t*3))
-        elif t < 10.2:                               # throws its head back and screams, wings half out
-            f['view'] = wide
-            u = (t - 8.2)/2.0
-            s = ease(clamp(u/0.2))*(1 - ease(clamp((u - 0.8)/0.2)))
-            cry = abs(math.sin(u*math.pi*3)) if 0.2 < u < 0.8 else 0
-            bird_pose(p, 0.95*s, 1 - 0.9*s, 1, -38*s + 8*math.sin(t*14)*s, head=-22*s,
-                      tail=-6*s, beak=20*cry*s)
-            f['sy'] = 1 + 0.03*s
-        elif t < 11.0:                               # settles
-            f['view'] = wide
-            u = (t - 10.2)/0.8
-            bird_pose(p, 0, 1, 1, head=5*math.sin(u*6)*(1 - u))
-        else:                                        # the second pull-back: the whole range
-            u = ease(clamp((t - 10.6)/3.0))
-            f['view'] = lerp_view(wide, habitat, u)
-            bird_pose(p, 0, 1, 1, head=6*math.sin(t*1.6), blink=0.1 if 12.2 < t < 12.32 else 1)
-            if t > length - 0.5:
-                f['alpha'] = (length - t)/0.5
-        f['feet'], f['rot'] = feet, rot
-        frames.append(f)
-    return dict(S=S, length=length, frames=frames, body=fbird.eagle_body, parts=fbird.BIRD_PARTS,
-                feet=fbird.BIRD_FEET, shadow=fbird.EAGLE_SHADOW, below=None, file='adler-animation.svg')
-
-
 def raven():
     import fig_bird as fbird
     S = Setup('Rabe')
@@ -483,6 +405,12 @@ def raven():
 
 
 # ------------------------------------------------------------- the registry
+
+def eagle():
+    """The nest on the peak; told in story_eagle.py."""
+    import story_eagle
+    return story_eagle.eagle_nest()
+
 
 STORIES = {'Ente': duck, 'Marienkäfer': ladybird, 'Adler': eagle, 'Rabe': raven}
 
