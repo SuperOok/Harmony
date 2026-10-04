@@ -194,6 +194,14 @@ enum Patterns {
     }
 }
 
+/// One card a seat held at the end: how far it got and what it paid.
+struct CardResult: Sendable, Codable {
+    let name: String
+    let cubes: Int
+    let total: Int
+    let points: Int
+}
+
 /// One game: which setting sat where, and how it went.
 struct GameResult: Sendable, Codable {
     let deal: Int
@@ -233,6 +241,10 @@ struct GameResult: Sendable, Codable {
     var waterStones: [Int] = []
     var riverLength: [Int] = []
     var islands: [Int] = []
+    /// The cards each seat held at the end, and every card that was turned
+    /// up during the game (open at some time, whoever took it).
+    var cardResults: [[CardResult]] = []
+    var cardsSeen: [String] = []
     /// Anything the referee objected to. A game with an objection is not
     /// counted.
     var objections: [String] = []
@@ -285,6 +297,13 @@ func play(deal: Int, rotation: Int, options: Options, cards: [AnimalCard]) -> Ga
     result.waterStones = water.map(\.stones)
     result.riverLength = water.map(\.river)
     result.islands = water.map(\.islands)
+    result.cardResults = table.seats.map { seat in
+        seat.hand.map { CardResult(name: $0.card.name, cubes: $0.cubesPlaced,
+                                   total: $0.card.points.count, points: $0.score) }
+    }
+    // What was never turned up is still in the deck.
+    let unseen = Set(table.deck.map(\.name))
+    result.cardsSeen = cards.map(\.name).filter { !unseen.contains($0) }
     result.scores = (0..<players).map(table.score(of:))
     result.landscape = (0..<players).map(table.landscape(of:))
     result.cards = (0..<players).map(table.cardPoints(of:))
@@ -516,6 +535,48 @@ print("  gesperrt: fertiges Muster nur auf dem Würfel einer anderen Karte · "
       + "verfolgt: Würfel mit wiedergefundenem Muster · Felder: von diesen Mustern "
       + "belegt · geteilt: mehrfach belegt · Zentren: hohe Felder unter zwei oder "
       + "mehr Mustern")
+
+/// Per card, what became of it: how often it was open, how often a seat of
+/// this setting took it, how often that ended in the last cube, and what it
+/// paid. Answers whether the engine takes good cards and leaves poor ones —
+/// `docs/kartenguete.md` rates the cards by their cost.
+print("\nKarten je Einstellung (Mittel über alle Partien)")
+for variant in variants {
+    struct Tally { var seen = 0, taken = 0, finished = 0, cubes = 0, cubesOf = 0, points = 0 }
+    var tally: [String: Tally] = [:]
+    for game in valid where game.cardResults.count == game.seats.count {
+        let own = game.seats.indices.filter { game.seats[$0] == variant }
+        guard !own.isEmpty else { continue }
+        for name in game.cardsSeen { tally[name, default: Tally()].seen += 1 }
+        for seat in own {
+            for card in game.cardResults[seat] {
+                var t = tally[card.name, default: Tally()]
+                t.taken += 1
+                if card.cubes >= card.total { t.finished += 1 }
+                t.cubes += card.cubes
+                t.cubesOf += card.total
+                t.points += card.points
+                tally[card.name] = t
+            }
+        }
+    }
+    guard !tally.isEmpty else { continue }
+    print("  \(variant)")
+    print("  " + pad("Karte", 14) + pad("offen", 7) + pad("genommen", 10) + pad("fertig", 9)
+          + pad("Würfel", 9) + "Punkte je genommener Karte")
+    for (name, t) in tally.sorted(by: { ($0.value.taken, $1.key) > ($1.value.taken, $0.key) }) {
+        let share = t.seen > 0 ? 100 * Double(t.taken) / Double(t.seen) : 0
+        print("  " + pad(name, 14) + pad("\(t.seen)", 7)
+              + pad(t.seen > 0 ? "\(f(share, 0)) %" : "—", 10)
+              + pad(t.taken > 0 ? "\(f(100 * Double(t.finished) / Double(t.taken), 0)) %" : "—", 9)
+              + pad(t.taken > 0 ? "\(f(100 * Double(t.cubes) / Double(t.cubesOf), 0)) %" : "—", 9)
+              + (t.taken > 0 ? f(Double(t.points) / Double(t.taken)) : "—"))
+    }
+}
+print("  offen: Partien mit dieser Einstellung, in denen die Karte im Lauf der Partie auslag · "
+      + "genommen: Anteil davon, in denen ein Platz dieser Einstellung sie nahm · "
+      + "fertig: Anteil der genommenen, die den letzten Würfel bekamen · "
+      + "Würfel: gelegt im Verhältnis zu allen Würfeln der genommenen Karten")
 
 if variants.count > 1 {
     print("\nPaarweise: Punkte der ersten minus der zweiten, je Austeilung über alle "
