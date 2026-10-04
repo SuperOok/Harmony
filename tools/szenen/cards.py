@@ -24,7 +24,7 @@ CARDS = os.path.join(os.path.dirname(__file__), '..', '..', 'HarmonyRules', 'Sou
 
 # How the field reads for each animal (docs/szenen.md).
 FIELD_KIND = {
-    'Maus': 'korn', 'Rabe': 'korn', 'Biene': 'korn', 'Marienkäfer': 'korn', 'Echse': 'korn', 'Waschbär': 'korn',
+    'Maus': 'korn', 'Rabe': 'korn', 'Biene': 'korn', 'Marienkäfer': 'praerie', 'Echse': 'korn', 'Waschbär': 'korn',
     'Wolf': 'praerie', 'Panther': 'praerie', 'Lama': 'praerie', 'Flamingo': 'praerie', 'Adler': 'praerie',
     'Wüstenfuchs': 'steppe', 'Erdmännchen': 'steppe', 'Eisfuchs': 'praerie',
 }

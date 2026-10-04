@@ -188,7 +188,7 @@ FIGURES['Ente'] = _still(duck_body, DUCK_FEET)
 
 from fig_bug import BUG_FEET, bug_body
 
-SIZE['Marienkäfer'] = 0.022
+SIZE['Marienkäfer'] = 0.03
 FIGURES['Marienkäfer'] = _still(bug_body, BUG_FEET)
 
 
