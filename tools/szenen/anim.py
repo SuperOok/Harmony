@@ -56,11 +56,13 @@ def smil(values, length, attr=None, kind=None, extra=''):
 
 def part_values(kind, frames, name, pivot):
     """SMIL values for one part. rotate: degrees; translate: (x, y);
-    scale: (sx, sy)."""
+    scale: (sx, sy); path: the path data."""
     out = []
     for f in frames:
         v = f['parts'].get(name)
-        if kind == 'rotate':
+        if kind == 'path':
+            out.append(v)
+        elif kind == 'rotate':
             out.append(f'{(v or 0):.2f} {pivot[0]} {pivot[1]}')
         elif kind == 'translate':
             x, y = v or (0, 0)
@@ -75,7 +77,10 @@ def _figure(frames, length, body, parts, scale, feet, shadow):
     """One figure's moving SVG: its shadow on the ground and the figure
     itself, placed, turned and squashed by each frame."""
     fx, fy = feet
-    anim = {name: smil(part_values(kind, frames, name, pivot), length, kind=kind)
+    # a part is a transform (rotate, translate, scale) or, for a shape that
+    # changes its outline from frame to frame, its path data (`path`)
+    anim = {name: (smil(part_values(kind, frames, name, pivot), length, attr='d') if kind == 'path'
+                   else smil(part_values(kind, frames, name, pivot), length, kind=kind))
             for name, (kind, pivot) in parts.items()}
     o = []
     # the shadow lies on what the animal stands on (`ground`), not under it

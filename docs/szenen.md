@@ -299,6 +299,20 @@ python3 tools/szenen/stories.py Ente Adler      # einzelne
 
 **Der Adler** ist seit dem 2026-10-04 größer (`SIZE` 0,085) und wirkt weniger wie ein Geier: Der erste Entwurf (`fig_bird.py`, jetzt nur noch Vorlage des Raben) hatte einen großen kahlen Kopf auf langem Hals und einen hängenden Schnabel. Der Horst ist ein Zwei-Hälften-Zeichnung (`nest.py`): Boden und hintere Kante unter den Tieren, vordere Kante darüber; sie sitzen darin, nicht davor. Die Geschichte steht in einer eigenen Datei, damit eine zweite Sitzung an `stories.py` arbeiten kann.
 
+**Die Flugpose** (`fig_eagle_flight.py`, 2026-10-04). Der erste Flug drehte
+Flügelbilder um die Schulter und sah aufrecht aus. Jetzt ist der Flügel eine
+flache Form (Arm, Hand, fünf gespreizte Handschwingen), die im Raum um den
+Körper gedreht und flachgedrückt wird, Bild für Bild: Der Adler fliegt
+waagrecht, der Kopf vorgestreckt, der Schwanz ein weißer Fächer, die Beine
+angezogen. Eben ausgestreckt hängt der nahe Flügel zu uns herab und der
+ferne ragt nach oben weg; angehoben zeigen beide nach oben; im Abschlag
+fährt der nahe am Bauch vorbei, und die Hand bleibt im Schlag zurück und
+knickt am Handgelenk. Die Geschichte gibt je Bild zwei Winkel
+(`wing_paths(arm, hand)`), die Pfade laufen als `d`-Animation (neue Teileart
+`path` in `anim.py`). Zum Landen richtet sich die Figur auf (Drehung um die
+Krallen), faltet die Flügel und wird nach 0,4 s durch die sitzende abgelöst;
+zum Abflug umgekehrt.
+
 **Warum Adler und nicht Lama.** Der Würfel des Lamas liegt auf dem Feld
 neben dem Berg, nicht auf dem Berg. Der Adler (Berg3 + Feld) hat ihn auf dem
 Gipfel und deckt zugleich das Fliegen ab; der Rabe fliegt, landet aber auf

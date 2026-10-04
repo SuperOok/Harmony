@@ -17,6 +17,7 @@ import math
 from anim import FPS, ease, clamp, lerp, lerp_view, lerp2, frame, write, base_frame
 import fig_chick as fc
 import fig_eagle as fe
+import fig_eagle_flight as ff
 import nest
 from stories import Setup, bezier
 
@@ -48,57 +49,105 @@ def eagle_nest():
     feed_at = [10.6, 11.7, 12.8]
     land_at, fold_at, lift_at = 8.3, 9.0, 9.6
     leave_at = 14.0
+    lift_off = (perch[0] - 0.4, perch[1] - 0.4)      # where the push-off ends and the flight begins
 
-    def wing(t, rate, amp=44, base=-22):
-        a = 2*math.pi*rate*t
-        return base + amp*math.sin(a), base + 6 + amp*math.sin(a - 0.7)
+    # ---- the father: two figures that take over from each other, the one in the air
+    # (fig_eagle_flight, wings turned in space) and the one on the rim (fig_eagle, folded)
+    cut_in = land_at + 0.4                       # the flying figure hands over to the perched one
+    cut_out = leave_at + 0.8                     # and takes over again for the take-off
+    tiny = 0.01
 
-    # ---- the father
-    def father():
+    def flap(t, rate, base, amp, lag=0.55):
+        """Angles of arm and hand: the arm beats between base - amp and base + amp, the hand trails it."""
+        ph = 2*math.pi*rate*t
+        arm = base + amp*math.cos(ph)
+        return arm, arm + lag*amp*math.sin(ph)
+
+    def fly_pose(p, e, legs=82.0, fan=1.0, tail=0.0, head=0.0, spread=1.0, hide=1.0, blink=1.0):
+        arm, hand = e
+        p['wingN'], p['wingNl'] = ff.wing_paths(arm, hand, True, spread)
+        p['wingF'], p['wingFl'] = ff.wing_paths(arm - 4, hand - 2, False, spread)
+        p['legs'], p['tail'], p['fan'], p['head'] = legs, tail, (1, fan), head
+        p['beak'], p['eye'], p['preyhide'] = 0.0, (1, blink), (max(tiny, hide),)*2
+
+    def lean_of(path, e):
+        ahead = path(min(1, e + 0.02))
+        here = path(e)
+        return math.degrees(math.atan2(ahead[1] - here[1], -(ahead[0] - here[0])))
+
+    def father_flight():
         out = []
+        approach = lambda e: bezier(start, (cx + 22, cy - 30), (cx + 12, cy - 9), perch, e)
+        leave = lambda e: bezier(lift_off, (cx + 1, cy - 12), (cx - 16, cy - 28), gone, e)
         for i in range(n):
             t = i/FPS
             f = base_frame(close)
             f['face'] = -1
             p = f['parts']
-            def pose(spread=0.0, fold=1.0, flap=None, head=0.0, tail=0.0, beak=0.0, prey=(0, 0), hide=1.0, blink=1.0):
-                tiny = 0.01
-                p['spread'] = (max(tiny, spread),)*2
-                p['fold'] = (max(tiny, fold),)*2
-                p['wingN'], p['wingF'] = (flap if flap is not None else (-30, -24))
-                p['head'], p['tail'], p['beak'] = head, tail, beak
-                p['prey'], p['preyhide'] = prey, (max(tiny, hide),)*2
-                p['eye'] = (1, blink)
-            rot, feet = 0.0, perch
-            fish_in_feet = (0, 0)
-            fish_at_bill = (27, -69)                     # from the feet to the bill, in design units
-            if t < 5.0:                                  # not yet there
-                f['alpha'] = 0
-                feet = start
-                pose(1, 0, wing(t, 2.4))
-            elif t < land_at:                            # glides in over the peak, flapping slowly, flares
+            f['alpha'] = 0
+            feet, rot = perch, 0.0
+            fly_pose(p, (14, 6))
+            if 5.0 <= t < land_at:                           # glides in, a few slow beats, then the flare
                 u = (t - 5.0)/(land_at - 5.0)
                 e = u**0.85
-                feet = bezier(start, (cx + 22, cy - 30), (cx + 12, cy - 9), perch, e)
-                ahead = bezier(start, (cx + 22, cy - 30), (cx + 12, cy - 9), perch, min(1, e + 0.02))
-                lean = max(-25, min(25, math.degrees(math.atan2(ahead[1] - feet[1], -(ahead[0] - feet[0])))*0.7))
-                rot = -lean
-                glide = 0.25 < u < 0.55
-                fl = wing(t, 1.3 if u < 0.7 else 2.6, 44 if not glide else 6, -22 if not glide else -28)
-                pose(1, 0, fl, tail=-6 + 8*math.sin(t*3))
+                feet = approach(e)
                 f['alpha'] = clamp((t - 5.0)/0.4)
-                f['airborne'] = u < 0.97
-                if u > 0.7:
-                    rot = 36*ease(clamp((u - 0.7)/0.3))   # braking: it rears up, wings forward
-            elif t < fold_at:                            # lands on the rim, wings still out for balance
-                u = (t - land_at)/(fold_at - land_at)
-                fl = wing(t, 2.6, 30*(1 - u), -10)
-                pose(1, 0, fl)
-                rot = 36*(1 - ease(u))
-                f['sy'] = 1 - 0.06*math.sin(u*math.pi)
-            elif t < lift_at:                            # folds the wings, brings the fish up to its bill
-                u = ease((t - fold_at)/(lift_at - fold_at))
-                pose(1 - u, u, (-25*(1 - u), -20*(1 - u)), prey=(fish_at_bill[0]*u, fish_at_bill[1]*u))
+                f['airborne'] = True
+                pitch = max(-20, min(20, lean_of(approach, e)*0.6))
+                if u < 0.2:
+                    e1 = flap(t, 1.5, 12, 36)
+                elif u < 0.55:
+                    e1 = (14 + 3*math.sin(t*2), 6 + 2*math.sin(t*2 + 1))   # soaring: wings out and still
+                elif u < 0.78:
+                    e1 = flap(t, 2.2, 14, 38)
+                else:                                        # the flare: wings up, body upright, feet forward
+                    k = ease(clamp((u - 0.78)/0.22))
+                    arm, hand = flap(t, 3.0, 14, 38)
+                    e1 = (lerp(arm, 70, k), lerp(hand, 58, k))
+                flare = ease(clamp((u - 0.74)/0.26))
+                rot = -pitch*(1 - flare) + 80*flare
+                fly_pose(p, e1, legs=lerp(82, -22, flare), fan=1 + 0.35*flare, tail=-8*flare)
+            elif land_at <= t < cut_in:                      # touches down and folds the wings in
+                u = ease((t - land_at)/(cut_in - land_at))
+                f['alpha'] = 1
+                feet, rot = perch, 80.0 - 4*u
+                fly_pose(p, (lerp(70, 80, u), lerp(58, 72, u)), legs=-22, fan=1.35, spread=lerp(1.0, 0.18, u))
+            elif cut_out <= t:                               # the push-off: up, then level and away
+                u = clamp((t - cut_out)/3.2)
+                f['alpha'] = 1 - clamp((t - 17.4)/0.6)
+                f['airborne'] = True
+                e = u**1.2
+                feet = leave(e)
+                pitch = max(-30, min(30, lean_of(leave, e)*0.6))
+                k = ease(clamp(u/0.18))
+                rot = lerp(80.0, -pitch, k)
+                arm, hand = flap(t, 2.2, 14, 40)
+                grow = ease(clamp((t - cut_out)/0.25))
+                fly_pose(p, (lerp(75, arm, k), lerp(62, hand, k)), legs=lerp(-22, 82, ease(clamp((u - 0.05)/0.2))),
+                         fan=1.3 - 0.3*k, spread=0.35 + 0.65*grow, hide=0.0)
+            f['feet'], f['rot'] = feet, rot
+            out.append(f)
+        return out
+
+    def father_perched():
+        out = []
+        fish_at_bill = (27, -69)                         # from the feet to the bill, in design units
+        for i in range(n):
+            t = i/FPS
+            f = base_frame(close)
+            f['face'] = -1
+            p = f['parts']
+            f['alpha'] = 1 if cut_in <= t < cut_out else 0
+            def pose(head=0.0, tail=0.0, prey=(0, 0), hide=1.0, blink=1.0):
+                p['spread'], p['fold'] = (tiny,)*2, (1, 1)
+                p['wingN'], p['wingF'] = -25, -20
+                p['head'], p['tail'], p['beak'] = head, tail, 0.0
+                p['prey'], p['preyhide'] = prey, (max(tiny, hide),)*2
+                p['eye'] = (1, blink)
+            feet = perch
+            if t < lift_at:                              # stands on the rim; the fish comes up to its bill
+                u = ease(clamp((t - fold_at)/(lift_at - fold_at)))
+                pose(prey=(fish_at_bill[0]*u, fish_at_bill[1]*u))
             elif t < leave_at:                           # holds the fish out, dips to each chick in turn
                 dip = 0.0
                 eaten = 0.0
@@ -107,34 +156,18 @@ def eagle_nest():
                     if 0 <= u <= 1:
                         dip = math.sin(u*math.pi)**0.8
                     eaten += clamp((t - t0 - 0.2)/0.4)/3.0      # a third of the fish for each chick
-                shrink = 1.0 - eaten
                 look_up = ease(clamp((t - 13.0)/0.4))*(1 - ease(clamp((t - 13.6)/0.3)))
-                pose(0, 1, (-25, -20), head=24*dip - 8*look_up, tail=2*math.sin(t*2),
-                     prey=fish_at_bill, hide=max(0.01, shrink),
-                     beak=14*dip*0.0, blink=0.1 if 12.2 < t < 12.32 else 1)
+                pose(head=24*dip - 8*look_up, tail=2*math.sin(t*2), prey=fish_at_bill, hide=max(tiny, 1.0 - eaten),
+                     blink=0.1 if 12.2 < t < 12.32 else 1)
                 f['sy'] = 1 - 0.03*dip
-                if t < feed_at[0] - 0.3:
-                    f['sy'] = 1
-            elif t < 14.8:                               # crouches, spreads, pushes off
-                u = (t - leave_at)/0.8
-                crouch = math.sin(min(1, u)*math.pi*0.5)
-                pose(ease(clamp(u*1.4)), 1 - ease(clamp(u*1.4)), wing(t, 3.0, 40*u, -20), hide=0.0)
-                f['sy'] = 1 - 0.10*crouch*(1 - ease(clamp((u - 0.6)/0.4)))
-                rot = 8*crouch
-                feet = (perch[0] - 1.5*ease(clamp((u - 0.6)/0.4)), perch[1] - 1.5*ease(clamp((u - 0.6)/0.4)))
-                f['airborne'] = u > 0.8
-            else:                                        # flies off to the upper left, over the mountains
-                u = clamp((t - 14.8)/3.6)
-                e = u**1.25
-                a = (perch[0] - 1.5, perch[1] - 1.5)
-                feet = bezier(a, (cx + 1, cy - 12), (cx - 16, cy - 28), gone, e)
-                ahead = bezier(a, (cx + 1, cy - 12), (cx - 16, cy - 28), gone, min(1, e + 0.02))
-                lean = math.degrees(math.atan2(ahead[1] - feet[1], -(ahead[0] - feet[0])))*0.6
-                rot = -max(-30, min(30, lean))
-                pose(1, 0, wing(t, 2.3, 44, -22), hide=0.0)
-                f['airborne'] = True
-                f['alpha'] = 1 - clamp((t - 17.4)/0.6)
-            f['feet'], f['rot'] = feet, rot
+            else:                                        # crouches to push off
+                u = clamp((t - leave_at)/0.8)
+                crouch = math.sin(u*math.pi*0.5)
+                pose(hide=0.0, tail=4*crouch)
+                f['sy'] = 1 - 0.12*crouch
+                f['sx'] = 1 + 0.04*crouch
+                p['wingN'], p['wingF'] = -25, -20
+            f['feet'], f['rot'] = feet, 0.0
             out.append(f)
         return out
 
@@ -213,12 +246,14 @@ def eagle_nest():
 
     rim_front = dict(frames=[dict(base_frame(close), feet=(0, 0))]*2, body=_still_world(nest.nest_front(cx, cy)),
                      parts={}, scale=1.0, feet=(0, 0), shadow=None)
-    dad = dict(frames=father(), body=fe.eagle_body, parts=fe.EAGLE_PARTS, scale=scale, feet=fe.EAGLE_FEET,
-               shadow=fe.EAGLE_SHADOW)
+    dad_perched = dict(frames=father_perched(), body=fe.eagle_body, parts=fe.EAGLE_PARTS, scale=scale,
+                       feet=fe.EAGLE_FEET, shadow=None)
+    dad_flying = dict(frames=father_flight(), body=ff.flight_body, parts=ff.FLIGHT_PARTS, scale=scale,
+                      feet=ff.FLIGHT_FEET, shadow=None)
     # the father's frames are followed by the camera as well, though the mother's carry the view
     return dict(S=S, length=length, frames=mom, body=fe.eagle_brooding, parts=fe.EAGLE_PARTS,
                 feet=fe.EAGLE_FEET, shadow=None, below=lambda frames: nest.nest_back(cx, cy),
-                file='adler-horst-animation.svg', others=chicks() + [rim_front, dad])
+                file='adler-horst-animation.svg', others=chicks() + [rim_front, dad_perched, dad_flying])
 
 
 def render():
