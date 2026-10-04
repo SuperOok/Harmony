@@ -16,7 +16,7 @@ import sys
 import random
 
 from landscapes import Board, COL, ROW, R, H, NEIGHBOURS, cells_in
-from style import HOUSE_H, ROOF_RISE, MOUNTAIN_STONE_H, FIELD
+from style import HOUSE_H, ROOF_RISE, MOUNTAIN_STONE_H, FIELD, CROWN_DROP
 from scene import Scene
 from figures import FIGURES, SIZE, FIGURE_SCALE, marker
 
@@ -122,7 +122,7 @@ def feet(kind, b, q, r):
     if kind == 'Gebäude':
         return x, y - HOUSE_H - ROOF_RISE + 0.8
     if kind.startswith('Baum'):
-        return x, y - (int(kind[-1]) - 1)*H - 17.5
+        return x, y - (int(kind[-1]) - 1)*H - 17.5 + CROWN_DROP
     if kind.startswith('Berg'):
         h = int(kind[-1])
         return x, y - h*MOUNTAIN_STONE_H - 2.0 - 0.8*h + 1.0

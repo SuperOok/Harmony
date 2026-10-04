@@ -55,6 +55,11 @@ CROWN = [  # (dx, dy above the leaves' foot, radius, in the back)
     (-7.0, -6.4, 3.7, False), (7.0, -6.2, 3.6, False), (0, -7.4, 4.4, False),
     (-3.8, -3.6, 3.9, False), (3.8, -3.4, 3.8, False),
 ]
+# The crown sits this far down the trunk, so that its lowest clumps hide the
+# top of the trunk's last stone: seen from above, the disc on top of the trunk
+# showed and looked wrong.
+CROWN_DROP = 3.4
+CROWN = [(dx, dy + CROWN_DROP, r, back) for dx, dy, r, back in CROWN]
 CROWN_FRONT = ('#74C57B', '#46974F', '#2E6B36')    # light, base, dark
 CROWN_BACK = ('#55A35D', '#357A3E', '#22552A')
 
