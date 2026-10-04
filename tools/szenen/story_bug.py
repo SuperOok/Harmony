@@ -6,7 +6,9 @@ join them.
 
 Told here, in a file of its own, and handed over by stories.py. The
 camera starts closer, on the bush and the meadow, but not as close as the
-first try; it pulls back twice, as in the other stories.
+first try; it pulls back once, to show the meadow, and stays there. The
+three keep to patches of their own, so that they do not crawl over one
+another.
 """
 import math
 
@@ -17,15 +19,14 @@ from stories import Setup, bezier
 
 def ladybirds():
     S = Setup('Marienkäfer')
-    length = 18.0
+    length = 14.5
     n = int(length*FPS)
     b = S.s.b
     bush_cell = (-1, 0)                                  # the bush beside the first cube's meadow
     bx, by = b.pos(*bush_cell)
     sx0, sy0 = S.spot
     close = frame(sx0 - 9, sy0 - 5.0, 25)
-    wide = frame(sx0 - 6, sy0 - 4.5, 36)
-    habitat = S.habitat
+    wide = frame(sx0 - 3, sy0 - 4.5, 36)
 
     land = (sx0 + 1.5, sy0 - 0.4)                        # where the third comes down, between the other two
     over = lambda u: (bx - 4.0 + 8.2*u, by - 3.4 - 1.4*math.sin(math.pi*u))   # over the bush, left to right
@@ -102,7 +103,7 @@ def ladybirds():
                     rot = lerp(rot, 20.0, k)
             else:                                        # on the meadow: crawls slowly, like the others
                 u = t - t_land
-                feet = (land[0] + 0.5*math.sin(u*0.5) , land[1] - 0.5*(1 - math.cos(u*0.5)))
+                feet = (land[0] + 0.6*math.sin(u*0.5), land[1] - 0.4*(1 - math.cos(u*0.5)))
                 rot = 20 + 25*math.sin(u*0.5)
                 legs(p, t, 0.4 + 0.3*math.sin(u*0.9))
                 feelers(p, t, 0.8, 5)
@@ -148,13 +149,11 @@ def ladybirds():
             f['view'] = close
         elif t < 7.8:
             f['view'] = lerp_view(close, wide, ease((t - 4.6)/3.2))
-        elif t < 10.6:
-            f['view'] = wide
         else:
-            f['view'] = lerp_view(wide, habitat, ease(clamp((t - 10.6)/3.4)))
+            f['view'] = wide                             # ends here: no second pull-back
 
-    b_frames = crawler((sx0 - 0.8, sy0 + 1.0), (3.2, 1.0), 0.6, 1.0, 0)
-    c_frames = crawler((sx0 + 4.4, sy0 - 0.6), (2.6, 0.9), 2.5, -1.0, 0)
+    b_frames = crawler((sx0 - 4.8, sy0 + 1.2), (2.2, 0.8), 0.6, 1.0, 0)      # each keeps to a patch of its own
+    c_frames = crawler((sx0 + 7.6, sy0 - 0.8), (2.2, 0.8), 2.5, -1.0, 0)
     for fr in (b_frames, c_frames):
         for i, f in enumerate(fr):
             f['view'] = third_frames[i]['view']
