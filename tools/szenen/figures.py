@@ -181,7 +181,7 @@ def _still(body, feet):
     return draw
 
 
-from figures_more import DUCK_FEET, duck_body
+from fig_duck import DUCK_FEET, duck_body
 
 SIZE['Ente'] = 0.06
 FIGURES['Ente'] = _still(duck_body, DUCK_FEET)

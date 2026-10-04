@@ -35,8 +35,20 @@ def jump(a, b, u, height):
 
 
 def smil(values, length, attr=None, kind=None, extra=''):
+    n = len(values)
+    keys = ''
+    if len(set(values)) == 1:              # nothing moves: two values do as well as hundreds
+        values = values[:2]
+    else:                                  # a long rest at either end needs no values
+        a = next(i for i in range(n) if values[i] != values[0])
+        b = next(i for i in range(n - 1, -1, -1) if values[i] != values[-1])
+        if a > 2 or b < n - 3:
+            lo, hi = max(a - 1, 0), min(b + 1, n - 1)
+            idx = ([0] if lo > 0 else []) + list(range(lo, hi + 1)) + ([n - 1] if hi < n - 1 else [])
+            keys = ' keyTimes="' + ';'.join(f'{i/(n - 1):.4f}' for i in idx) + '"'
+            values = [values[i] for i in idx]
     vals = ';'.join(values)
-    common = f'values="{vals}" dur="{length}s" repeatCount="indefinite" calcMode="linear"{extra}'
+    common = f'values="{vals}"{keys} dur="{length}s" repeatCount="indefinite" calcMode="linear"{extra}'
     if kind:
         return f'<animateTransform attributeName="transform" type="{kind}" {common}/>'
     return f'<animate attributeName="{attr}" {common}/>'
@@ -59,22 +71,13 @@ def part_values(kind, frames, name, pivot):
     return out
 
 
-def write(filename, scene, drawn_view, frames, length, body, parts, scale, feet,
-          shadow=(1.0, 0.25), below=None, depth=None):
-    """The scene seen through the moving camera, the figure on top.
-
-    body(anim, shadow=False) draws the figure in its design space with SMIL
-    `anim[name]` put into each named part. `parts` says what each part is:
-    {name: (kind, pivot)}. `below(frames)` may return SVG for the world
-    (rings on water and the like), drawn under the figure. With `depth` (a
-    y in the drawing) the figure is drawn among the things that stand there,
-    so what lies nearer, grain say, is drawn over it; without, on top."""
+def _figure(frames, length, body, parts, scale, feet, shadow):
+    """One figure's moving SVG: its shadow on the ground and the figure
+    itself, placed, turned and squashed by each frame."""
     fx, fy = feet
     anim = {name: smil(part_values(kind, frames, name, pivot), length, kind=kind)
             for name, (kind, pivot) in parts.items()}
     o = []
-    if below:
-        o.append(below(frames))
     # the shadow lies on what the animal stands on (`ground`), not under it
     # while it flies; `shadow` in a frame scales it, none at all on water
     if shadow:
@@ -91,6 +94,28 @@ def write(filename, scene, drawn_view, frames, length, body, parts, scale, feet,
     o.append('<g>' + smil([f'{f.get("rot", 0):.2f} 0 0' for f in frames], length, kind='rotate'))
     o.append('<g>' + smil([f'{f["face"]*f["sx"]*scale:.4f} {f["sy"]*scale:.4f}' for f in frames], length, kind='scale'))
     o.append(f'<g transform="translate({-fx} {-fy})">' + body(anim, shadow=False) + '</g></g></g></g>')
+    return '\n'.join(o)
+
+
+def write(filename, scene, drawn_view, frames, length, body, parts, scale, feet,
+          shadow=(1.0, 0.25), below=None, depth=None, others=()):
+    """The scene seen through the moving camera, the figure on top.
+
+    body(anim, shadow=False) draws the figure in its design space with SMIL
+    `anim[name]` put into each named part. `parts` says what each part is:
+    {name: (kind, pivot)}. `below(frames)` may return SVG for the world
+    (rings on water and the like), drawn under the figure. With `depth` (a
+    y in the drawing) the figure is drawn among the things that stand there,
+    so what lies nearer, grain say, is drawn over it; without, on top.
+    `others` are further figures, each a dict(frames, body, parts, scale,
+    feet, shadow), drawn over the first in the order given; the camera
+    follows the first one's frames."""
+    o = []
+    if below:
+        o.append(below(frames))
+    o.append(_figure(frames, length, body, parts, scale, feet, shadow))
+    for x in others:
+        o.append(_figure(x['frames'], length, x['body'], x['parts'], x['scale'], x['feet'], x.get('shadow')))
     piece = '\n'.join(o)
     svg = scene.svg(drawn_view, width=None, inject=[(depth, piece)] if depth is not None else ())
     head, tail_ = svg.rsplit('</svg>', 1)
