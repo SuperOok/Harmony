@@ -55,8 +55,7 @@ def bird_body(p, anim=None, perched=False):
             '<path d="M50 52 Q55 66 50 80 M44 54 Q46 66 44 76" fill="none" stroke="#fff" stroke-opacity="0.15" stroke-width="0.7"/>')
     o.append(scaled_about(anim.get('fold', ''), BIRD_PARTS['fold'][1], fold))
     # head
-    o.append('<g>' + anim.get('head', ''))
-    o.append(f'<ellipse cx="60" cy="38" rx="9" ry="9" fill="{_f(p["head"])}"/>')
+    o.append('<g>' + anim.get('head', '') + '<g transform="translate(-3 7)">')      # sits down on the shoulders: no neck
     o.append(f'<circle cx="64" cy="29" r="{11*k + 1:.1f}" fill="{_f(p["head"])}"/>')
     bill = (f'M70 24 Q85 22 86 36 Q84 41 80 36 Q77 32 70 34 Z' if p['hook']
             else 'M70 25 Q88 24 92 31 Q80 34 70 35 Z')
@@ -67,7 +66,7 @@ def bird_body(p, anim=None, perched=False):
     o.append(scaled_about(anim.get('eye', ''), BIRD_PARTS['eye'][1],
                           f'<circle cx="68" cy="27.5" r="2.7" fill="{p["iris"]}"/><circle cx="68.4" cy="27.5" r="1.4" fill="#15171B"/>'
                           '<circle cx="68.9" cy="26.8" r="0.5" fill="#fff"/>'))
-    o.append('</g>')
+    o.append('</g></g>')
     # near wing last, over the body
     near = '<g>' + anim.get('wingN', '') + _wing(p['wing']) + '</g>'
     if not perched:

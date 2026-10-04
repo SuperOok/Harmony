@@ -48,7 +48,6 @@ def raven_flight_body(anim=None, shadow=False, pose=(10, 4)):
              + '<path d="M38 70 L44 68 L50 71" stroke="#15171B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>')
     # the head thrust forward, a heavy bill
     o.append('<g>' + anim.get('head', ''))
-    o.append(f'<ellipse cx="72" cy="46" rx="9" ry="7" fill="{_f("raven")}"/>')
     o.append(f'<circle cx="79" cy="43.5" r="7" fill="{_f("raven")}"/>')
     o.append(f'<path d="M83.5 39.5 Q96 38.5 101.5 46 Q93 48 84 47 Z" fill="{_f("bug-black")}"/>')
     o.append('<path d="M85 41 Q93 40.5 98 44" fill="none" stroke="#9FB0D0" stroke-opacity="0.35" stroke-width="0.8" stroke-linecap="round"/>')
