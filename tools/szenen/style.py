@@ -13,9 +13,11 @@ BACKGROUND = '#22313A'
 # The board, seen at a slant.
 HEX_RADIUS = 12.5
 SQUASH = 0.42                 # how flat the board lies: 1 = from above
-HEX_FILL = '#2F424C'
-HEX_EDGE = '#3E5560'
-HEX_GAP = 0.95                # a board hex is drawn this much of its size
+# The real boards are a sandy beige; the evening mood comes from the sky and
+# the haze, which takes the far rows back into the background colour.
+HEX_FILL = '#CBB98F'
+HEX_EDGE = '#A99869'
+HEX_GAP = 0.985               # a board hex is drawn this much of its size
 
 # How things fade with distance. A row r < 0 lies -r rows behind the front.
 FADE_PER_ROW = 0.22           # visibility lost per row back
