@@ -149,4 +149,17 @@ struct AnimalCardTests {
             }
         }
     }
+
+    @Test("Der Eisfuchs hat zwei Baum2 neben dem Feld")
+    func theArcticFoxHasTwoTallTreesBesideTheField() throws {
+        // Am 2026-10-04 an der Karte am Tisch aufgefallen: Die Datei hatte
+        // Baum1, die Karte zeigt Baum2 (V-Form, 5/10/17). Die Prüfung beim
+        // Erfassen hatte das nicht gefunden; hier ist es festgehalten.
+        let fox = try #require(try cards.first { $0.name == "Eisfuchs" })
+        #expect(fox.pattern[12] == PatternCell(rawValue: "Baum2"))
+        #expect(fox.pattern[21] == PatternCell(rawValue: "Feld"))
+        #expect(fox.pattern[32] == PatternCell(rawValue: "Baum2"))
+        #expect(fox.cube == 21)
+        #expect(fox.points == [5, 10, 17])
+    }
 }

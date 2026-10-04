@@ -186,3 +186,16 @@ Fleißarbeit über alle 32 Karten erst nach dem Durchstich zu beginnen; sie
 lief am 2026-09-19 durch, weil an Vokabular und Schablone über alle Karten
 hinweg nichts zu ändern war. Die Sorge, die diese Reihenfolge begründet
 hat, ist damit gegenstandslos.
+
+## Stand der Prüfung
+
+Am **2026-10-04** fiel am Tisch auf, dass der Eisfuchs mit `Baum1` statt
+`Baum2` erfasst war; die Rückzeichnung beim Erfassen hatte es nicht gefunden.
+Korrigiert, mit Prüffall in `AnimalCardTests`. Danach hat Hauke alle übrigen
+Karten mit Baum- oder Berghöhen (24 von 32) gegen die Karten in der Hand
+gehalten — Form, Höhen, Würfelzelle und Punkte — und **alle bestätigt**, auch
+den Wolf mit `Baum3`, den die Punktleiste verdächtig machte (5 Steine gegen 3
+bei den anderen Karten mit `4/10/16`), und die Biene. Die sieben Karten ohne
+Höhen (Echse, Ente, Flamingo, Maus, Pfau, Rabe, Waschbär) hat er danach
+ebenso bestätigt: **alle 32 Karten sind gegen die physischen Karten geprüft**,
+mit dem Eisfuchs als einziger Korrektur.

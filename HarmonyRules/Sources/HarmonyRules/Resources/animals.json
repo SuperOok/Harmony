@@ -7,7 +7,7 @@
     {"name": "Bär",          "pattern": {"11": "Berg2", "12": "Berg2", "21": "Baum1"},                  "cube": "21", "points": [5, 11]},
     {"name": "Echse",        "pattern": {"11": "Feld", "12": "Feld", "13": "Gebäude"},                  "cube": "13", "points": [5, 10, 16]},
     {"name": "Eichhörnchen", "pattern": {"11": "Baum3", "12": "Gebäude"},                               "cube": "12", "points": [4, 9, 15]},
-    {"name": "Eisfuchs",     "pattern": {"12": "Baum1", "21": "Feld", "32": "Baum1"},                   "cube": "21", "points": [5, 10, 17]},
+    {"name": "Eisfuchs",     "pattern": {"12": "Baum2", "21": "Feld", "32": "Baum2"},                   "cube": "21", "points": [5, 10, 17]},
     {"name": "Eisvogel",     "pattern": {"12": "Wasser", "21": "Baum3", "32": "Wasser"},                "cube": "21", "points": [5, 11, 18]},
     {"name": "Ente",         "pattern": {"11": "Gebäude", "12": "Wasser"},                              "cube": "12", "points": [2, 4, 8, 13]},
     {"name": "Erdmännchen",  "pattern": {"11": "Feld", "12": "Berg1"},                                  "cube": "12", "points": [2, 5, 9, 14]},

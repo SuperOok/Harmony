@@ -81,7 +81,9 @@ Steine und fünf Würfel, aber `2/4/6/10/15` gegen `2/5/8/12/17`.
 
 „**Höchstpunktzahl = Steinzahl + 13.**" Passt auf Pinguin, Pfau, Eisvogel,
 Hase und Wüstenfuchs, scheitert an Papagei (4 Steine, 14 Punkte), Eisfuchs
-(3 Steine, 17), Echse, Lama und Panther. Sie stammte aus drei Datenpunkten
+(5 Steine, 17; die Datei führte ihn bis zum 2026-10-04 fälschlich mit Baum1
+und damit 3 Steinen, siehe Prüffall in `AnimalCardTests`), Echse, Lama und
+Panther. Sie stammte aus drei Datenpunkten
 einer einzigen Formklasse und war schon durch den damals bereits erfassten
 Papagei widerlegt.
 
