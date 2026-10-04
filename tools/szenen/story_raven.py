@@ -133,6 +133,9 @@ def ravens():
                 turn = math.tanh(vx/6.0)
                 if take_off is not None and t < t1_circle:
                     turn = 1.0
+                if t >= land[0]:
+                    turn = 1.0              # coming in to land, it flies right; the path ends nearly straight down,
+                                            # where vx falls to 0 and the figure would be squeezed thin
                 if abs(turn) < 0.03:
                     turn = 0.03
                 sgn = 1 if turn > 0 else -1
