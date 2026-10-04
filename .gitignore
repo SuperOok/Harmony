@@ -33,3 +33,6 @@ fastlane/screenshots/**/*.png
 # Szenen-Generator: erzeugte Bilder und Python-Cache
 tools/szenen/out/
 __pycache__/
+
+# Rohdaten der Messläufe (tools/nachtlauf.sh); Ergebnisse gehören in docs/
+messungen/

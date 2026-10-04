@@ -11,8 +11,10 @@ import HarmonyTable
 //
 //   swift run -c release HarmonyMatch --plaetze standard,ohne-kartenplatz --partien 50
 //
-// A setting is `standard`, `ohne-kartenplatz`, `ohne-vorhersage` or
-// `ohne-folgewuerfel` (the standard before 2026-10-03), with
+// A setting is `standard`, `ohne-kartenplatz`, `ohne-vorhersage`,
+// `ohne-folgewuerfel` (the standard before 2026-10-03) or `gierig` (points
+// in hand and nothing else: no outlook, no prospects, no forecast — a
+// baseline that shows what the board gives by itself), with
 // changes after a `+`: `standard+preis=7`, `standard+bedenkzeit=10+outlook=0.7`.
 // Keys: vorhersage, kartenplatz (an/aus), preis, vollab, outlook,
 // tierkarten, offene, folgewuerfel, folgetiefe, folgeabschlag, landschaften, vielfalt, bedenkzeit (seconds).
@@ -37,6 +39,14 @@ struct Variant: Sendable {
         case "ohne-kartenplatz": settings.priceCardSpaces = false
         case "ohne-vorhersage": settings.forecastEnd = false
         case "ohne-folgewuerfel": settings.followUpCubes = 0
+        case "gierig":
+            settings.forecastEnd = false
+            settings.priceCardSpaces = false
+            settings.outlook = 0
+            settings.cardProspects = 0
+            settings.followUpCubes = 0
+            settings.landscapeProspects = 0
+            settings.variety = 0
         default: fail("unbekannte Einstellung \(parts.first ?? "")")
         }
         for change in parts.dropFirst() {
@@ -120,6 +130,23 @@ enum Breakdown {
     }
 }
 
+/// What the water made of a board: the stones laid, the river's length on
+/// side A, the islands on side B. The two sides differ here, and the gap
+/// between them is what this measurement is after.
+enum Water {
+    static func measure(_ seat: Seat, side: BoardSide) -> (stones: Int, river: Int, islands: Int) {
+        let scoring = BoardScoring(side: side, columns: side.columns, stacks: seat.stacks)
+        let water = Set(side.board.cells.filter { (seat.stacks[$0] ?? []).landscape == .water })
+        switch side {
+        case .a:
+            return (water.count, scoring.longestRiver(water: water), 0)
+        case .b:
+            let lines = scoring.breakdown().first { $0.title.hasPrefix("Wasser") }?.lines.count ?? 0
+            return (water.count, 0, lines)
+        }
+    }
+}
+
 /// What the patterns did: where a cube was in the way, and how the habitats
 /// under the cubes share their spaces.
 enum Patterns {
@@ -198,6 +225,14 @@ struct GameResult: Sendable, Codable {
     var distinctSpaces: [Int] = []
     var hubs: [Int] = []
     var turns = 0
+    /// The game ended because a board was full (two spaces free), not
+    /// because the bag ran out. Both at once count as the board.
+    var endedByBoard = false
+    /// Water stones laid, the river's length (side A) and the islands
+    /// (side B), for each seat.
+    var waterStones: [Int] = []
+    var riverLength: [Int] = []
+    var islands: [Int] = []
     /// Anything the referee objected to. A game with an objection is not
     /// counted.
     var objections: [String] = []
@@ -245,6 +280,11 @@ func play(deal: Int, rotation: Int, options: Options, cards: [AnimalCard]) -> Ga
     }
 
     result.turns = table.turnsPlayed
+    result.endedByBoard = table.endsAfter.map { $0 <= table.lastTurn } ?? false
+    let water = table.seats.map { Water.measure($0, side: table.side) }
+    result.waterStones = water.map(\.stones)
+    result.riverLength = water.map(\.river)
+    result.islands = water.map(\.islands)
     result.scores = (0..<players).map(table.score(of:))
     result.landscape = (0..<players).map(table.landscape(of:))
     result.cards = (0..<players).map(table.cardPoints(of:))
@@ -428,6 +468,29 @@ for variant in variants {
 print("  Karten: Punkte der Tierkarten · fertig: Karten mit letztem Würfel · "
       + "Würfel: gelegt · offen: noch auf den gehaltenen Karten · "
       + "leer: freie Felder am Ende")
+
+print("\nEnde und Wasser (Mittel je Partie)")
+print(pad("Einstellung", 26) + pad("Züge je Spielerin", 19) + pad("Plan voll", 11)
+      + pad("Wasser", 8) + pad("Fluss", 7) + "Inseln")
+for variant in variants {
+    var turns = 0.0, board = 0.0, stones = 0.0, river = 0.0, islands = 0.0, seats = 0.0
+    for game in valid where game.waterStones.count == game.seats.count {
+        for seat in game.seats.indices where game.seats[seat] == variant {
+            seats += 1
+            turns += Double(game.turns) / Double(players)
+            board += game.endedByBoard ? 1 : 0
+            stones += Double(game.waterStones[seat])
+            river += Double(game.riverLength[seat])
+            islands += Double(game.islands[seat])
+        }
+    }
+    let n = max(seats, 1)
+    print(pad(variant, 26) + pad(f(turns / n), 19) + pad("\(f(100 * board / n, 0)) %", 11)
+          + pad(f(stones / n), 8) + pad(f(river / n), 7) + f(islands / n))
+}
+print("  Plan voll: Partie endete, weil ein Plan nur noch zwei freie Felder hatte, "
+      + "nicht durch den Beutel · Wasser: gelegte blaue Steine · Fluss: Länge "
+      + "(nur Seite A) · Inseln: Zahl (nur Seite B)")
 
 print("\nMuster unter den Würfeln (Mittel je Partie)")
 print(pad("Einstellung", 26) + pad("gesperrt", 10) + pad("verfolgt", 10)
