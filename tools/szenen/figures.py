@@ -122,7 +122,7 @@ def squirrel_body(anim=None, shadow=True):
     f = lambda n: f'url(#fig-{n})'
     o = []
     if shadow:
-        o.append('<ellipse cx="50" cy="88.5" rx="20" ry="3" fill="#000" opacity="0.3"/>')
+        o.append('<ellipse cx="50" cy="88.5" rx="20" ry="3" fill="#3A2813" opacity="0.3"/>')
     o.append('<g>' + anim.get('tail', '') + squirrel_tail(f('tail')) + '</g>')
     o.append(f'<ellipse cx="47" cy="79" rx="10" ry="8" fill="{f("fur-dark")}"/>'
              f'<ellipse cx="55" cy="86.2" rx="8.5" ry="2.7" fill="{f("fur-dark")}"/>')

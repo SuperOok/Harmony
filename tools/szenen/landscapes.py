@@ -118,7 +118,7 @@ def token(o, cx, yb, k, rx=RX, ry=RY, h=H):
     o.append(f'<ellipse cx="{cx:.2f}" cy="{yt:.2f}" rx="{rx-0.35:.2f}" ry="{ry-0.3:.2f}" fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="0.45"/>')
 
 def shadow(o, cx, cy, rx=RX + 1.4, ry=RY + 0.9):
-    o.append(f'<ellipse cx="{cx+1:.2f}" cy="{cy+0.5:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="#000" opacity="{SHADOW_OPACITY}"/>')
+    o.append(f'<ellipse cx="{cx+1:.2f}" cy="{cy+0.5:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="{SHADOW_COLOUR}" opacity="{SHADOW_OPACITY}"/>')
 
 
 # ------------------------------------------------------------- building
@@ -159,7 +159,7 @@ def facade(o, cx, yb, rx=HOUSE_RX):
 def eave_shadow(o, cx, yt, rx=HOUSE_RX):
     ry = rx*RY/RX
     o.append(f'<path d="M{cx-rx:.2f} {yt:.2f} A{rx} {ry:.2f} 0 0 0 {cx+rx:.2f} {yt:.2f} L{cx+rx:.2f} {yt+1.4:.2f} '
-             f'A{rx} {ry:.2f} 0 0 1 {cx-rx:.2f} {yt+1.4:.2f} Z" fill="#000" opacity="0.28"/>')
+             f'A{rx} {ry:.2f} 0 0 1 {cx-rx:.2f} {yt+1.4:.2f} Z" fill="{SHADOW_COLOUR}" opacity="0.3"/>')
 
 def building(base='stone'):
     """A red stone on a grey, brown or red one."""

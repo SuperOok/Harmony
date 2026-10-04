@@ -6,7 +6,7 @@ board's slant (SQUASH)."""
 import math
 import random
 
-from style import SQUASH
+from style import SQUASH, SHADOW_COLOUR
 
 RIM = 6.4                     # radius of the nest
 TWIGS = ('#6B4A2B', '#8A6540', '#A88256', '#523820', '#77562F')
@@ -27,7 +27,7 @@ def _twig(rnd, cx, cy, a, lift):
 def nest_back(cx, cy, seed=4):
     """The floor and the far half of the rim."""
     rnd = random.Random(seed)
-    o = [f'<ellipse cx="{cx:.2f}" cy="{cy + 0.4:.2f}" rx="{RIM + 1.6:.2f}" ry="{(RIM + 1.6)*SQUASH:.2f}" fill="#000" opacity="0.28"/>',
+    o = [f'<ellipse cx="{cx:.2f}" cy="{cy + 0.4:.2f}" rx="{RIM + 1.6:.2f}" ry="{(RIM + 1.6)*SQUASH:.2f}" fill="{SHADOW_COLOUR}" opacity="0.3"/>',
          f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{RIM:.2f}" ry="{RIM*SQUASH:.2f}" fill="#3A2A1A"/>',
          f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{RIM*0.75:.2f}" ry="{RIM*0.75*SQUASH:.2f}" fill="#53402A" opacity="0.8"/>']
     for k in range(46):

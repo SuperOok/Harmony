@@ -11,6 +11,7 @@ import os
 
 from cards import PORTRAIT
 from scene import OUT
+from style import SHADOW_COLOUR
 
 FPS = 25
 
@@ -88,7 +89,7 @@ def _figure(frames, length, body, parts, scale, feet, shadow):
     if shadow:
         sx, sy = shadow
         ground = [f.get('ground', f['feet']) for f in frames]
-        o.append(f'<ellipse rx="{sx}" ry="{sy}" fill="#000">'
+        o.append(f'<ellipse rx="{sx}" ry="{sy}" fill="{SHADOW_COLOUR}">'
                  + smil([f'{g[0]:.3f}' for g in ground], length, attr='cx')
                  + smil([f'{g[1] + 0.05:.3f}' for g in ground], length, attr='cy')
                  + smil([f'{(0 if f["airborne"] else 0.3)*f["alpha"]*f.get("shadow", 1):.2f}' for f in frames],

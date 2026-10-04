@@ -38,7 +38,9 @@ STONES = {
     'wood':   ('#734F30', '#8C6442', '#4F3520'),
     'leaves': ('#408F4A', '#58AA62', '#2B6633'),
 }
-SHADOW_OPACITY = 0.28
+# Cast shadows: a warm dark brown, which suits the sandy board better than black.
+SHADOW_COLOUR = '#3A2813'
+SHADOW_OPACITY = 0.32
 
 # Building: smaller than its field, the stone under it narrower than the
 # roof, so the eaves stand out. The roof has no wall of its own.

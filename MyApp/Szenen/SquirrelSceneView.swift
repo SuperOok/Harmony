@@ -55,6 +55,9 @@ struct SquirrelSceneView: View {
 }
 
 enum SceneRenderer {
+    /// The warm brown of cast shadows, `SHADOW_COLOUR` in `tools/szenen/style.py`.
+    static let shadowColour = Color(hex: "#3A2813")
+
     /// One frame. The camera shows `pose.view`, a phone-shaped part of the
     /// scene, as large as fits; a wider screen shows more to the sides.
     static func draw(_ list: SceneDisplayList, pose: SquirrelPose,
@@ -85,7 +88,7 @@ enum SceneRenderer {
             var shadow = c
             shadow.opacity = 0.3 * pose.alpha
             shadow.fill(Path(ellipseIn: CGRect(x: feet.x - 1.0, y: feet.y + 0.05 - 0.25, width: 2.0, height: 0.5)),
-                        with: .color(.black))
+                        with: .color(SceneRenderer.shadowColour))
         }
 
         c.opacity = pose.alpha

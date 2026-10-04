@@ -19,7 +19,7 @@ import os
 from cards import build, PORTRAIT
 from scene import OUT
 from figures import squirrel_body, SIZE, SQUIRREL_FEET, SQUIRREL_TAIL_ROOT
-from style import HOUSE_H, ROOF_RISE, EAVE_RX, STONE_RX, STONE_RY, STONE_H, CROWN
+from style import SHADOW_COLOUR, HOUSE_H, ROOF_RISE, EAVE_RX, STONE_RX, STONE_RY, STONE_H, CROWN
 
 FPS = 25
 LENGTH = 13.5            # seconds, then it starts again
@@ -186,7 +186,7 @@ def main():
     }
     o = []
     # shadow under the feet while on something; gone in the air
-    o.append('<ellipse rx="1.0" ry="0.25" fill="#000">'
+    o.append(f'<ellipse rx="1.0" ry="0.25" fill="{SHADOW_COLOUR}">'
              + smil('cx', [f'{f["feet"][0]:.3f}' for f in frames])
              + smil('cy', [f'{f["feet"][1] + 0.05:.3f}' for f in frames])
              + smil('opacity', [f'{0 if f["airborne"] else 0.3*f["alpha"]:.2f}' for f in frames]) + '</ellipse>')
