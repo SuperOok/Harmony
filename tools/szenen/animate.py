@@ -37,32 +37,42 @@ def frame(cx, cy, w):
 def lerp_view(a, b, u): return tuple(lerp(p, q, u) for p, q in zip(a, b))
 
 
-def timeline(house, tree, scale, cube_feet):
-    """The squirrel's feet, which way it faces, how it is squashed, where its
-    nut is, the tail's swing, the blink and the camera, for every frame."""
+def anchors(house, tree, scale, cube_feet):
+    """The places the animation is built on: where the squirrel stands and
+    the three camera framings (close, wide, habitat)."""
     hx, hy = house
     eave_ry = EAVE_RX*STONE_RY/STONE_RX
     yb = hy - HOUSE_H
-    ridge_mid = (hx, yb - ROOF_RISE + 0.6)
-    ridge_back = (hx, yb - ROOF_RISE - eave_ry*0.75 + 0.6)
     tx, ty = tree
     crown_foot = ty - 2*STONE_H
     def on_clump(k):                            # standing on top of a clump of the crown
         dx, dy, r, _ = CROWN[k]
         return (tx + dx, crown_foot + dy - r + 0.5)
     perch = on_clump(5)                          # front left
-    crown_path = [perch, on_clump(7), on_clump(6)]   # over the top to the front right
-    start = (perch[0] - 9, perch[1] + 3)
-
     body = 70*scale
-    close = frame(perch[0], perch[1] - body*0.6, body*3.4)
-    wide = frame((hx + tx)/2 - 1, (perch[1] + hy)/2 + 1.5, 26)
-
-    # the last pull-back: all three houses of the habitat, the outer two a
-    # little more than half in the picture
     xs = [x for x, _ in cube_feet]
     span = max(xs) - min(xs) + 3
-    habitat = frame((max(xs) + min(xs))/2, hy - 0.42*span*PORTRAIT + 6, span)
+    return dict(
+        ridge_mid=(hx, yb - ROOF_RISE + 0.6),
+        ridge_back=(hx, yb - ROOF_RISE - eave_ry*0.75 + 0.6),
+        perch=perch,
+        crown_path=[perch, on_clump(7), on_clump(6)],   # over the top to the front right
+        start=(perch[0] - 9, perch[1] + 3),
+        close=frame(perch[0], perch[1] - body*0.6, body*3.4),
+        wide=frame((hx + tx)/2 - 1, (perch[1] + hy)/2 + 1.5, 26),
+        # the last pull-back: all three houses of the habitat, the outer two a
+        # little more than half in the picture
+        habitat=frame((max(xs) + min(xs))/2, hy - 0.42*span*PORTRAIT + 6, span),
+    )
+
+
+def timeline(house, tree, scale, cube_feet):
+    """The squirrel's feet, which way it faces, how it is squashed, where its
+    nut is, the tail's swing, the blink and the camera, for every frame."""
+    a = anchors(house, tree, scale, cube_feet)
+    ridge_mid, ridge_back, perch = a['ridge_mid'], a['ridge_back'], a['perch']
+    crown_path, start = a['crown_path'], a['start']
+    close, wide, habitat = a['close'], a['wide'], a['habitat']
 
     def jump(a, b, u, height):
         x = lerp(a[0], b[0], u)
@@ -185,6 +195,7 @@ def main():
     o.append('<g>' + smil(None, [f'{f["face"]*f["sx"]*scale:.4f} {f["sy"]*scale:.4f}' for f in frames], 'scale'))
     o.append(f'<g transform="translate({-fx} {-fy})">' + squirrel_body(anim, shadow=False) + '</g></g></g>')
     out = head + '\n'.join(o) + '</svg>' + tail_
+    os.makedirs(OUT, exist_ok=True)           # a fresh clone has no out/ yet
     p = os.path.join(OUT, 'eichhoernchen-animation.svg')
     with open(p, 'w') as fh:
         fh.write(out)

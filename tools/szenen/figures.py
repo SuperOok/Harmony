@@ -5,6 +5,8 @@ placed with a transform. So far only the squirrel, from
 entwuerfe/eichhoernchen.svg; the others stand in as a marker.
 """
 
+from figures_more import SHADES_MORE
+
 FIGURE_SCALE = 0.15
 
 # How big each animal is drawn, against a house ~12 units high. Small
@@ -33,7 +35,7 @@ SHADES = {
 def figure_defs():
     """Gradients the figures use; scene.py puts them into every scene."""
     d = []
-    for name, (light, base, dark) in SHADES.items():
+    for name, (light, base, dark) in {**SHADES, **SHADES_MORE}.items():
         d.append(f'<radialGradient id="fig-{name}" cx="0.36" cy="0.3" r="0.8"><stop offset="0" stop-color="{light}"/>'
                  f'<stop offset="0.55" stop-color="{base}"/><stop offset="1" stop-color="{dark}"/></radialGradient>')
     return d
@@ -167,3 +169,34 @@ def marker(o, x, y, scale=FIGURE_SCALE, flip=False):
 
 
 FIGURES = {'Eichhörnchen': squirrel}
+
+
+# ---- the animals of figures_more.py, standing still, for the static scenes
+
+def _still(body, feet):
+    def draw(o, x, y, scale=FIGURE_SCALE, flip=False):
+        _place(o, x, y, feet, scale, flip)
+        o.append(body({}))
+        o.append('</g>')
+    return draw
+
+
+from fig_duck import DUCK_FEET, duck_body
+
+SIZE['Ente'] = 0.06
+FIGURES['Ente'] = _still(duck_body, DUCK_FEET)
+
+from fig_bug import BUG_FEET, bug_body
+
+SIZE['Marienkäfer'] = 0.022
+FIGURES['Marienkäfer'] = _still(bug_body, BUG_FEET)
+
+
+from fig_bird import BIRD_FEET, eagle_still, raven_still
+
+from fig_eagle import EAGLE_FEET, eagle_still as eagle_still_new
+
+SIZE['Adler'] = 0.085
+FIGURES['Adler'] = _still(eagle_still_new, EAGLE_FEET)
+SIZE['Rabe'] = 0.045
+FIGURES['Rabe'] = _still(raven_still, BIRD_FEET)

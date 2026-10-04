@@ -17,6 +17,11 @@ was verworfen wurde. Erst dort nachlesen, dann ändern.
 - `tools/szenen/scene.py`: Plan, Tiefensortierung, Dunst, Himmel, Kamera.
 - `tools/szenen/cards.py`: Szene einer Karte (Anordnung, Umgebung, drei Ausschnitte).
 - `tools/szenen/figures.py`: Tierfiguren; `animate.py`: die Animation.
+- `tools/szenen/stories.py` (mit `anim.py`, `figures_more.py`, `fig_bug.py`,
+  `fig_bird.py`): Ente, Marienkäfer, Adler, Rabe als Animation, noch nicht
+  in der App (`python3 tools/szenen/stories.py <Tier>`); Abschnitt *Vier
+  weitere Tiere* in `docs/szenen.md`. SMIL zeigt `qlmanage` nicht: im
+  Browser ansehen und mit `setCurrentTime` anspringen.
 
 ```bash
 python3 tools/szenen/scene.py --feld korn      # Beispielszene
@@ -56,6 +61,14 @@ einzelner Wunsch pro Runde, dann zeigen, nicht mehrere Änderungen bündeln.
 ## Offen
 
 Animationen 2 und 3 je Karte (`cards.build(name, arrived=k)`), die übrigen
-31 Tiere, Umgebung und Feldlesart je Tier, die Übertragung nach SwiftUI
-(`TimelineView` und `Canvas`, wie `IconFlower.swift`). Stand und Reihenfolge
-stehen am Ende von `docs/szenen.md`.
+31 Tiere, Umgebung und Feldlesart je Tier, die Rechenzeit der Szene auf dem
+Gerät. Stand und Reihenfolge stehen am Ende von `docs/szenen.md`.
+
+## In der App
+
+Die erste Animation läuft in der App (`MyApp/Szenen/`, vor „Über Harmony").
+Die Szene geht als Anzeigeliste dorthin: nach **jeder** Änderung an Stil,
+Landschaft oder Figur `python3 tools/szenen/export.py` laufen lassen, sonst
+zeigt die App den alten Stand. Eine Änderung an `animate.py` ist in
+`SquirrelTimeline.swift` nachzuziehen. Einzelheiten unter *In der App* in
+`docs/szenen.md`.

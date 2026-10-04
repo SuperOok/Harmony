@@ -1,10 +1,49 @@
 # Szenen der Tierkarten
 
 Stand 2026-10-03, abends. Entwurf für kleine Start- und Zwischenanimationen, eine
-je Tierkarte. Noch nichts davon ist in der App. Gezeichnet wird mit einem
-Generator in Python, der SVG schreibt (`tools/szenen/`). Damit ist jede
-Änderung in Sekunden als Bild zu sehen. Die SwiftUI-Fassung folgt, wenn der
-Stil steht.
+je Tierkarte. Gezeichnet wird mit einem Generator in Python, der SVG
+schreibt (`tools/szenen/`). Damit ist jede Änderung in Sekunden als Bild zu
+sehen. In der App läuft bisher nur die erste Animation des Eichhörnchens,
+vor dem Über-Bildschirm (siehe *In der App*).
+
+## In der App
+
+Die Übertragung geht nicht über eine Neufassung der Landschaften in Swift,
+sondern über eine **Anzeigeliste**: `tools/szenen/export.py` liest das SVG
+der Szene zurück und schreibt die Formen in Zeichenreihenfolge nach
+`MyApp/Szenen/szene-eichhoernchen.json` (rund 480 KB, gut 3500 Knoten;
+Pfade nur aus M, L, Q, C, Z, Verläufe, ein Ausschnitt für das Wasser, benannte
+Gruppen). Dasselbe Python zeichnet damit Vorschau und App, ein Unterschied
+kann nur im Zeichnen selbst entstehen. Nach jeder Änderung an Stil, Landschaft
+oder Figur wird die Datei neu geschrieben:
+
+```bash
+python3 tools/szenen/export.py
+```
+
+| Datei | Inhalt |
+| --- | --- |
+| `MyApp/Szenen/SceneDisplayList.swift` | lädt die Liste, baut Pfade, zeichnet Knoten mit `Canvas`; Verläufe wie `objectBoundingBox` im SVG, Knoten außerhalb des Bildes werden übersprungen |
+| `MyApp/Szenen/SquirrelTimeline.swift` | die Zeitleiste in Swift, Zahl für Zahl aus `animate.py`; Ankerpunkte und Kameraausschnitte stehen in der Liste (`animate.anchors`) |
+| `MyApp/Szenen/SquirrelSceneView.swift` | `TimelineView` und `Canvas`, Kamera, Tier mit Schwanz, Nuss und Auge; Tippen beendet vorzeitig |
+
+Eine Änderung an `animate.py` muss in `SquirrelTimeline.swift` nachgezogen
+werden (und bei neuen Ankerpunkten in `anchors()`); der Test `SceneTests`
+prüft nur Anfang, Ende und dass die Kamera nie wieder hineinzoomt.
+
+Abgespielt wird sie, wenn in `StartView` „Über Harmony" angetippt wird: Die
+Szene liegt als Decke über dem Start-Bildschirm, beim Ausblenden wird der
+Über-Bildschirm darunter eingeschoben. Sie läuft 13,5 Sekunden, blendet in
+den letzten 0,5 aus (das Tier blendet dort anders als im SVG nicht aus, die
+Szene schon). Die Prüfeinstiege (`Launch.skipsIntro`) und „Bewegung
+reduzieren" überspringen sie.
+
+Der Ausschnitt ist ein Hochformat von 430 : 932 und wird so groß gezeichnet,
+wie er auf den Bildschirm passt; ein breiterer Bildschirm zeigt seitlich mehr.
+Dafür ist die Liste für den weitesten Ausschnitt (`weit`) gezeichnet, nicht
+für `mittel` wie das SVG; der Mond sitzt deshalb an anderer Stelle.
+**Auf dem Gerät nicht nachgemessen:** je Bild sind bis zu rund 3500 Formen zu
+zeichnen. Verläufe laufen als Füllung mit Matrix, nicht als Maske.
 
 ## Wo was liegt
 
@@ -231,13 +270,99 @@ Pinsel Haarbüschel.
 
 ## Die Tierfigur
 
-Bisher gibt es nur das Eichhörnchen (`figures.py`). Es ist aus Kreisen und
+Das Eichhörnchen (`figures.py`) kam zuerst; vier weitere folgen im nächsten
+Abschnitt. Es ist aus Kreisen und
 Ellipsen gebaut, aber wie die Steine schattiert: jedes Teil ein rundes
 Volumen, hell oben links, dunkel unten rechts. Der Schwanz ist eine
 einzige buschige Feder entlang einer Mittellinie mit Breitenverlauf, außen
 mit Fellspitzen und innen mit hellen Strähnen; die Ohrpinsel sind
 Haarbüschel. Schwanz, Kopf, Auge und Nuss sind eigene Gruppen mit
 Drehpunkt und damit einzeln animierbar.
+
+## Vier weitere Tiere (2026-10-04)
+
+Je eine Landschaft, damit sich zeigt, wie Wasser, Getreide, Berg und Luft
+aussehen können. Alle als SVG-Animation; **noch nicht in der App** (der
+Export `export.py` ist auf das Eichhörnchen verdrahtet).
+
+```bash
+python3 tools/szenen/stories.py                 # alle vier
+python3 tools/szenen/stories.py Ente Adler      # einzelne
+```
+
+| Tier | Karte (Muster, Würfel) | Figur | Geschichte |
+| --- | --- | --- | --- |
+| **Ente** | Gebäude + Wasser, 4 Würfel, Würfel auf Wasser | `figures_more.py`: Erpel, an der Wasserlinie abgeschnitten, Ring davor | paddelt von links herein, schaut sich um, gründelt (Heck hoch, Kopf unter Wasser), schüttelt das Heck; Ringe auf dem Wasser |
+| **Marienkäfer** | Baum1 + Feld, 5 Würfel, Würfel auf Feld | `fig_bug.py`: von hinten oben, Flügeldecken öffnen sich wie Türen | krabbelt durch die Halme, Fühler, Flügel entfalten und flattern, hebt ab und setzt weiter vorn auf; **die Halme davor verdecken ihn** (`depth`) |
+| **Adler** | Berg3 + Feld, 2 Würfel, Würfel auf Berg3 | `fig_eagle.py`: Weißkopfseeadler, klein und befiedert der Kopf, kurzer Hakenschnabel, lange gefaltete Flügel; `fig_chick.py`: Küken; `nest.py`: Horst | **Horst auf dem Gipfel** (`story_eagle.py`): die Mutter brütet, das Männchen fliegt mit einem Fisch heran, landet am Rand, füttert drei Küken nacheinander und fliegt weiter; Küken und Mutter bleiben, die Kamera zieht zweimal heraus |
+| **Rabe** | Gebäude + Feld, 2 Würfel, Würfel auf Feld | dieselbe Vogelfigur, schwarz, schlanker | fliegt über das Feld (Schatten läuft am Boden), landet, hüpft zweimal, ruft dreimal |
+
+**Der Adler** ist seit dem 2026-10-04 größer (`SIZE` 0,085) und wirkt weniger wie ein Geier: Der erste Entwurf (`fig_bird.py`, jetzt nur noch Vorlage des Raben) hatte einen großen kahlen Kopf auf langem Hals und einen hängenden Schnabel. Der Horst ist ein Zwei-Hälften-Zeichnung (`nest.py`): Boden und hintere Kante unter den Tieren, vordere Kante darüber; sie sitzen darin, nicht davor. Die Geschichte steht in einer eigenen Datei, damit eine zweite Sitzung an `stories.py` arbeiten kann.
+
+**Die Flugpose** (`fig_eagle_flight.py`, 2026-10-04). Der erste Flug drehte
+Flügelbilder um die Schulter und sah aufrecht aus. Jetzt ist der Flügel eine
+flache Form (Arm, Hand, fünf gespreizte Handschwingen), die im Raum um den
+Körper gedreht und flachgedrückt wird, Bild für Bild: Der Adler fliegt
+waagrecht, der Kopf vorgestreckt, der Schwanz ein weißer Fächer, die Beine
+angezogen. Eben ausgestreckt hängt der nahe Flügel zu uns herab und der
+ferne ragt nach oben weg; angehoben zeigen beide nach oben; im Abschlag
+fährt der nahe am Bauch vorbei, und die Hand bleibt im Schlag zurück und
+knickt am Handgelenk. Die Geschichte gibt je Bild zwei Winkel
+(`wing_paths(arm, hand)`), die Pfade laufen als `d`-Animation (neue Teileart
+`path` in `anim.py`). Zum Landen richtet sich die Figur auf (Drehung um die
+Krallen), faltet die Flügel und wird nach 0,4 s durch die sitzende abgelöst;
+zum Abflug umgekehrt.
+
+**Warum Adler und nicht Lama.** Der Würfel des Lamas liegt auf dem Feld
+neben dem Berg, nicht auf dem Berg. Der Adler (Berg3 + Feld) hat ihn auf dem
+Gipfel und deckt zugleich das Fliegen ab; der Rabe fliegt, landet aber auf
+dem Feld, weil seine Karte es so verlangt.
+
+**Aufbau.**
+
+| Datei | Inhalt |
+| --- | --- |
+| `anim.py` | schreibt eine Geschichte als animiertes SVG, für jede Figur: Füße, Blickrichtung (`face`), Drehung (`rot`), Stauchung, Kamera, Teile mit Drehpunkt (`rotate`, `translate`, `scale`), Schatten auf dem Boden, Ringe (`below`) |
+| `stories.py` | die vier Geschichten, Bild für Bild: `Setup` liefert Szene, Zielfeld und die drei Kameraausschnitte (nah, weit, Lebensraum) |
+| `figures_more.py` | Farbtöne der neuen Figuren, Erpel |
+| `fig_bug.py`, `fig_bird.py` | Marienkäfer; Adler und Rabe aus einem Bau (`bird_body`) |
+| `cards.py` | `MIX` und `BEHIND` je Tier: Wasser um die Ente, Felder um den Käfer, Berge um den Adler, Äcker um den Raben |
+
+**Ansehen.** Die Vorschau hakt bei SMIL: `qlmanage` zeichnet es nicht. Im
+Browser (zum Beispiel lokal mit `python3 -m http.server -d tools/szenen/out`)
+lässt sich eine Stelle anspringen:
+
+```js
+const s = document.documentElement; s.pauseAnimations(); s.setCurrentTime(6.5)
+```
+
+**Was noch fehlt.** Es sind erste Entwürfe, nicht abgenommen: Die Figuren
+sind klein im Bild (der Lebensraum-Ausschnitt zeigt alle Würfel, nicht nur
+den ersten), der Erpel taucht nur mit dem Kopf, der Adler ähnelt einem Geier,
+und die Flügelschläge sind grob (ein Flügel dreht sich um die Schulter,
+Verkürzung fehlt). Die zweiten und dritten Tiere je Karte kommen nicht vor.
+
+**Übergabe (Stand 2026-10-04, Rückmeldung: „gute Anfänge, überarbeiten").**
+Zwei Sitzungen arbeiten daran, deshalb hier der Stand, damit keine die
+andere überrascht:
+
+- Die vier Entwürfe sind unverändert so, wie sie committet sind; was
+  zuerst anzufassen wäre, steht im Absatz davor. Gestaltet wird über
+  Bilder, ein Wunsch pro Runde.
+- Eine Änderung an einer Figur oder Geschichte betrifft nur ihre Datei
+  (`figures_more.py`, `fig_bug.py`, `fig_bird.py`, `stories.py`); `anim.py`,
+  `scene.py`, `cards.py` gelten für alle Tiere, dort Änderungen absprechen.
+- Nicht in der App sind die vier Tiere und ihre Szenen. Der Weg dahin ist
+  der des Eichhörnchens (*In der App*): `export.py` auf einen Tiernamen
+  und `SquirrelTimeline` auf eine Zeitleiste je Tier verallgemeinern; eine
+  Liste je Tier ist rund 0,5 MB, siehe *Noch offen*.
+- Offene Messung: Rechenzeit der Szene auf dem iPhone (kein Gerät
+  angeschlossen gewesen).
+- Die Sitzungen haben je einen eigenen Worktree und Branch (`szenen1`,
+  `szenen2`, beide unter `.claude/worktrees/`). `szenen2` zweigt vom Stand
+  `6e6210a` ab, vor dieser Notiz. Zusammengeführt wird später per Merge;
+  Konflikte sind in `anim.py`, `scene.py`, `cards.py` und `stories.py` zu
+  erwarten, wo beide Seiten Tiere eintragen (`STORIES`, `MIX`, `SIZE`).
 
 ## Noch offen
 
@@ -248,7 +373,9 @@ Drehpunkt und damit einzeln animierbar.
 - Umgebung (`MIX`) und Feldlesart je Tier festlegen.
 - Ob der Dunst innerhalb eines zusammenhängenden Gebirges einheitlich
   sein soll.
-- Die Übertragung nach SwiftUI (`TimelineView` und `Canvas`, wie bei der
-  Blüte des Icons). Die Kulisse wird dort aus denselben Formeln gerechnet,
-  der Code bleibt klein; das SVG ist mit rund 400 KB nur deshalb groß,
-  weil es jede Form einzeln ausschreibt.
+- Die Rechenzeit der Szene auf dem Gerät. Wird sie zu knapp, bieten sich an:
+  die Felder (über 1000 Halme) nur nahe vor der Kamera zeichnen, oder die
+  ruhende Kulisse je Kameraschritt zwischenspeichern.
+- Die Liste ist mit 480 KB groß, weil sie jede Form einzeln ausschreibt.
+  Für mehr als ein Tier wird eine gemeinsame Kulisse oder eine Verdichtung
+  (Halme und Wellen aus Formeln) nötig.

@@ -43,8 +43,10 @@ Was es gibt, in Stichworten:
   Standard) 30,2 s bei 321.816 Zügen auf dem Gerät „Zackebuh“, von Hauke
   gemeldet und als akzeptabel befunden, weil spätere Züge viel weniger Züge
   prüfen. Der Standard (Tiefe 1) ist nicht einzeln nachgemessen.
-- **Tierszenen** als Entwurf für kleine Animationen, noch nicht in der App:
-  `tools/szenen/`, Regeln in `docs/szenen.md`.
+- **Tierszenen** als kleine Animationen, Entwurf in `tools/szenen/`, Regeln
+  in `docs/szenen.md`. In der App (`MyApp/Szenen/`) läuft die erste
+  Eichhörnchen-Animation vor „Über Harmony"; die Szene kommt als
+  Anzeigeliste aus `tools/szenen/export.py`.
 
 **Fürs Gerät `-configuration Release` bauen.** Das Schema baut beim
 Laufenlassen Debug, und Debug ist hier sechs- bis achtmal langsamer.

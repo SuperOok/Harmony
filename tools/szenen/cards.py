@@ -163,9 +163,26 @@ MIX = {
     'Eichhörnchen': dict(front={'Wasser': 3, 'Baum': 2},
                          middle={'Baum': 8, 'Gebäude': 1},
                          far={'Baum': 4, 'Berg': 2, 'Wasser': 1}),
+    # a duck lives on a lake: water all round, reeds (bushes) and trees on the banks
+    'Ente': dict(front={'Wasser': 8, 'Baum': 1},
+                 middle={'Wasser': 8, 'Baum': 3, 'Gebäude': 1},
+                 far={'Berg': 3, 'Baum': 2, 'Wasser': 3}),
+    # a ladybird lives in the grain: fields all round, a few bushes and trees at their edges
+    'Marienkäfer': dict(front={'Feld': 8, 'Baum': 2},
+                        middle={'Feld': 9, 'Baum': 2},
+                        far={'Feld': 4, 'Berg': 2, 'Baum': 2}),
+    # an eagle lives in the mountains: peaks behind and beside, grass and a few trees below
+    'Adler': dict(front={'Feld': 5, 'Baum': 2, 'Wasser': 1},
+                  middle={'Berg': 8, 'Feld': 2, 'Baum': 1},
+                  far={'Berg': 8, 'Baum': 1}),
+    # a raven: fields and farms, a few trees
+    'Rabe': dict(front={'Feld': 6, 'Baum': 2},
+                 middle={'Feld': 6, 'Gebäude': 2, 'Baum': 3},
+                 far={'Feld': 3, 'Baum': 3, 'Berg': 2}),
 }
-BEHIND = {'Eichhörnchen': 'Baum'}                 # what stands right behind the habitat
-TREE_SHARE = {None: 0.7, 'Eichhörnchen': 0.9}     # how densely a copse is planted
+BEHIND = {'Eichhörnchen': 'Baum', 'Ente': 'Wasser', 'Marienkäfer': 'Feld', 'Adler': 'Berg'}                # what stands right behind the habitat
+LAKE = ('Ente',)                                  # what is not land is water
+TREE_SHARE ={None: 0.7, 'Eichhörnchen': 0.9}     # how densely a copse is planted
 HIGH = ('Baum2', 'Baum3', 'Berg1', 'Berg2', 'Berg3', 'Gebäude')   # what can hide an animal
 
 
@@ -240,6 +257,8 @@ def surroundings(layout, cubes, b, view, seed=1, animal=None):
         reach = {'Gebäude': 0, 'Baum': 1, 'Berg': 1, 'Wasser': 1, 'Feld': 1}[kind]
         share = TREE_SHARE.get(animal, TREE_SHARE[None]) if kind == 'Baum' else 0.7
         if d > reach or (kind in ('Baum', 'Gebäude') and rnd.random() > share):
+            if animal in LAKE:                    # a lake has no bare board
+                out[c] = 'Wasser'
             continue
         k = with_height(c, kind, zone(c))
         if k:
