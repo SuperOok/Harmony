@@ -21,7 +21,7 @@ RAVEN_SHADOW = (0.8, 0.22)
 EAGLE = dict(body='eagle-brown', head='eagle-white', wing='eagle-brown', wingfar='eagle-brown', tail='eagle-white',
              bill='eagle-yellow', legs='#EFC230', iris='#F4C21B', hook=True, brow=True, size=1.0)
 RAVEN = dict(body='raven', head='raven', wing='raven', wingfar='raven', tail='raven',
-             bill='bug-black', legs='#15171B', iris='#E8E2D0', hook=False, brow=False, size=0.82)
+             bill='bug-black', legs='#15171B', iris='#E8E2D0', hook=False, brow=False, size=0.82, lean=38)       # a raven stands and hops leaning well forward
 
 
 def _wing(shade, tipcolour=None):
@@ -36,6 +36,8 @@ def bird_body(p, anim=None, perched=False):
     """`perched` leaves the spread wings out, for a figure that stands still."""
     anim = anim or {}
     k = p['size']
+    lean = p.get('lean', -12)                    # the body's axis, in degrees (the eagle's first try stood upright)
+    tilt = lean + 12                             # how much further forward than that
     o = []
     # far wing behind everything, a little darker through the shade of the body
     far = '<g>' + anim.get('wingF', '') + f'<g transform="translate(-5 2)" opacity="0.85">{_wing(p["wingfar"])}</g></g>'
@@ -47,15 +49,15 @@ def bird_body(p, anim=None, perched=False):
         f'<path d="M36 93 L40 90 L45 94 M48 94 L52 90 L57 93" stroke="{p["legs"]}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
         '</g>'))
     # tail
-    o.append(f'<g>{anim.get("tail", "")}<path d="M38 70 L26 99 L38 96 L44 100 L48 90 Z" fill="{_f(p["tail"])}" stroke="#000" stroke-opacity="0.2" stroke-width="0.5"/></g>')
+    o.append(f'<g transform="rotate({tilt*1.2:.1f} 38 70)"><g>{anim.get("tail", "")}<path d="M38 70 L26 99 L38 96 L44 100 L48 90 Z" fill="{_f(p["tail"])}" stroke="#000" stroke-opacity="0.2" stroke-width="0.5"/></g></g>')
     # body, leaning forward
-    o.append(f'<ellipse cx="48" cy="57" rx="{17*k:.1f}" ry="{25*k:.1f}" fill="{_f(p["body"])}" transform="rotate(-12 48 60)"/>')
+    o.append(f'<ellipse cx="48" cy="57" rx="{17*k:.1f}" ry="{25*k:.1f}" fill="{_f(p["body"])}" transform="rotate({lean} 48 60)"/>')
     # the folded wing laid along it
     fold = (f'<path d="M52 44 Q64 58 54 84 Q44 88 38 76 Q34 60 44 46 Z" fill="{_f(p["wing"])}" stroke="#000" stroke-opacity="0.25" stroke-width="0.5"/>'
             '<path d="M50 52 Q55 66 50 80 M44 54 Q46 66 44 76" fill="none" stroke="#fff" stroke-opacity="0.15" stroke-width="0.7"/>')
-    o.append(scaled_about(anim.get('fold', ''), BIRD_PARTS['fold'][1], fold))
+    o.append(f'<g transform="rotate({tilt} 48 60)">' + scaled_about(anim.get('fold', ''), BIRD_PARTS['fold'][1], fold) + '</g>')
     # head
-    o.append('<g>' + anim.get('head', '') + '<g transform="translate(-3 7)">')      # sits down on the shoulders: no neck
+    o.append('<g>' + anim.get('head', '') + f'<g transform="translate({-3 + tilt*0.17:.1f} {7 + tilt*0.08:.1f})">')      # sits down on the shoulders: no neck
     o.append(f'<circle cx="64" cy="29" r="{11*k + 1:.1f}" fill="{_f(p["head"])}"/>')
     bill = (f'M70 24 Q85 22 86 36 Q84 41 80 36 Q77 32 70 34 Z' if p['hook']
             else 'M70 25 Q88 24 92 31 Q80 34 70 35 Z')
